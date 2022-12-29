@@ -1,5 +1,3 @@
-# kele.el
-
 ![](./img/kele.jpg)
 
 Kele (*kě lè*, or *kə-ˈlə*) ("Kubernetes Enablement Layer for Emacs")
