@@ -22,6 +22,7 @@
 (require 'f)
 (require 'filenotify)
 (require 'ht)
+(require 'subr-x)
 (require 'yaml)
 
 (defgroup kele nil
