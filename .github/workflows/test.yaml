@@ -47,10 +47,10 @@ jobs:
         run: |
           make test
 
-      - name: Upload coverage
-        if: steps.install.outcome == 'success' && steps.install.conclusion == 'success'
-        uses: codecov/codecov-action@v2
-        with:
-          env_vars: EMACS_VERSION
-          files: ./coverage/lcov-ert.info,./coverage/lcov-buttercup.info
-          fail_ci_if_error: true
+      # - name: Upload coverage
+      #   if: steps.install.outcome == 'success' && steps.install.conclusion == 'success'
+      #   uses: codecov/codecov-action@v2
+      #   with:
+      #     env_vars: EMACS_VERSION
+      #     files: ./coverage/lcov-buttercup.info
+      #     fail_ci_if_error: true

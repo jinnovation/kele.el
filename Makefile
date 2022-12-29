@@ -17,4 +17,4 @@ compile: cask
 
 .PHONY: test
 test: compile
-	cask emacs --batch -L . -L test -f ert-run-tests-batch
+	cask exec buttercup -L . tests/
