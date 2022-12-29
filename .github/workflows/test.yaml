@@ -42,7 +42,7 @@ jobs:
         run: |
           emacs --version
           cask build --verbose
-          make build
+          make compile
 
       - name: Test
         if: steps.install.outcome == 'success' && steps.install.conclusion == 'success'
