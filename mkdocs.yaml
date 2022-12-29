@@ -1,0 +1,37 @@
+strict: true
+
+site_name: "kele.el"
+site_description: "Kubernetes Enablement Layer for Emacs"
+site_url: https://jinnovation.github.io/kele.el
+
+repo_name: jinnovation/kele.el
+repo_url: https://github.com/jinnovation/kele.el
+
+nav:
+  - Home: index.md
+theme:
+  name: material
+  palette:
+    scheme: slate
+  features:
+    - navigation.indexes
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - pymdownx.details
+  - pymdownx.snippets:
+      check_paths: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - smarty
+  - tables
+  - meta
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg

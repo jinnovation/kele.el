@@ -1,3 +1,4 @@
+# -*- before-save-hook: (delete-trailing-whitespace); -*-
 #+TITLE: 🥤 kele.el (Kubernetes Enablement Layer for Emacs)
 
 [[file:docs/img/kele.jpg]]
@@ -12,12 +13,14 @@ noteworthy packages that you can take advantage of in your own configs. These
 also serve to demonstrate Kele's capabilities. Our documentation includes
 tutorials for replicating these integrations yourselves.
 
+*For full documentation, please visit [[https://jinnovation.github.io/kele][jinnovation.github.io/kele]]*.
+
 * Getting Started
-  
+
 ** The Hard Way
 
    Clone this repository and put it in your load-path.
-  
+
 ** Use-package + Straight
 
    #+begin_src emacs-lisp
