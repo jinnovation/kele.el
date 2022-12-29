@@ -70,16 +70,30 @@ Values are parsed from the contents at `kele-kubeconfig-path'."
               (concat "(" kele-current-namespace ")")
             "")))
 
+(defconst kele--awesome-tray-module '("kele" . (kele-status-simple nil)))
+
+(defun kele--enable ()
+  "Enables Kele functionality."
+  (setq kele--kubeconfig-watcher
+        (file-notify-add-watch kele-kubeconfig-path '(change) #'kele--update))
+  (if (featurep 'awesome-tray)
+      (add-to-list 'awesome-tray-module-alist kele--awesome-tray-module))
+  (kele--update))
+
+(defun kele--disable ()
+  "Disable Kele functionality."
+  (file-notify-rm-watch kele--kubeconfig-watcher)
+  (if (featurep 'awesome-tray)
+      (delete kele--awesome-tray-module awesome-tray-module-alist)))
+
 (define-minor-mode kele-mode
 "Minor mode to enable listening on Kubernetes configs."
 :global t
 :group 'kele
 :lighter nil
 (if (not kele-mode)
-    (file-notify-rm-watch kele--kubeconfig-watcher)
-  (setq kele--kubeconfig-watcher
-        (file-notify-add-watch kele-kubeconfig-path '(change) #'kele--update))
-  (kele--update)))
+    (kele--disable)
+  (kele--enable)))
 
 (provide 'kele)
 

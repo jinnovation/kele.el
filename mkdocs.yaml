@@ -9,6 +9,10 @@ repo_url: https://github.com/jinnovation/kele.el
 
 nav:
   - Home: index.md
+  - How-Tos:
+      - how-tos/index.md
+      - how-tos/integrations.md
+
 theme:
   name: material
   palette:
