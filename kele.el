@@ -34,10 +34,32 @@
 (defcustom kele-kubeconfig-path
   (expand-file-name (or (getenv "KUBECONFIG") "~/.kube/config"))
   "Path to the kubeconfig file."
-  :type 'file)
+  :type 'file
+  :group 'kele)
+
+(defcustom kele-kubectl-executable "kubectl"
+  "The kubectl executable to use."
+  :group 'kele)
+
+(cl-defun kele-kubectl-do (&rest args)
+  "Execute kubectl with ARGS."
+  (let ((cmd (append (list kele-kubectl-executable) args)))
+    (make-process
+     :name (format "kele: %s" (s-join " " cmd))
+     :command cmd
+     :noquery t)))
 
 (defvar kele-current-context nil
   "The current kubectl context.
+
+The value is kept up-to-date with any changes to the underlying
+configuration, e.g. via `kubectl config'.")
+
+(defvar kele--contexts nil
+  "The full list of contexts.
+
+Each element is a hash-table representing the entry in
+kubeconfig.
 
 The value is kept up-to-date with any changes to the underlying
 configuration, e.g. via `kubectl config'.")
@@ -51,17 +73,24 @@ configuration, e.g. via `kubectl config'.")
 (defvar kele--kubeconfig-watcher nil
   "Descriptor of the file watcher on `kele-kubeconfig-path'.")
 
+(defun kele--get-config ()
+  "Get the config at `kele-kubeconfig-path'.
+
+The config will be represented as a hash table."
+  (yaml-parse-string (f-read kele-kubeconfig-path)))
+
 (defun kele--update (&optional _)
   "Update `kele-k8s-context' and `kele-k8s-namespace'.
 
 Values are parsed from the contents at `kele-kubeconfig-path'."
-  (when-let* ((config (yaml-parse-string (f-read kele-kubeconfig-path)))
+  (when-let* ((config (kele--get-config))
               (current-context (ht-get config 'current-context))
               (contexts (-concat (ht-get config 'contexts) '()))
               (context (-first (lambda (elem) (string= (ht-get elem 'name) current-context)) contexts)))
     (let ((namespace (ht-get* context 'context 'namespace)))
       (setq kele-current-context current-context
-            kele-current-namespace namespace))))
+            kele-current-namespace namespace
+            kele--contexts contexts))))
 
 (defun kele-status-simple ()
   "Return a simple status string suitable for modeline display."
@@ -72,6 +101,15 @@ Values are parsed from the contents at `kele-kubeconfig-path'."
             "")))
 
 (defconst kele--awesome-tray-module '("kele" . (kele-status-simple nil)))
+
+(defun kele-contexts ()
+  "Get the names of all known contexts."
+  (-map (lambda (elem) (ht-get elem 'name)) kele--contexts))
+
+(defun kele-context-switch (context)
+  "Switch to CONTEXT."
+  (interactive (list (completing-read "Context: " (kele-contexts))))
+  (kele-kubectl-do "config" "use-context" context))
 
 (defun kele--enable ()
   "Enables Kele functionality."
