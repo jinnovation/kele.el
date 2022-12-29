@@ -31,28 +31,28 @@ jobs:
         with:
           python-version: '3.10'
           architecture: 'x64'
-      # - name: Setup Cask
-      #   uses: conao3/setup-cask@master
-      #   with:
-      #     version: "snapshot"
+      - name: Setup Cask
+        uses: conao3/setup-cask@master
+        with:
+          version: "snapshot"
       - uses: actions/checkout@v3
-      # - name: Install
-      #   id: install
-      #   continue-on-error: ${{ matrix.ignore_error != '' && matrix.ignore_error }}
-      #   run: |
-      #     emacs --version
-      #     cask build --verbose
-      #     make build
+      - name: Install
+        id: install
+        continue-on-error: ${{ matrix.ignore_error != '' && matrix.ignore_error }}
+        run: |
+          emacs --version
+          cask build --verbose
+          make build
 
-      # - name: Test
-      #   if: steps.install.outcome == 'success' && steps.install.conclusion == 'success'
-      #   run: |
-      #     make test
+      - name: Test
+        if: steps.install.outcome == 'success' && steps.install.conclusion == 'success'
+        run: |
+          make test
 
-      # - name: Upload coverage
-      #   if: steps.install.outcome == 'success' && steps.install.conclusion == 'success'
-      #   uses: codecov/codecov-action@v2
-      #   with:
-      #     env_vars: EMACS_VERSION
-      #     files: ./coverage/lcov-ert.info,./coverage/lcov-buttercup.info
-      #     fail_ci_if_error: true
+      - name: Upload coverage
+        if: steps.install.outcome == 'success' && steps.install.conclusion == 'success'
+        uses: codecov/codecov-action@v2
+        with:
+          env_vars: EMACS_VERSION
+          files: ./coverage/lcov-ert.info,./coverage/lcov-buttercup.info
+          fail_ci_if_error: true
