@@ -13,7 +13,7 @@ noteworthy packages that you can take advantage of in your own configs. These
 also serve to demonstrate Kele's capabilities. Our documentation includes
 tutorials for replicating these integrations yourselves.
 
-*For full documentation, please visit [[https://jinnovation.github.io/kele][jinnovation.github.io/kele]]*.
+*For full documentation, please visit [[https://jonathanj.in/kele.el][jonathanj.in/kele.el]]*.
 
 * Getting Started
 
