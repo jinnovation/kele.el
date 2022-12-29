@@ -54,7 +54,7 @@ Values are parsed from the contents at `kele-kubeconfig-path'."
               (context (-first (lambda (elem) (string= (ht-get elem 'name) current-context)) contexts)))
     (let ((namespace (ht-get* context 'context 'namespace)))
       (setq kele-current-context current-context
-            kele-current-namespace namespace)))))
+            kele-current-namespace namespace))))
 
 (defvar kele--kubeconfig-watcher nil
 "Descriptor of the file watcher on `kele-kubeconfig-path'.")
