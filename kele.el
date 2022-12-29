@@ -48,7 +48,7 @@ The value is kept up-to-date with any changes to the underlying
 configuration, e.g. via `kubectl config'.")
 
 (defvar kele--kubeconfig-watcher nil
-"Descriptor of the file watcher on `kele-kubeconfig-path'.")
+  "Descriptor of the file watcher on `kele-kubeconfig-path'.")
 
 (defun kele--update (&optional _)
   "Update `kele-k8s-context' and `kele-k8s-namespace'.
@@ -77,23 +77,25 @@ Values are parsed from the contents at `kele-kubeconfig-path'."
   (setq kele--kubeconfig-watcher
         (file-notify-add-watch kele-kubeconfig-path '(change) #'kele--update))
   (if (featurep 'awesome-tray)
-      (add-to-list 'awesome-tray-module-alist kele--awesome-tray-module))
+      (with-suppressed-warnings ((free-vars awesome-tray-module-alist))
+        (add-to-list 'awesome-tray-module-alist kele--awesome-tray-module)))
   (kele--update))
 
 (defun kele--disable ()
   "Disable Kele functionality."
   (file-notify-rm-watch kele--kubeconfig-watcher)
   (if (featurep 'awesome-tray)
-      (delete kele--awesome-tray-module awesome-tray-module-alist)))
+      (with-suppressed-warnings ((free-vars awesome-tray-module-alist))
+        (delete kele--awesome-tray-module awesome-tray-module-alist))))
 
 (define-minor-mode kele-mode
-"Minor mode to enable listening on Kubernetes configs."
-:global t
-:group 'kele
-:lighter nil
-(if (not kele-mode)
-    (kele--disable)
-  (kele--enable)))
+  "Minor mode to enable listening on Kubernetes configs."
+  :global t
+  :group 'kele
+  :lighter nil
+  (if (not kele-mode)
+      (kele--disable)
+    (kele--enable)))
 
 (provide 'kele)
 
