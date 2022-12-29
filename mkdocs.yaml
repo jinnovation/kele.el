@@ -1,8 +1,8 @@
 strict: true
 
-site_name: "kele.el"
+site_name: "🥤 kele.el: Kubernetes Enablement Layer for Emacs"
 site_description: "Kubernetes Enablement Layer for Emacs"
-site_url: https://jinnovation.github.io/kele.el
+site_url: https://jonathanj.in/kele.el
 
 repo_name: jinnovation/kele.el
 repo_url: https://github.com/jinnovation/kele.el
