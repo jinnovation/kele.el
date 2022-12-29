@@ -7,7 +7,7 @@
 ;; Version: 0.0.1
 ;; Homepage: https://github.com/jinnovation/kele.el
 ;; Keywords: kubernetes
-;; Package-Requires: ((emacs "27.1") (f "0.20.0") (yaml "0.5.1"))
+;; Package-Requires: ((emacs "27.1") (f "0.20.0") (ht "20221031.705") (yaml "0.5.1"))
 
 ;;; Commentary:
 
@@ -20,6 +20,8 @@
 ;;; Code:
 
 (require 'f)
+(require 'filenotify)
+(require 'ht)
 (require 'yaml)
 
 (defgroup kele nil
