@@ -45,6 +45,9 @@ configuration, e.g. via `kubectl config'.")
 The value is kept up-to-date with any changes to the underlying
 configuration, e.g. via `kubectl config'.")
 
+(defvar kele--kubeconfig-watcher nil
+"Descriptor of the file watcher on `kele-kubeconfig-path'.")
+
 (defun kele--update (&optional _)
   "Update `kele-k8s-context' and `kele-k8s-namespace'.
 
@@ -57,8 +60,13 @@ Values are parsed from the contents at `kele-kubeconfig-path'."
       (setq kele-current-context current-context
             kele-current-namespace namespace))))
 
-(defvar kele--kubeconfig-watcher nil
-"Descriptor of the file watcher on `kele-kubeconfig-path'.")
+(defun kele-status-simple ()
+  "Return a simple status string suitable for modeline display."
+  (concat "k8s:"
+          kele-current-context
+          (if kele-current-namespace
+              (concat "(" kele-current-namespace ")")
+            "")))
 
 (define-minor-mode kele-mode
 "Minor mode to enable listening on Kubernetes configs."
