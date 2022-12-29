@@ -78,7 +78,7 @@ Values are parsed from the contents at `kele-kubeconfig-path'."
 (if (not kele-mode)
     (file-notify-rm-watch kele--kubeconfig-watcher)
   (setq kele--kubeconfig-watcher
-        (file-notify-add-watch kele-kubeconfig-path '(change) 'kele--update))
+        (file-notify-add-watch kele-kubeconfig-path '(change) #'kele--update))
   (kele--update)))
 
 (provide 'kele)
