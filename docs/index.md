@@ -6,10 +6,10 @@ that can be leveraged to build higher-level integrations, e.g. modeline modules
 and interactive clients such as
 [kubernetes-el](https://github.com/kubernetes-el/kubernetes-el).
 
-Kele comes with "batteries included." It contains several integrations with
-noteworthy packages that you can take advantage of in your own configs. These
-also serve to demonstrate Kele&rsquo;s capabilities. Our documentation includes
-tutorials for replicating these integrations yourselves.
+Kele comes with "batteries included." It contains several
+[integrations](./how-tos/integrations.md) with noteworthy packages that you can
+take advantage of in your own configs. These also serve to demonstrate Keles's
+capabilities.
 
 ## Getting Started
 
