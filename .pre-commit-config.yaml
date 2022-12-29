@@ -1,4 +1,10 @@
 repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.3.0
+  hooks:
+    - id: trailing-whitespace
+    - id: check-merge-conflict
+    - id: mixed-line-ending
 - repo: https://github.com/markdownlint/markdownlint
   rev: e31711c0db57df9b350fbaeaae6de745972f3e66
   hooks:
