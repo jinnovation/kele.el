@@ -119,10 +119,10 @@ Values are parsed from the contents at `kele-kubeconfig-path'."
 
 (defun kele--context-cluster (context-name)
   "Get the cluster of the context named CONTEXT-NAME."
-  (ht-get*
-   (-first (lambda (elem) (string= (ht-get elem 'name) context-name))
-           kele--contexts)
-   'context 'cluster))
+  (if-let ((context (-first (lambda (elem) (string= (ht-get elem 'name) context-name))
+                            kele--contexts)))
+      (ht-get* context 'context 'cluster)
+    (error "Could not find context of name %s in %s" context-name kele--contexts)))
 
 (defun kele--context-annotate (context-name)
   "Return annotation text for the context named CONTEXT-NAME."
@@ -182,6 +182,7 @@ Only populated if Embark is installed.")
 (defun kele--enable ()
   "Enables Kele functionality."
   (setq kele--kubeconfig-watcher
+        ;; FIXME: Update the watcher when `kele-kubeconfig-path' changes.
         (file-notify-add-watch kele-kubeconfig-path '(change) #'kele--update))
   (kele--setup-embark-maybe)
   (if (featurep 'awesome-tray)
