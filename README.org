@@ -1,9 +1,11 @@
 # -*- before-save-hook: (delete-trailing-whitespace); -*-
 #+TITLE: 🥤 kele.el (Kubernetes Enablement Layer for Emacs)
 
+#+html: <a href="https://codecov.io/gh/jinnovation/kele.el" > <img src="https://codecov.io/gh/jinnovation/kele.el/branch/main/graph/badge.svg?token=LR7RDREPZF"/> </a>
+#+html: <a href="https://github.com/jinnovation/kele.el/actions"> <img src="https://github.com/jinnovation/kele.el/workflows/test/badge.svg?branch=main"/></a>
+
 [[file:docs/img/kele.jpg]]
 
-@@html:<a href="https://codecov.io/gh/jinnovation/kele.el" > <img src="https://codecov.io/gh/jinnovation/kele.el/branch/main/graph/badge.svg?token=LR7RDREPZF"/> </a>@@
 
 Kele (/kě lè/, or /kə-ˈlə/) ("Kubernetes Enablement Layer for Emacs")
 streamlines integration between Kubernetes and Emacs. It provides a "base layer"
