@@ -39,6 +39,7 @@
 
 (defcustom kele-kubectl-executable "kubectl"
   "The kubectl executable to use."
+  :type 'string
   :group 'kele)
 
 (cl-defun kele-kubectl-do (&rest args)
@@ -144,12 +145,29 @@ STR, PRED, and ACTION are as defined in completion functions."
 (defun kele-context-switch (context)
   "Switch to CONTEXT."
   (interactive (list (completing-read "Context: " #'kele--contexts-complete)))
+  ;; TODO: Message that this has been done
   (kele-kubectl-do "config" "use-context" context))
+
+(defconst kele--embark-keymap-entries '((kele-context . kele--context-actions)))
+
+(defun kele--setup-embark-maybe ()
+  (when (featurep 'embark)
+    (embark-define-keymap kele--context-actions
+      "Keymap for actions on Kubernetes contexts."
+      ("s" kele-context-switch))
+    (dolist (entry kele--embark-keymap-entries)
+      (add-to-list 'embark-keymap-alist entry))))
+
+(defun kele--teardown-embark-maybe ()
+  (when (featurep 'embark)
+    (dolist (entry kele--embark-keymap-entries)
+      (delete entry embark-keymap-alist))))
 
 (defun kele--enable ()
   "Enables Kele functionality."
   (setq kele--kubeconfig-watcher
         (file-notify-add-watch kele-kubeconfig-path '(change) #'kele--update))
+  (kele--setup-embark-maybe)
   (if (featurep 'awesome-tray)
       (with-suppressed-warnings ((free-vars awesome-tray-module-alist))
         (add-to-list 'awesome-tray-module-alist kele--awesome-tray-module)))
@@ -158,6 +176,7 @@ STR, PRED, and ACTION are as defined in completion functions."
 (defun kele--disable ()
   "Disable Kele functionality."
   (file-notify-rm-watch kele--kubeconfig-watcher)
+  (kele--teardown-embark-maybe)
   (if (featurep 'awesome-tray)
       (with-suppressed-warnings ((free-vars awesome-tray-module-alist))
         (delete kele--awesome-tray-module awesome-tray-module-alist))))
