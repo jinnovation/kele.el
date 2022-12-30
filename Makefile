@@ -16,4 +16,5 @@ compile: cask
 
 .PHONY: test
 test: compile
+	cask clean-elc
 	cask exec buttercup -L . tests/

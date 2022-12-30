@@ -155,17 +155,19 @@ STR, PRED, and ACTION are as defined in completion functions."
                      (read-from-minibuffer "Rename to: ")))
   (kele-kubectl-do "config" "rename-context" old-name new-name))
 
-(defconst kele--embark-keymap-entries '((kele-context . kele--context-actions)))
+(defvar kele--context-keymap nil
+  "Keymap for actions on Kubernetes contexts.
 
-(declare-function embark-define-keymap "ext:embark")
+Only populated if Embark is installed.")
+(defconst kele--embark-keymap-entries '((kele-context . kele--context-keymap)))
 
 (defun kele--setup-embark-maybe ()
-  (when (featurep 'embark)
-    (with-suppressed-warnings ((free-vars embark-keymap-alist))
-      (embark-define-keymap kele--context-actions
-        "Keymap for actions on Kubernetes contexts."
-        ("s" kele-context-switch)
-        ("r" kele-context-rename))
+  (with-eval-after-load 'embark
+    (with-suppressed-warnings ((free-vars embark-keymap-alist embark-general-map))
+      (setq kele--context-keymap (let ((map (make-sparse-keymap)))
+                                   (define-key map "s" #'kele-context-switch)
+                                   (define-key map "r" #'kele-context-rename)
+                                   (make-composed-keymap map embark-general-map)))
       (dolist (entry kele--embark-keymap-entries)
         (add-to-list 'embark-keymap-alist entry)))))
 
