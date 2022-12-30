@@ -1,8 +1,7 @@
 # 🥤 kele.el (Kubernetes Enablement Layer for Emacs)
 
-![img](docs/img/kele.jpg)
-
 [![codecov](https://codecov.io/gh/jinnovation/kele.el/branch/main/graph/badge.svg?token=LR7RDREPZF)](https://codecov.io/gh/jinnovation/kele.el)
+![img](docs/img/kele.jpg)
 
 Kele (*kě lè*, or *kə-ˈlə*) ("Kubernetes Enablement Layer for Emacs")
 streamlines integration between Kubernetes and Emacs. It provides a "base layer"
