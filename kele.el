@@ -149,6 +149,12 @@ STR, PRED, and ACTION are as defined in completion functions."
   ;; TODO: Message that this has been done
   (kele-kubectl-do "config" "use-context" context))
 
+(defun kele-context-rename (old-name new-name)
+  "Rename context named OLD-NAME to NEW-NAME."
+  (interactive (list (completing-read "Context to rename: " #'kele--contexts-complete)
+                     (read-from-minibuffer "Rename to: ")))
+  (kele-kubectl-do "config" "rename-context" old-name new-name))
+
 (defconst kele--embark-keymap-entries '((kele-context . kele--context-actions)))
 
 (declare-function embark-define-keymap "ext:embark")
@@ -158,7 +164,8 @@ STR, PRED, and ACTION are as defined in completion functions."
     (with-suppressed-warnings ((free-vars embark-keymap-alist))
       (embark-define-keymap kele--context-actions
         "Keymap for actions on Kubernetes contexts."
-        ("s" kele-context-switch))
+        ("s" kele-context-switch)
+        ("r" kele-context-rename))
       (dolist (entry kele--embark-keymap-entries)
         (add-to-list 'embark-keymap-alist entry)))))
 
