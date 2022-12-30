@@ -7,7 +7,7 @@
 ;; Version: 0.0.1
 ;; Homepage: https://github.com/jinnovation/kele.el
 ;; Keywords: kubernetes
-;; Package-Requires: ((emacs "27.1") (f "0.20.0") (ht "20221031.705") (yaml "0.5.1"))
+;; Package-Requires: ((emacs "27.1") (dash "2.19.1") (f "0.20.0") (ht "20221031.705") (yaml "0.5.1"))
 
 ;;; Commentary:
 
@@ -73,6 +73,12 @@ configuration, e.g. via `kubectl config'.")
 (defvar kele--kubeconfig-watcher nil
   "Descriptor of the file watcher on `kele-kubeconfig-path'.")
 
+(defvar kele--config nil
+  "The current kubeconfig.
+
+The value is kept up-to-date with any changes to the underlying
+configuration, e.g. via `kubectl config'.")
+
 (defun kele--get-config ()
   "Get the config at `kele-kubeconfig-path'.
 
@@ -90,6 +96,7 @@ Values are parsed from the contents at `kele-kubeconfig-path'."
     (let ((namespace (ht-get* context 'context 'namespace)))
       (setq kele-current-context current-context
             kele-current-namespace namespace
+            kele--config config
             kele--contexts contexts))))
 
 (defun kele-status-simple ()
@@ -106,9 +113,37 @@ Values are parsed from the contents at `kele-kubeconfig-path'."
   "Get the names of all known contexts."
   (-map (lambda (elem) (ht-get elem 'name)) kele--contexts))
 
+(defun kele--context-cluster (context-name)
+  "Get the cluster of the context named CONTEXT-NAME."
+  (ht-get*
+   (-first (lambda (elem) (string= (ht-get elem 'name) context-name))
+           kele--contexts)
+   'context 'cluster))
+
+(defun kele--context-annotate (context-name)
+  "Return annotation text for the context named CONTEXT-NAME."
+  (let* ((context (-first (lambda (elem)
+                           (string= (ht-get elem 'name) context-name))
+                         kele--contexts))
+        (cluster-name (ht-get* context 'context 'cluster))
+        (cluster (-first (lambda (elem)
+                           (string= (ht-get elem 'name) cluster-name))
+                         (-concat (ht-get kele--config 'clusters) '())))
+        (server (ht-get* cluster 'cluster 'server)))
+    (s-concat " (" cluster-name ", " server ")")))
+
+(defun kele--contexts-complete (str pred action)
+  "Complete input for selection of contexts.
+
+STR, PRED, and ACTION are as defined in completion functions."
+  (if (eq action 'metadata)
+      '(metadata (annotation-function . kele--context-annotate)
+                 (category . kele-context))
+    (complete-with-action action (kele-contexts) str pred)))
+
 (defun kele-context-switch (context)
   "Switch to CONTEXT."
-  (interactive (list (completing-read "Context: " (kele-contexts))))
+  (interactive (list (completing-read "Context: " #'kele--contexts-complete)))
   (kele-kubectl-do "config" "use-context" context))
 
 (defun kele--enable ()
