@@ -111,7 +111,7 @@ Values are parsed from the contents at `kele-kubeconfig-path'."
 
 (defconst kele--awesome-tray-module '("kele" . (kele-status-simple nil)))
 
-(defun kele-contexts ()
+(defun kele-context-names ()
   "Get the names of all known contexts."
   (-map (lambda (elem) (ht-get elem 'name)) kele--contexts))
 
@@ -141,7 +141,7 @@ STR, PRED, and ACTION are as defined in completion functions."
   (if (eq action 'metadata)
       '(metadata (annotation-function . kele--context-annotate)
                  (category . kele-context))
-    (complete-with-action action (kele-contexts) str pred)))
+    (complete-with-action action (kele-context-names) str pred)))
 
 (defun kele-context-switch (context)
   "Switch to CONTEXT."
