@@ -92,14 +92,14 @@ The config will be represented as a hash table."
 
 Values are parsed from the contents at `kele-kubeconfig-path'."
   (when-let* ((config (kele--get-config))
-              (current-context (ht-get config 'current-context))
-              (contexts (-concat (ht-get config 'contexts) '()))
-              (context (-first (lambda (elem) (string= (ht-get elem 'name) current-context)) contexts)))
-    (let ((namespace (ht-get* context 'context 'namespace)))
-      (setq kele-current-context current-context
-            kele-current-namespace namespace
-            kele--config config
-            kele--contexts contexts))))
+              (contexts (-concat (ht-get config 'contexts) '())))
+    (setq kele--config config
+          kele--contexts contexts)
+    (when-let ((current-context (ht-get config 'current-context)))
+      (let* ((context (-first (lambda (elem) (string= (ht-get elem 'name) current-context)) contexts))
+             (namespace (ht-get* context 'context 'namespace)))
+        (setq kele-current-context current-context
+              kele-current-namespace namespace)))))
 
 (defun kele-status-simple ()
   "Return a simple status string suitable for modeline display."
