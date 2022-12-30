@@ -86,6 +86,7 @@ configuration, e.g. via `kubectl config'.")
 The config will be represented as a hash table."
   (yaml-parse-string (f-read kele-kubeconfig-path)))
 
+;; TODO: Can this be done async?
 (defun kele--update (&optional _)
   "Update `kele-k8s-context' and `kele-k8s-namespace'.
 
@@ -150,18 +151,22 @@ STR, PRED, and ACTION are as defined in completion functions."
 
 (defconst kele--embark-keymap-entries '((kele-context . kele--context-actions)))
 
+(declare-function embark-define-keymap "ext:embark")
+
 (defun kele--setup-embark-maybe ()
   (when (featurep 'embark)
-    (embark-define-keymap kele--context-actions
-      "Keymap for actions on Kubernetes contexts."
-      ("s" kele-context-switch))
-    (dolist (entry kele--embark-keymap-entries)
-      (add-to-list 'embark-keymap-alist entry))))
+    (with-suppressed-warnings ((free-vars embark-keymap-alist))
+      (embark-define-keymap kele--context-actions
+        "Keymap for actions on Kubernetes contexts."
+        ("s" kele-context-switch))
+      (dolist (entry kele--embark-keymap-entries)
+        (add-to-list 'embark-keymap-alist entry)))))
 
 (defun kele--teardown-embark-maybe ()
   (when (featurep 'embark)
-    (dolist (entry kele--embark-keymap-entries)
-      (delete entry embark-keymap-alist))))
+    (with-suppressed-warnings ((free-vars embark-keymap-alist))
+      (dolist (entry kele--embark-keymap-entries)
+        (delete entry embark-keymap-alist)))))
 
 (defun kele--enable ()
   "Enables Kele functionality."
