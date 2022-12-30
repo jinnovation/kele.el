@@ -3,6 +3,7 @@
 
 #+html: <a href="https://codecov.io/gh/jinnovation/kele.el" > <img src="https://codecov.io/gh/jinnovation/kele.el/branch/main/graph/badge.svg?token=LR7RDREPZF"/> </a>
 #+html: <a href="https://github.com/jinnovation/kele.el/actions"> <img src="https://github.com/jinnovation/kele.el/workflows/test/badge.svg?branch=main"/></a>
+#+html: <img alt="License badge" src="https://img.shields.io/github/license/jinnovation/kele.el">
 
 [[file:docs/img/kele.jpg]]
 
