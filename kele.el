@@ -103,11 +103,13 @@ Values are parsed from the contents at `kele-kubeconfig-path'."
 
 (defun kele-status-simple ()
   "Return a simple status string suitable for modeline display."
-  (concat "k8s:"
-          kele-current-context
-          (if kele-current-namespace
-              (concat "(" kele-current-namespace ")")
-            "")))
+  (let ((status (if (not (or kele-current-context kele-current-namespace))
+                    "--"
+                  (concat kele-current-context
+                          (if kele-current-namespace
+                              (concat "(" kele-current-namespace ")")
+                            "")))))
+    (concat "k8s:" status)))
 
 (defconst kele--awesome-tray-module '("kele" . (kele-status-simple nil)))
 

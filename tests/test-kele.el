@@ -8,13 +8,17 @@
 
 (describe "kele-status-simple"
   :var (kele-current-context kele-current-namespace)
-  (it "renders both context and namespace correctly"
+  (it "renders with context and namespace"
     (setq kele-current-context "foo"
           kele-current-namespace "bar")
     (expect (kele-status-simple) :to-equal "k8s:foo(bar)"))
-  (it "renders correctly with no namespace"
+  (it "renders with no namespace"
     (setq kele-current-context "foo"
           kele-current-namespace nil)
-    (expect (kele-status-simple) :to-equal "k8s:foo")))
+    (expect (kele-status-simple) :to-equal "k8s:foo"))
+  (it "renders with neither namespace nor context"
+    (setq kele-current-context nil
+          kele-current-namespace nil)
+    (expect (kele-status-simple) :to-equal "k8s:--")))
 
 ;;; test-kele.el ends here
