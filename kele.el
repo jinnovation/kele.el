@@ -164,6 +164,7 @@ Only populated if Embark is installed.")
 (defconst kele--embark-keymap-entries '((kele-context . kele--context-keymap)))
 
 (defun kele--setup-embark-maybe ()
+  "Optionally set up Embark integration."
   (when (featurep 'embark)
     (with-suppressed-warnings ((free-vars embark-keymap-alist embark-general-map))
       (setq kele--context-keymap (let ((map (make-sparse-keymap)))
@@ -174,6 +175,7 @@ Only populated if Embark is installed.")
         (add-to-list 'embark-keymap-alist entry)))))
 
 (defun kele--teardown-embark-maybe ()
+  "Optionally tear down Embark integration."
   (when (featurep 'embark)
     (with-suppressed-warnings ((free-vars embark-keymap-alist))
       (dolist (entry kele--embark-keymap-entries)

@@ -14,6 +14,10 @@ compile: cask
 	  -f batch-byte-compile $$(cask files); \
 	  (ret=$$? ; cask clean-elc && exit $$ret)
 
+.PHONY: checkdoc
+checkdoc:
+	cask emacs -batch --eval "(checkdoc-file \"kele.el\")"
+
 .PHONY: package-lint
 package-lint:
 	cask emacs -batch -f package-lint-batch-and-exit kele.el
@@ -22,3 +26,6 @@ package-lint:
 test: compile
 	cask clean-elc
 	cask exec buttercup -L . tests/
+
+.PHONY: all
+all: checkdoc package-lint test
