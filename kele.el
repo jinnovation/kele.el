@@ -42,6 +42,20 @@
   :type 'string
   :group 'kele)
 
+(cl-defun kele--retry (fn &key (count 5) (wait 1) (timeout 100))
+  "Retry FN COUNT times, waiting WAIT seconds between each.
+
+Returns unconditionally after TIMEOUT seconds.
+
+Returns the retval of FN."
+  (let ((retval))
+    (with-timeout (timeout)
+      (let ((_count count))
+        (while (and (> _count 0) (not (setq retval (funcall fn))))
+          (setq _count (- _count 1))
+          (sleep-for wait))))
+    retval))
+
 (cl-defun kele-kubectl-do (&rest args)
   "Execute kubectl with ARGS."
   (let ((cmd (append (list kele-kubectl-executable) args)))
