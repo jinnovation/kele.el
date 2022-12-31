@@ -4,4 +4,5 @@
 
 (development
  (depends-on "buttercup")
+ (depends-on "package-lint")
  (depends-on "undercover" "0.8.1"))

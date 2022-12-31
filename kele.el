@@ -1,4 +1,4 @@
-;;; kele.el --- Kubernetes Enablement Layer for Emacs -*- lexical-binding: t; -*-
+;;; kele.el --- Interface with Kubernetes -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2022-2022 Jonathan Jin
 
@@ -6,14 +6,14 @@
 
 ;; Version: 0.0.1
 ;; Homepage: https://github.com/jinnovation/kele.el
-;; Keywords: kubernetes
-;; Package-Requires: ((emacs "27.1") (dash "2.19.1") (f "0.20.0") (ht "20221031.705") (yaml "0.5.1"))
+;; Keywords: kubernetes tools
+;; Package-Requires: ((emacs "27.1") (dash "2.19.1") (f "0.20.0") (ht "2.3") (yaml "0.5.1"))
 
 ;;; Commentary:
 
-;; kele.el is a streamlines integration between Kubernetes and Emacs.  It
-;; provides a "base layer" that can be leveraged to build higher-level
-;; integrations, e.g. modeline modules and interactive clients.
+;; kele.el streamlines integration with Kubernetes.  It provides a "base layer"
+;; that can be leveraged to build higher-level integrations, e.g. modeline
+;; modules and interactive clients.
 ;;
 ;; For more details, see: https://github.com/jinnovation/kele.el.
 
@@ -164,7 +164,7 @@ Only populated if Embark is installed.")
 (defconst kele--embark-keymap-entries '((kele-context . kele--context-keymap)))
 
 (defun kele--setup-embark-maybe ()
-  (with-eval-after-load 'embark
+  (when (featurep 'embark)
     (with-suppressed-warnings ((free-vars embark-keymap-alist embark-general-map))
       (setq kele--context-keymap (let ((map (make-sparse-keymap)))
                                    (define-key map "s" #'kele-context-switch)
@@ -198,6 +198,7 @@ Only populated if Embark is installed.")
       (with-suppressed-warnings ((free-vars awesome-tray-module-alist))
         (delete kele--awesome-tray-module awesome-tray-module-alist))))
 
+;;;###autoload
 (define-minor-mode kele-mode
   "Minor mode to enable listening on Kubernetes configs."
   :global t
