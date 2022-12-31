@@ -28,6 +28,14 @@
     (kele--update)
     (expect (kele--context-annotate "development") :to-equal " (development-cluster, https://development.org/server)")))
 
+(describe "kele-context-names"
+  (it "returns the correct cluster names"
+    (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
+    (kele--update)
+
+    (expect (kele-context-names) :to-equal '("development"))
+    ))
+
 (describe "kele--context-cluster"
   (it "returns the correct cluster"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
