@@ -22,10 +22,13 @@
     (spy-on 'kele-current-namespace :and-return-value nil)
     (expect (kele-status-simple) :to-equal "k8s:--")))
 
+(describe "kele--context-annotate"
+  (it "returns the proper annotation text"
+    (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
+    (kele--update)
+    (expect (kele--context-annotate "development") :to-equal " (development-cluster, https://development.org/server)")))
 
 (describe "kele--context-cluster"
-  :var (kele-kubeconfig-path)
-
   (it "returns the correct cluster"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
     (kele--update)
