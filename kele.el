@@ -50,11 +50,7 @@
      :command cmd
      :noquery t)))
 
-(defvar kele-current-context nil
-  "The current kubectl context.
 
-The value is kept up-to-date with any changes to the underlying
-configuration, e.g. via `kubectl config'.")
 
 (defvar kele-current-namespace nil
   "The current kubectl namespace.
@@ -88,14 +84,20 @@ Values are parsed from the contents at `kele-kubeconfig-path'."
     (when-let ((current-context (ht-get config 'current-context)))
       (let* ((context (-first (lambda (elem) (string= (ht-get elem 'name) current-context)) contexts))
              (namespace (ht-get* context 'context 'namespace)))
-        (setq kele-current-context current-context
-              kele-current-namespace namespace)))))
+        (setq kele-current-namespace namespace)))))
+
+(defun kele-current-context ()
+  "Get the current context name.
+
+The value is kept up-to-date with any changes to the underlying
+configuration, e.g. via `kubectl config'."
+  (ht-get kele--config 'current-context))
 
 (defun kele-status-simple ()
   "Return a simple status string suitable for modeline display."
-  (let ((status (if (not (or kele-current-context kele-current-namespace))
+  (let ((status (if (not (or (kele-current-context) kele-current-namespace))
                     "--"
-                  (concat kele-current-context
+                  (concat (kele-current-context)
                           (if kele-current-namespace
                               (concat "(" kele-current-namespace ")")
                             "")))))
