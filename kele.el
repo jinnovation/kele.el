@@ -56,15 +56,6 @@
 The value is kept up-to-date with any changes to the underlying
 configuration, e.g. via `kubectl config'.")
 
-(defvar kele--contexts nil
-  "The full list of contexts.
-
-Each element is a hash-table representing the entry in
-kubeconfig.
-
-The value is kept up-to-date with any changes to the underlying
-configuration, e.g. via `kubectl config'.")
-
 (defvar kele-current-namespace nil
   "The current kubectl namespace.
 
@@ -93,8 +84,7 @@ The config will be represented as a hash table."
 Values are parsed from the contents at `kele-kubeconfig-path'."
   (when-let* ((config (kele--get-config))
               (contexts (-concat (ht-get config 'contexts) '())))
-    (setq kele--config config
-          kele--contexts contexts)
+    (setq kele--config config)
     (when-let ((current-context (ht-get config 'current-context)))
       (let* ((context (-first (lambda (elem) (string= (ht-get elem 'name) current-context)) contexts))
              (namespace (ht-get* context 'context 'namespace)))
@@ -115,20 +105,27 @@ Values are parsed from the contents at `kele-kubeconfig-path'."
 
 (defun kele-context-names ()
   "Get the names of all known contexts."
-  (-map (lambda (elem) (ht-get elem 'name)) kele--contexts))
+  (-map (lambda (elem) (ht-get elem 'name)) (kele-contexts)))
+
+(defun kele-contexts ()
+  "Get all contexts.
+
+Each element is a hash-table representing the entry in
+kubeconfig."
+  (-concat (ht-get kele--config 'contexts) '()))
 
 (defun kele--context-cluster (context-name)
   "Get the cluster of the context named CONTEXT-NAME."
   (if-let ((context (-first (lambda (elem) (string= (ht-get elem 'name) context-name))
-                            kele--contexts)))
+                            (kele-contexts))))
       (ht-get* context 'context 'cluster)
-    (error "Could not find context of name %s in %s" context-name kele--contexts)))
+    (error "Could not find context of name %s" context-name)))
 
 (defun kele--context-annotate (context-name)
   "Return annotation text for the context named CONTEXT-NAME."
   (let* ((context (-first (lambda (elem)
                            (string= (ht-get elem 'name) context-name))
-                         kele--contexts))
+                          (kele-contexts)))
         (cluster-name (ht-get* context 'context 'cluster))
         (cluster (-first (lambda (elem)
                            (string= (ht-get elem 'name) cluster-name))
