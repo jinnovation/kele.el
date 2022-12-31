@@ -7,7 +7,7 @@
 ;; Version: 0.0.1
 ;; Homepage: https://github.com/jinnovation/kele.el
 ;; Keywords: kubernetes tools
-;; Package-Requires: ((emacs "27.1") (dash "2.19.1") (f "0.20.0") (ht "2.3") (yaml "0.5.1"))
+;; Package-Requires: ((emacs "27.1") (dash "2.19.1") (f "0.20.0") (ht "2.3") (request "0.3.2") (yaml "0.5.1"))
 
 ;;; Commentary:
 
@@ -22,6 +22,7 @@
 (require 'f)
 (require 'filenotify)
 (require 'ht)
+(require 'request)
 (require 'subr-x)
 (require 'yaml)
 
@@ -55,6 +56,78 @@ Returns the retval of FN."
           (setq _count (- _count 1))
           (sleep-for wait))))
     retval))
+
+
+(defun kele--kill-process-quietly (proc &optional _signal)
+  "Kill process PROC silently and the associated buffer, suppressing all errors."
+  (when proc
+    (set-process-sentinel proc nil)
+    (set-process-query-on-exit-flag proc nil)
+    (let ((kill-buffer-query-functions nil)
+          (buf (process-buffer proc)))
+      (ignore-errors (kill-process proc))
+      (ignore-errors (delete-process proc))
+      (ignore-errors (kill-buffer buf)))))
+
+(defun kele--request-option (url fatal &rest body)
+  "Send request to URL using BODY, returning error or the response.
+
+If FATAL is nil, instead of an error, simply return nil.
+
+This function injects :sync t into BODY."
+  (-if-let* ((updated-plist
+              (plist-put (plist-put body :sync t)
+                         ;; Suppress the default request.el error handler; we
+                         ;; check the error later
+                         :error (cl-function (lambda (&rest args &key error-thrown &allow-other-keys)
+                                               nil))))
+             (resp (apply #'request url updated-plist))
+             (err (request-response-error-thrown resp)))
+      (if fatal (signal 'error (list (cdr err))) nil)
+    resp))
+
+(cl-defun kele-proxy-process (context port &key (wait t) (read-only t))
+  "Create a new kubectl proxy process for CONTEXT.
+
+The proxy will be opened at PORT (localhost:PORT).  It is the
+  caller's responsibility to ensure that the port is not
+  occupied.
+
+If READ-ONLY is set, the proxy will only accept read-only
+requests.
+
+If WAIT is non-nil, `kele-proxy-process' will wait for the proxy
+  to be ready before returning.  This wait is a best effort; the
+  proxy's /livez and /readyz endpoints are not guaranteed to
+  return 200s by end of wait."
+  (let* ((s-port (number-to-string port))
+         (proc-name (format "kele: proxy (%s, %s)" context port))
+         (cmd (list kele-kubectl-executable
+                    "proxy"
+                    "--port"
+                    s-port
+                    "--reject-methods"
+                    (if read-only "\'POST,PUT,PATCH\'" "^$")))
+         (proc (make-process
+                :name proc-name
+                :command cmd
+                :buffer (generate-new-buffer (format "*%s*" proc-name))
+                :noquery t
+                :sentinel
+                (lambda (proc status)
+                  (when (zerop (process-exit-status proc))
+                    (message "Successfully terminated process: %s" proc-name)
+                    (kele--kill-process-quietly proc)))))
+         (ready-addr (format "http://localhost:%s/readyz" s-port))
+         (live-addr (format "http://localhost:%s/livez" s-port)))
+    (when wait
+      ;; Give the proxy process some time to spin up, so that curl doesn't
+      ;; return error code 7 which to request.el is a "peculiar error"
+      (sleep-for 2)
+      (kele--retry (lambda ()
+                     (and (= 200 (request-response-status-code (kele--request-option ready-addr nil)))
+                          (= 200 (request-response-status-code (kele--request-option live-addr nil)))))))
+    proc))
 
 (cl-defun kele-kubectl-do (&rest args)
   "Execute kubectl with ARGS."
