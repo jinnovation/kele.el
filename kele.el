@@ -50,14 +50,6 @@
      :command cmd
      :noquery t)))
 
-
-
-(defvar kele-current-namespace nil
-  "The current kubectl namespace.
-
-The value is kept up-to-date with any changes to the underlying
-configuration, e.g. via `kubectl config'.")
-
 (defvar kele--kubeconfig-watcher nil
   "Descriptor of the file watcher on `kele-kubeconfig-path'.")
 
@@ -75,16 +67,10 @@ The config will be represented as a hash table."
 
 ;; TODO: Can this be done async?
 (defun kele--update (&optional _)
-  "Update `kele-k8s-context' and `kele-k8s-namespace'.
+  "Update `kele--config'.
 
 Values are parsed from the contents at `kele-kubeconfig-path'."
-  (when-let* ((config (kele--get-config))
-              (contexts (-concat (ht-get config 'contexts) '())))
-    (setq kele--config config)
-    (when-let ((current-context (ht-get config 'current-context)))
-      (let* ((context (-first (lambda (elem) (string= (ht-get elem 'name) current-context)) contexts))
-             (namespace (ht-get* context 'context 'namespace)))
-        (setq kele-current-namespace namespace)))))
+  (setq kele--config (kele--get-config)))
 
 (defun kele-current-context-name ()
   "Get the current context name.
@@ -93,13 +79,24 @@ The value is kept up-to-date with any changes to the underlying
 configuration, e.g. via `kubectl config'."
   (ht-get kele--config 'current-context))
 
+(defun kele-current-namespace ()
+  "Get the current context's default namespace.
+
+The value is kept up-to-date with any changes to the underlying
+configuration, e.g. via `kubectl config'."
+  (if-let* ((context (-first
+                      (lambda (elem)
+                        (string= (ht-get elem 'name) (kele-current-context-name)))
+                      (kele-contexts))))
+      (ht-get* context 'context 'namespace)))
+
 (defun kele-status-simple ()
   "Return a simple status string suitable for modeline display."
-  (let ((status (if (not (or (kele-current-context-name) kele-current-namespace))
+  (let ((status (if (not (or (kele-current-context-name) (kele-current-namespace)))
                     "--"
                   (concat (kele-current-context-name)
-                          (if kele-current-namespace
-                              (concat "(" kele-current-namespace ")")
+                          (if (kele-current-namespace)
+                              (concat "(" (kele-current-namespace) ")")
                             "")))))
     (concat "k8s:" status)))
 
