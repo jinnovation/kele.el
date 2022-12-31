@@ -86,7 +86,7 @@ Values are parsed from the contents at `kele-kubeconfig-path'."
              (namespace (ht-get* context 'context 'namespace)))
         (setq kele-current-namespace namespace)))))
 
-(defun kele-current-context ()
+(defun kele-current-context-name ()
   "Get the current context name.
 
 The value is kept up-to-date with any changes to the underlying
@@ -95,9 +95,9 @@ configuration, e.g. via `kubectl config'."
 
 (defun kele-status-simple ()
   "Return a simple status string suitable for modeline display."
-  (let ((status (if (not (or (kele-current-context) kele-current-namespace))
+  (let ((status (if (not (or (kele-current-context-name) kele-current-namespace))
                     "--"
-                  (concat (kele-current-context)
+                  (concat (kele-current-context-name)
                           (if kele-current-namespace
                               (concat "(" kele-current-namespace ")")
                             "")))))
