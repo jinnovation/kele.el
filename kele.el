@@ -51,9 +51,9 @@ Returns unconditionally after TIMEOUT seconds.
 Returns the retval of FN."
   (let ((retval))
     (with-timeout (timeout)
-      (let ((_count count))
-        (while (and (> _count 0) (not (setq retval (funcall fn))))
-          (setq _count (- _count 1))
+      (let ((count-remaining count))
+        (while (and (> count-remaining 0) (not (setq retval (funcall fn))))
+          (setq count-remaining (- count-remaining 1))
           (sleep-for wait))))
     retval))
 
@@ -75,14 +75,14 @@ Returns the retval of FN."
 If FATAL is nil, instead of an error, simply return nil.
 
 This function injects :sync t into BODY."
-  (-if-let* ((updated-plist
-              (plist-put (plist-put body :sync t)
-                         ;; Suppress the default request.el error handler; we
-                         ;; check the error later
-                         :error (cl-function (lambda (&rest args &key error-thrown &allow-other-keys)
-                                               nil))))
-             (resp (apply #'request url updated-plist))
-             (err (request-response-error-thrown resp)))
+  (if-let* ((updated-plist
+             (plist-put (plist-put body :sync t)
+                        ;; Suppress the default request.el error handler; we
+                        ;; check the error later
+                        :error (cl-function (lambda (&rest args &key error-thrown &allow-other-keys)
+                                              nil))))
+            (resp (apply #'request url updated-plist))
+            (err (request-response-error-thrown resp)))
       (if fatal (signal 'error (list (cdr err))) nil)
     resp))
 
@@ -114,7 +114,7 @@ If WAIT is non-nil, `kele-proxy-process' will wait for the proxy
                 :buffer (generate-new-buffer (format "*%s*" proc-name))
                 :noquery t
                 :sentinel
-                (lambda (proc status)
+                (lambda (proc _status)
                   (when (zerop (process-exit-status proc))
                     (message "Successfully terminated process: %s" proc-name)
                     (kele--kill-process-quietly proc)))))
