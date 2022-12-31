@@ -9,18 +9,17 @@
 (require 'kele)
 
 (describe "kele-status-simple"
-  :var (kele-current-context kele-current-namespace)
   (it "renders with context and namespace"
-    (setq kele-current-context "foo"
-          kele-current-namespace "bar")
+    (spy-on 'kele-current-context-name :and-return-value "foo")
+    (spy-on 'kele-current-namespace :and-return-value "bar")
     (expect (kele-status-simple) :to-equal "k8s:foo(bar)"))
   (it "renders with no namespace"
-    (setq kele-current-context "foo"
-          kele-current-namespace nil)
+    (spy-on 'kele-current-context-name :and-return-value "foo")
+    (spy-on 'kele-current-namespace :and-return-value nil)
     (expect (kele-status-simple) :to-equal "k8s:foo"))
   (it "renders with neither namespace nor context"
-    (setq kele-current-context nil
-          kele-current-namespace nil)
+    (spy-on 'kele-current-context-name :and-return-value nil)
+    (spy-on 'kele-current-namespace :and-return-value nil)
     (expect (kele-status-simple) :to-equal "k8s:--")))
 
 
