@@ -43,6 +43,11 @@
   :type 'string
   :group 'kele)
 
+(defcustom kele-proxy-ttl 60
+  "The default time-to-live for ephemeral kubectl proxy processes."
+  :type 'integer
+  :group 'kele)
+
 (cl-defun kele--retry (fn &key (count 5) (wait 1) (timeout 100))
   "Retry FN COUNT times, waiting WAIT seconds between each.
 
@@ -287,7 +292,7 @@ Returns the proxy process."
          (key (intern context))
          (proc (kele--proxy-process context :port selected-port))
          (cleanup (when ephemeral
-                    (run-with-timer 60 nil #'kele--cleanup-proxy-for-context proc))))
+                    (run-with-timer kele-proxy-ttl nil #'kele--cleanup-proxy-for-context proc))))
     (add-to-list
      'kele--context-proxy-ledger
      `(,key . ((proc . ,proc)
