@@ -279,10 +279,10 @@ The values at each are as follows:
 
 (cl-defun kele--cleanup-proxy-for-context (context)
   "Clean up the proxy for CONTEXT."
-  (-let (((&alist "proc" proc "timer" timer) (alist-get context kele--context-proxy-ledger)))
+  (-let (((&alist "proc" proc "timer" timer) (alist-get (intern context) kele--context-proxy-ledger)))
     (kele--kill-process-quietly proc)
     (when timer (cancel-timer timer)))
-  (assoc-delete-all context kele--context-proxy-ledger))
+  (setq kele--context-proxy-ledger (assoc-delete-all (intern context) kele--context-proxy-ledger)))
 
 (cl-defun kele--start-proxy (context &key port (ephemeral t))
   "Start a proxy process for CONTEXT at PORT.
