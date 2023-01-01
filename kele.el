@@ -92,7 +92,7 @@ This function injects :sync t into BODY."
   "Return a random integer within `kele--random-port-range'."
   (+ (car kele--random-port-range) (random (cadr kele--random-port-range))))
 
-(cl-defun kele-proxy-process (context &key port (wait t) (read-only t))
+(cl-defun kele--proxy-process (context &key port (wait t) (read-only t))
   "Create a new kubectl proxy process for CONTEXT.
 
 The proxy will be opened at PORT (localhost:PORT).  If PORT is
@@ -102,7 +102,7 @@ The proxy will be opened at PORT (localhost:PORT).  If PORT is
 If READ-ONLY is set, the proxy will only accept read-only
 requests.
 
-If WAIT is non-nil, `kele-proxy-process' will wait for the proxy
+If WAIT is non-nil, `kele--proxy-process' will wait for the proxy
   to be ready before returning.  This wait is a best effort; the
   proxy's /livez and /readyz endpoints are not guaranteed to
   return 200s by end of wait."
@@ -224,6 +224,7 @@ kubeconfig."
                            (string= (ht-get elem 'name) cluster-name))
                          (-concat (ht-get kele--config 'clusters) '())))
         (server (ht-get* cluster 'cluster 'server)))
+    ;; TODO: Show proxy status
     (s-concat " (" cluster-name ", " server ")")))
 
 (defun kele--contexts-complete (str pred action)
@@ -245,7 +246,60 @@ STR, PRED, and ACTION are as defined in completion functions."
   "Rename context named OLD-NAME to NEW-NAME."
   (interactive (list (completing-read "Context to rename: " #'kele--contexts-complete)
                      (read-from-minibuffer "Rename to: ")))
+  ;; TODO: This needs to update `kele--context-proxy-ledger' as well.
   (kele-kubectl-do "config" "rename-context" old-name new-name))
+
+(defvar kele--context-proxy-ledger nil
+  "An alist mapping contexts to their corresponding proxy processes.
+
+Keys are context names.  Values are alists with the keys `proc',
+`timer', and `port'.  If nil, there is no active proxy for that
+context.
+
+The values at each are as follows:
+
+  - The value at `proc' is the kubectl proxy process;
+
+  - `timer' is a timer object that terminates the proxy and
+    cleans up the proxy process.  If nil, the proxy process will
+    not be automatically cleaned up and it is user responsibility
+    to do so;
+
+  - `port' is the port that the proxy was opened on.")
+
+(cl-defun kele--cleanup-proxy-for-context (context)
+  "Clean up the proxy for CONTEXT."
+  (-let (((&alist "proc" proc "timer" timer) (alist-get context kele--context-proxy-ledger)))
+    (kele--kill-process-quietly proc)
+    (when timer (cancel-timer timer)))
+  (assoc-delete-all context kele--context-proxy-ledger))
+
+(cl-defun kele--start-proxy (context &key port (ephemeral t))
+  "Start a proxy process for CONTEXT at PORT.
+
+If EPHEMERAL is non-nil, the proxy process will be cleaned up
+after a certain amount of time.
+
+If PORT is nil, a random port will be chosen.
+
+Returns the proxy process."
+  (let* ((selected-port (or port (kele--random-port)))
+         (key (intern context))
+         (proc (kele--proxy-process context :port selected-port))
+         (cleanup (when ephemeral
+                    (run-with-timer 60 nil #'kele--cleanup-proxy-for-context proc))))
+    (add-to-list
+     'kele--context-proxy-ledger
+     `(,key . ((proc . ,proc)
+               (timer . ,cleanup)
+               (port . ,selected-port))))
+    proc))
+
+(cl-defun kele--ensure-proxy (context)
+  "Return a proxy process for CONTEXT, creating one if needed."
+  (if-let* ((entry (alist-get (intern context) kele--context-proxy-ledger)))
+      (alist-get 'proc entry)
+    (kele--start-proxy context)))
 
 (defvar kele--context-keymap nil
   "Keymap for actions on Kubernetes contexts.

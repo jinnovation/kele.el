@@ -91,4 +91,43 @@
     (kele--retry 'foo :count 5 :wait 0)
     (expect 'foo :to-have-been-called-times 5)))
 
+(describe "kele--start-proxy"
+  (before-each
+    (spy-on 'kele--proxy-process :and-return-value 'fake-proc)
+    (spy-on 'run-with-timer :and-return-value 'fake-timer))
+
+  (describe "when ephemeral is nil"
+    (it "adds an entry with no timer"
+      (kele--start-proxy "foobar" :port 9999 :ephemeral nil)
+      (expect (alist-get 'foobar kele--context-proxy-ledger)
+              :to-equal
+              '((proc . fake-proc)
+                (timer . nil)
+                (port . 9999)))))
+
+  (describe "when ephemeral is non-nil"
+    (it "adds an entry with a timer"
+      (kele--start-proxy "foobar" :port 9999)
+      (expect (alist-get 'foobar kele--context-proxy-ledger)
+              :to-equal
+              '((proc . fake-proc)
+                (timer . fake-timer)
+                (port . 9999))))))
+
+(describe "kele--ensure-proxy"
+  (before-each
+    (spy-on 'kele--start-proxy)
+    (setq kele--context-proxy-ledger nil))
+  (describe "when proxy present"
+    (before-each
+      (add-to-list 'kele--context-proxy-ledger '(foobar . ((proc . fake-proc)
+                                                           (timer . fake-timer)
+                                                           (port . 9999)))))
+    (it "returns the ledger entry"
+      (expect (kele--ensure-proxy "foobar") :to-equal 'fake-proc)))
+  (describe "when proxy not already present"
+    (it "creates the proxy"
+      (kele--ensure-proxy "foobar")
+      (expect 'kele--start-proxy :to-have-been-called-with "foobar"))))
+
 ;;; test-kele.el ends here
