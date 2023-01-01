@@ -86,12 +86,18 @@ This function injects :sync t into BODY."
       (if fatal (signal 'error (list (cdr err))) nil)
     resp))
 
-(cl-defun kele-proxy-process (context port &key (wait t) (read-only t))
+(defconst kele--random-port-range '(1000 9000))
+
+(defun kele--random-port ()
+  "Return a random integer within `kele--random-port-range'."
+  (+ (car kele--random-port-range) (random (cadr kele--random-port-range))))
+
+(cl-defun kele-proxy-process (context &key port (wait t) (read-only t))
   "Create a new kubectl proxy process for CONTEXT.
 
-The proxy will be opened at PORT (localhost:PORT).  It is the
-  caller's responsibility to ensure that the port is not
-  occupied.
+The proxy will be opened at PORT (localhost:PORT).  If PORT is
+  nil, a random port will be chosen.  It is the caller's
+  responsibility to ensure that the port is not occupied.
 
 If READ-ONLY is set, the proxy will only accept read-only
 requests.
@@ -100,8 +106,9 @@ If WAIT is non-nil, `kele-proxy-process' will wait for the proxy
   to be ready before returning.  This wait is a best effort; the
   proxy's /livez and /readyz endpoints are not guaranteed to
   return 200s by end of wait."
-  (let* ((s-port (number-to-string port))
-         (proc-name (format "kele: proxy (%s, %s)" context port))
+  (let* ((chosen-port (or port (kele--random-port)))
+         (s-port (number-to-string chosen-port))
+         (proc-name (format "kele: proxy (%s, %s)" context s-port))
          (cmd (list kele-kubectl-executable
                     "proxy"
                     "--port"
