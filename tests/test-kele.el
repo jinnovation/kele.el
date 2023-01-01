@@ -129,7 +129,9 @@
                                                            (timer . fake-timer)
                                                            (port . 9999)))))
     (it "returns the ledger entry"
-      (expect (kele--ensure-proxy "foobar") :to-equal 'fake-proc)))
+      (expect (kele--ensure-proxy "foobar") :to-equal '((proc . fake-proc)
+                                                        (timer . fake-timer)
+                                                        (port . 9999)))))
   (describe "when proxy not already present"
     (it "creates the proxy"
       (kele--ensure-proxy "foobar")
