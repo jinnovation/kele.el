@@ -33,8 +33,16 @@
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
     (kele--update)
 
-    (expect (kele-context-names) :to-equal '("development"))
-    ))
+    (expect (kele-context-names) :to-equal '("development"))))
+
+(describe "kele-context-rename"
+  (before-each
+    (spy-on 'kele-kubectl-do))
+  (it "calls kubectl properly"
+    (kele-context-rename "foo" "bar")
+    (expect 'kele-kubectl-do
+            :to-have-been-called-with
+            "config" "rename-context" "foo" "bar")))
 
 (describe "kele--context-cluster"
   (it "returns the correct cluster"
