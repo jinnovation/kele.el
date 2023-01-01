@@ -19,6 +19,7 @@
 
 ;;; Code:
 
+(require 'dash)
 (require 'f)
 (require 'filenotify)
 (require 'ht)
@@ -320,11 +321,24 @@ If value is nil, the namespaces need to be fetched directly.")
   (setq kele--context-namespaces
         (assoc-delete-all (intern context) kele--context-namespaces)))
 
-;; (defun kele--get-namespaces (context)
-;;   (if-let ((namespaces (alist-get (intern context) kele--context-namespaces)))
-;;       namespaces
-;;     ;; TODO: Retrieve + cache namespaces
-;;     ))
+(defun kele--get-namespaces (context)
+  "Get namespaces for CONTEXT.
+
+If not cached, will fetch and cache the namespaces."
+  (if-let ((namespaces (alist-get (intern context) kele--context-namespaces)))
+      namespaces
+    (apply #'kele--cache-namespaces (kele--fetch-namespaces context))))
+
+(defun kele--fetch-namespaces (context)
+  "Fetch namespaces for CONTEXT."
+  (-if-let* (((&alist 'port port) (kele--ensure-proxy context))
+             (url (format "http://localhost:%s/api/v1/namespaces" port))
+             (resp (kele--request-option url t))
+             (data (json-parse-string (request-response-data resp)))
+             ((&hash "items" items) data))
+      (-map (-lambda ((&hash "metadata" (&hash "name" name))) name)
+            (append items '()))
+    (signal 'error "Failed to fetch namespaces")))
 
 (defun kele--cache-namespaces (context &rest namespace-names)
   "Store NAMESPACE-NAMES as the associated namespaces for CONTEXT.
