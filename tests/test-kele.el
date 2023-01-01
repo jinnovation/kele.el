@@ -94,11 +94,16 @@
 (describe "kele--start-proxy"
   (before-each
     (spy-on 'kele--proxy-process :and-return-value 'fake-proc)
-    (spy-on 'run-with-timer :and-return-value 'fake-timer))
+    (spy-on 'run-with-timer :and-return-value 'fake-timer)
+    (setq kele--context-proxy-ledger nil))
 
   (describe "when ephemeral is nil"
     (it "adds an entry with no timer"
-      (kele--start-proxy "foobar" :port 9999 :ephemeral nil)
+      (expect (kele--start-proxy "foobar" :port 9999 :ephemeral nil)
+              :to-equal
+              '((proc . fake-proc)
+                (timer . nil)
+                (port . 9999)))
       (expect (alist-get 'foobar kele--context-proxy-ledger)
               :to-equal
               '((proc . fake-proc)

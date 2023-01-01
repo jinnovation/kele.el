@@ -297,18 +297,17 @@ Returns the proxy process."
          (key (intern context))
          (proc (kele--proxy-process context :port selected-port))
          (cleanup (when ephemeral
-                    (run-with-timer kele-proxy-ttl nil #'kele--cleanup-proxy-for-context proc))))
-    (add-to-list
-     'kele--context-proxy-ledger
-     `(,key . ((proc . ,proc)
-               (timer . ,cleanup)
-               (port . ,selected-port))))
-    proc))
+                    (run-with-timer kele-proxy-ttl nil #'kele--cleanup-proxy-for-context context)))
+         (entry `((proc . ,proc)
+                  (timer . ,cleanup)
+                  (port . ,selected-port))))
+    (add-to-list 'kele--context-proxy-ledger `(,key . ,entry))
+    entry))
 
 (cl-defun kele--ensure-proxy (context)
   "Return a proxy process for CONTEXT, creating one if needed."
   (if-let* ((entry (alist-get (intern context) kele--context-proxy-ledger)))
-      (alist-get 'proc entry)
+      entry
     (kele--start-proxy context)))
 
 (defvar kele--context-namespaces nil
