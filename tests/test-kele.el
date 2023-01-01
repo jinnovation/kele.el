@@ -137,6 +137,15 @@
       (kele--ensure-proxy "foobar")
       (expect 'kele--start-proxy :to-have-been-called-with "foobar"))))
 
+(describe "kele--clear-namespaces-for-context"
+  (before-each
+    (setq kele--context-namespaces '((foo . ("n1" "n2" "n3")))))
+  (describe "when context is present in cache"
+    (it "deletes the entry"
+      (kele--clear-namespaces-for-context "foo")
+      (message "%s" kele--context-namespaces)
+      (expect kele--context-namespaces :to-equal nil))))
+
 (describe "kele--cache-namespaces"
   (before-each
     (spy-on 'run-with-timer)

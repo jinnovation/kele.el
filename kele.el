@@ -317,7 +317,8 @@ If value is nil, the namespaces need to be fetched directly.")
 
 (defun kele--clear-namespaces-for-context (context)
   "Clear the stored namespaces for CONTEXT."
-  (assoc-delete-all (intern context) kele--context-namespaces))
+  (setq kele--context-namespaces
+        (assoc-delete-all (intern context) kele--context-namespaces)))
 
 ;; (defun kele--get-namespaces (context)
 ;;   (if-let ((namespaces (alist-get (intern context) kele--context-namespaces)))
