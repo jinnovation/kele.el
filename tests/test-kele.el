@@ -81,4 +81,14 @@
     (it "returns the response"
       (expect (kele--request-option "foo" t) :to-be-truthy))))
 
+(describe "kele--retry"
+  :var (foo)
+  (before-each
+    (setf (symbol-function 'foo) (lambda () nil))
+    (spy-on 'foo :and-call-through))
+
+  (it "retries the correct number of times"
+    (kele--retry 'foo :count 5 :wait 0)
+    (expect 'foo :to-have-been-called-times 5)))
+
 ;;; test-kele.el ends here
