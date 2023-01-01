@@ -34,7 +34,7 @@
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
     (kele--update)
 
-    (expect (kele-context-names) :to-equal '("development"))))
+    (expect (kele-context-names) :to-equal '("development" "no-namespace"))))
 
 (describe "kele-context-rename"
   (before-each
@@ -44,6 +44,17 @@
     (expect 'kele-kubectl-do
             :to-have-been-called-with
             "config" "rename-context" "foo" "bar")))
+
+(describe "kele-current-namespace"
+  (before-each
+    (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
+    (kele--update))
+  (it "returns the default namespace for the current cluster"
+    (spy-on 'kele-current-context-name :and-return-value "development")
+    (expect (kele-current-namespace) :to-equal "development-namespace"))
+  (it "returns nil if no default namespace"
+    (spy-on 'kele-current-context-name :and-return-value "no-namespace")
+    (expect (kele-current-namespace) :to-equal nil)))
 
 (describe "kele--context-cluster"
   (it "returns the correct cluster"
