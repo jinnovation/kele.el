@@ -168,7 +168,9 @@ configuration, e.g. via `kubectl config'.")
   "Get the config at `kele-kubeconfig-path'.
 
 The config will be represented as a hash table."
-  (yaml-parse-string (f-read kele-kubeconfig-path)))
+  (yaml-parse-string (f-read kele-kubeconfig-path)
+                     :object-type 'alist
+                     :sequence-type 'list))
 
 ;; TODO: Can this be done async?
 (defun kele--update (&optional _)
@@ -182,18 +184,18 @@ Values are parsed from the contents at `kele-kubeconfig-path'."
 
 The value is kept up-to-date with any changes to the underlying
 configuration, e.g. via `kubectl config'."
-  (ht-get kele--config 'current-context))
+  (alist-get 'current-context kele--config))
 
 (defun kele-current-namespace ()
   "Get the current context's default namespace.
 
 The value is kept up-to-date with any changes to the underlying
 configuration, e.g. via `kubectl config'."
-  (if-let* ((context (-first
-                      (lambda (elem)
-                        (string= (ht-get elem 'name) (kele-current-context-name)))
-                      (kele-contexts))))
-      (ht-get* context 'context 'namespace)))
+  (-if-let* (((&alist 'context (&alist 'namespace namespace))
+              (-first (lambda (elem)
+                        (string= (alist-get 'name elem) (kele-current-context-name)))
+                      (alist-get 'contexts kele--config))))
+      namespace))
 
 (defun kele-status-simple ()
   "Return a simple status string suitable for modeline display."
@@ -209,32 +211,25 @@ configuration, e.g. via `kubectl config'."
 
 (defun kele-context-names ()
   "Get the names of all known contexts."
-  (-map (lambda (elem) (ht-get elem 'name)) (kele-contexts)))
-
-(defun kele-contexts ()
-  "Get all contexts.
-
-Each element is a hash-table representing the entry in
-kubeconfig."
-  (-concat (ht-get kele--config 'contexts) '()))
+  (-map (lambda (elem) (alist-get 'name elem)) (alist-get 'contexts kele--config)))
 
 (defun kele--context-cluster (context-name)
   "Get the cluster of the context named CONTEXT-NAME."
-  (if-let ((context (-first (lambda (elem) (string= (ht-get elem 'name) context-name))
-                            (kele-contexts))))
-      (ht-get* context 'context 'cluster)
+  (if-let ((context (-first (lambda (elem) (string= (alist-get 'name elem) context-name))
+                            (alist-get 'contexts kele--config))))
+      (alist-get 'cluster (alist-get 'context context))
     (error "Could not find context of name %s" context-name)))
 
 (defun kele--context-annotate (context-name)
   "Return annotation text for the context named CONTEXT-NAME."
   (let* ((context (-first (lambda (elem)
-                           (string= (ht-get elem 'name) context-name))
-                          (kele-contexts)))
-        (cluster-name (ht-get* context 'context 'cluster))
-        (cluster (-first (lambda (elem)
-                           (string= (ht-get elem 'name) cluster-name))
-                         (-concat (ht-get kele--config 'clusters) '())))
-        (server (ht-get* cluster 'cluster 'server)))
+                            (string= (alist-get 'name elem) context-name))
+                          (alist-get 'contexts kele--config)))
+         (cluster-name (alist-get 'cluster (alist-get 'context context)))
+         (cluster (-first (lambda (elem)
+                            (string= (alist-get 'name elem) cluster-name))
+                          (-concat (alist-get 'clusters kele--config) '())))
+         (server (alist-get 'server (alist-get 'cluster cluster))))
     ;; TODO: Show proxy status
     (s-concat " (" cluster-name ", " server ")")))
 
