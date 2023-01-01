@@ -130,4 +130,15 @@
       (kele--ensure-proxy "foobar")
       (expect 'kele--start-proxy :to-have-been-called-with "foobar"))))
 
+(describe "kele--cache-namespaces"
+  (before-each
+    (spy-on 'run-with-timer)
+    (setq kele--context-namespaces nil))
+
+  (it "adds namespaces correctly"
+    (kele--cache-namespaces "foobar" "n0" "n1" "n2")
+    (expect (alist-get 'foobar kele--context-namespaces)
+            :to-equal
+            '("n0" "n1" "n2"))
+    (expect 'run-with-timer :to-have-been-called)))
 ;;; test-kele.el ends here

@@ -48,6 +48,11 @@
   :type 'integer
   :group 'kele)
 
+(defcustom kele-namespace-refresh-interval 600
+  "The interval at which to refresh the namespace cache."
+  :type 'integer
+  :group 'kele)
+
 (cl-defun kele--retry (fn &key (count 5) (wait 1) (timeout 100))
   "Retry FN COUNT times, waiting WAIT seconds between each.
 
@@ -305,6 +310,33 @@ Returns the proxy process."
   (if-let* ((entry (alist-get (intern context) kele--context-proxy-ledger)))
       (alist-get 'proc entry)
     (kele--start-proxy context)))
+
+(defvar kele--context-namespaces nil
+  "An alist mapping contexts to their constituent namespaces.
+
+If value is nil, the namespaces need to be fetched directly.")
+
+(defun kele--clear-namespaces-for-context (context)
+  "Clear the stored namespaces for CONTEXT."
+  (assoc-delete-all (intern context) kele--context-namespaces))
+
+;; (defun kele--get-namespaces (context)
+;;   (if-let ((namespaces (alist-get (intern context) kele--context-namespaces)))
+;;       namespaces
+;;     ;; TODO: Retrieve + cache namespaces
+;;     ))
+
+(defun kele--cache-namespaces (context &rest namespace-names)
+  "Store NAMESPACE-NAMES as the associated namespaces for CONTEXT.
+
+The stored values are cleaned up after
+`kele-namespace-refresh-interval' seconds."
+  (add-to-list 'kele--context-namespaces `(,(intern context) . ,namespace-names))
+  (run-with-timer
+   kele-namespace-refresh-interval
+   nil
+   #'kele--clear-namespaces-for-context
+   context))
 
 (defvar kele--context-keymap nil
   "Keymap for actions on Kubernetes contexts.
