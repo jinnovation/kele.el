@@ -7,17 +7,23 @@
 
 ## Contexts
 
-### Switching
+### Switching contexts
 
 ```
 M-x kele-context-switch
 ```
 
-### Renaming
+This can also be done via [Embark] on any selection candidate in any other
+context-related Kele command, e.g. [`kele-context-rename`](#renaming-a-context).
+
+### Renaming a context
 
 ```
 M-x kele-context-rename
 ```
+
+This can also be done via [Embark] on any selection candidate in any other
+context-related Kele command, e.g. [`kele-context-switch`](#switching-contexts).
 
 ## Namespaces
 
@@ -32,3 +38,5 @@ M-x kele-namespace-switch-for-context
 ```
 M-x kele-namespace-switch-for-current-context
 ```
+
+[Embark]: https://github.com/oantolin/embark

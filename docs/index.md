@@ -8,8 +8,8 @@ permit operations as coarse or fine-grained as you need, **fast**, and get back
 to your work. See [How-Tos](./how-tos/index.md) for example usage.
 
 Kele also comes with "batteries included." It contains several
-[integrations](./how-tos/integrations.md) with noteworthy packages that you can
-take advantage of in your own configs.
+[integrations](./how-tos/integrations.md) with noteworthy packages,
+e.g. [Embark], that you can take advantage of in your own configs.
 
 !!! tip
 
@@ -54,3 +54,5 @@ Kele aims to have **PLANS**. Namely, it aims to be:
 
 The name Kele comes from the Mandarin term for cola, 可乐 (*kě lè*). It is
 also an abbreviation of "Kubernetes Enablement Layer for Emacs."
+
+[Embark]: https://github.com/oantolin/embark
