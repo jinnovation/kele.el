@@ -32,6 +32,20 @@ Clone this repository and put it in your load-path.
   (kele-mode 1))
 ```
 
+## Design Ethos
+
+Kele aims to have **PLANS**. Namely, it aims to be:
+
+- **P**erformant: if it is easier/faster for you to simply use `kubectl` to get
+  the info you need instead of Kele, then Kele has failed;
+- **Lightweight**: minimally intrusive, minimize context-switching, keep
+  "embellishments" to a minimum;
+- **A**gile: get you the answers you need -- and let you return to your other
+  work -- as quickly as possible;
+- **N**imble: get you as coarse/detailed insight as needed at any given point,
+  with no compromise to any of the other tenets listed here;
+- **S**mart: provide sensible defaults and interfaces that "just make sense".
+
 ## About the Name
 
 The name Kele comes from the Mandarin term for cola, 可乐 (*kě lè*). It is
