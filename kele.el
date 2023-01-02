@@ -106,7 +106,7 @@ This function injects :sync t into BODY."
              (plist-put (plist-put body :sync t)
                         ;; Suppress the default request.el error handler; we
                         ;; check the error later
-                        :error (cl-function (lambda (&rest args &allow-other-keys)
+                        :error (cl-function (lambda (&rest _args &allow-other-keys)
                                               nil))))
             (resp (apply #'request url updated-plist))
             (err (request-response-error-thrown resp)))
