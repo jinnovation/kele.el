@@ -45,7 +45,7 @@ jobs:
       - name: Test
         if: steps.install.outcome == 'success' && steps.install.conclusion == 'success'
         run: |
-          make test
+          make testall
 
       - name: Upload coverage
         if: steps.install.outcome == 'success' && steps.install.conclusion == 'success'
