@@ -263,14 +263,17 @@ If CONTEXT is nil, the current context will be used."
      str
      pred)))
 
-(defun kele-namespace-switch (namespace &optional context)
+(defun kele-namespace-switch-for-context (context namespace)
   "Switch to NAMESPACE for CONTEXT."
-  (interactive
-   (let ((context (kele-current-context-name)))
-     (list
-      (completing-read (format "Namespace (%s): " context) #'kele--namespaces-complete)
-      context)))
-  (kele-kubectl-do "config" "set-context" "--current" "--namespace" namespace))
+  (interactive (let ((context (completing-read "Context: " #'kele--contexts-complete)))
+                 (list context
+                       (completing-read (format "Namespace (%s): " context) #'kele--namespaces-complete))))
+  (kele-kubectl-do "config" "set-context" context "--namespace" namespace))
+
+(defun kele-namespace-switch-for-current-context (namespace)
+  "Switch to NAMESPACE for the current context."
+  (interactive (list (completing-read (format "Namespace (%s): " (kele-current-context-name)) #'kele--namespaces-complete)))
+  (kele-kubectl-do "config" "set-context" context "--namespace" namespace))
 
 (defun kele--namespace-annotate (namespace-name)
   "Return annotation text for the namespace named NAMESPACE-NAME."
@@ -421,9 +424,10 @@ Only populated if Embark is installed.")
       (setq kele--context-keymap (let ((map (make-sparse-keymap)))
                                    (define-key map "s" #'kele-context-switch)
                                    (define-key map "r" #'kele-context-rename)
+                                   (define-key map "n" #'kele-namespace-switch-for-context)
                                    (make-composed-keymap map embark-general-map)))
       (setq kele--namespace-keymap (let ((map (make-sparse-keymap)))
-                                     (define-key map "s" #'kele-namespace-switch)
+                                     (define-key map "s" #'kele-namespace-switch-for-current-context)
                                      (make-composed-keymap map embark-general-map)))
       (dolist (entry kele--embark-keymap-entries)
         (add-to-list 'embark-keymap-alist entry)))))
