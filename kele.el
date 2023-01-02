@@ -349,10 +349,17 @@ Returns the proxy process."
       entry
     (kele--start-proxy context)))
 
-(defvar kele--context-resources nil
-  "An alist mapping contexts to their cached resources.
+;; TODO: Might be worth an EIEIO class for this
+(defvar kele--context-resource-names nil
+  "An alist mapping contexts to their cached resources and object names.
 
-Values are: (RESOURCE-NAME . (list RESOURCE)).")
+Values are: (RESOURCE-NAME . (list OBJECT-NAME)).
+
+All resources detected for the given context will have entries,
+but not all will have cached object names.  A nil value under a
+given resource denotes that the object set has not been cached; a
+special value of :empty denotes that the retrieved set is simply
+empty.")
 
 (defvar kele--context-namespaces nil
   "An alist mapping contexts to their constituent namespaces.
