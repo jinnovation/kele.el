@@ -2,16 +2,20 @@
 
 ![](./img/kele.jpg)
 
-Kele (*kě lè*, or *kə-ˈlə*) ("Kubernetes Enablement Layer for Emacs")
-streamlines integration between Kubernetes and Emacs. It provides a "base layer"
-that can be leveraged to build higher-level integrations, e.g. modeline modules
-and interactive clients such as
-[kubernetes-el](https://github.com/kubernetes-el/kubernetes-el).
+Kele (*kě lè*, or *kə-ˈlə*) ("Kubernetes Enablement Layer for Emacs") is a
+Kubernetes cluster management package. It is structured around permitting you to
+permit operations as coarse or fine-grained as you need, **fast**, and get back
+to your work. See [How-Tos](./how-tos/index.md) for example usage.
 
-Kele comes with "batteries included." It contains several
+Kele also comes with "batteries included." It contains several
 [integrations](./how-tos/integrations.md) with noteworthy packages that you can
-take advantage of in your own configs. These also serve to demonstrate Keles's
-capabilities.
+take advantage of in your own configs.
+
+!!! tip
+
+    To learn more about how Kele compares to some other Kubernetes packages for
+    Emacs, see: [Explanations > Comparisons with Similar
+    Packages/Tools](./explanations/comparisons.md).
 
 !!! note
 
