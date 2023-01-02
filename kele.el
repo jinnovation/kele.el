@@ -322,7 +322,7 @@ If value is nil, the namespaces need to be fetched directly.")
 If not cached, will fetch and cache the namespaces."
   (if-let ((namespaces (alist-get (intern context) kele--context-namespaces)))
       namespaces
-    (apply #'kele--cache-namespaces (kele--fetch-namespaces context))))
+    (apply #'kele--cache-namespaces context (kele--fetch-namespaces context))))
 
 (defun kele--fetch-namespaces (context)
   "Fetch namespaces for CONTEXT."
