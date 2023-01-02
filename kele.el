@@ -49,9 +49,24 @@
   :type 'integer
   :group 'kele)
 
-(defcustom kele-namespace-refresh-interval 600
-  "The interval at which to refresh the namespace cache."
+(defcustom kele-resource-default-refresh-interval 60
+  "The time-to-live for cached resources.
+
+If a resource is not listed in `kele-resource-refresh-overrides',
+its cached values are wiped afther this many seconds."
   :type 'integer
+  :group 'kele)
+
+(defcustom kele-resource-refresh-overrides '((namespace . 600))
+  "Resource-specific cache time-to-live overrides.
+
+If a resource is listed here, the corresponding value will be
+used for cache time-to-live for that resource.  Otherwise,
+`kele-resource-default-refresh-interval' is used.
+
+Keys are the singular form of the resource name, e.g. \"pod\" for
+pods."
+  :type '(alist :key-type symbol :value-type 'integer)
   :group 'kele)
 
 (cl-defun kele--retry (fn &key (count 5) (wait 1) (timeout 100))
@@ -334,6 +349,11 @@ Returns the proxy process."
       entry
     (kele--start-proxy context)))
 
+(defvar kele--context-resources nil
+  "An alist mapping contexts to their cached resources.
+
+Values are: (RESOURCE-NAME . (list RESOURCE)).")
+
 (defvar kele--context-namespaces nil
   "An alist mapping contexts to their constituent namespaces.
 
@@ -363,14 +383,20 @@ If not cached, will fetch and cache the namespaces."
             (append items '()))
     (signal 'error "Failed to fetch namespaces")))
 
-(defun kele--cache-namespaces (context &rest namespace-names)
-  "Store NAMESPACE-NAMES as the associated namespaces for CONTEXT.
+(defun kele--get-cache-ttl-for-resource (resource)
+  "Get the cache TTL for RESOURCE."
+  (or (alist-get resource kele-resource-refresh-overrides)
+      kele-resource-default-refresh-interval))
 
-The stored values are cleaned up after
-`kele-namespace-refresh-interval' seconds."
+(defun kele--cache-namespaces (context &rest namespace-names)
+  "Cache NAMESPACE-NAMES as the associated namespaces for CONTEXT.
+
+The cache has a TTL as defined by
+`kele-resource-refresh-overrides' and
+`kele-resource-default-refresh-interval'."
   (add-to-list 'kele--context-namespaces `(,(intern context) . ,namespace-names))
   (run-with-timer
-   kele-namespace-refresh-interval
+   (kele--get-cache-ttl-for-resource 'namespace)
    nil
    #'kele--clear-namespaces-for-context
    context))

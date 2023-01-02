@@ -163,4 +163,16 @@
             :to-equal
             '("n0" "n1" "n2"))
     (expect 'run-with-timer :to-have-been-called)))
+
+(describe "resource caching"
+  (before-each
+    (setq kele-resource-default-refresh-interval 60)
+    (setq kele-resource-refresh-overrides '((foo . 999))))
+
+  (describe "when a resource has a TTL override"
+    (it "uses the override value"
+      (expect (kele--get-cache-ttl-for-resource 'foo) :to-equal 999)))
+  (describe "when a resource has no TTL override"
+    (it "uses the default value"
+      (expect (kele--get-cache-ttl-for-resource 'bar) :to-equal 60))))
 ;;; test-kele.el ends here
