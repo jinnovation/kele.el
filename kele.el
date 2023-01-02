@@ -105,7 +105,7 @@ This function injects :sync t into BODY."
              (plist-put (plist-put body :sync t)
                         ;; Suppress the default request.el error handler; we
                         ;; check the error later
-                        :error (cl-function (lambda (&rest args &key error-thrown &allow-other-keys)
+                        :error (cl-function (lambda (&rest args &allow-other-keys)
                                               nil))))
             (resp (apply #'request url updated-plist))
             (err (request-response-error-thrown resp)))
@@ -273,9 +273,10 @@ If CONTEXT is nil, the current context will be used."
 (defun kele-namespace-switch-for-current-context (namespace)
   "Switch to NAMESPACE for the current context."
   (interactive (list (completing-read (format "Namespace (%s): " (kele-current-context-name)) #'kele--namespaces-complete)))
-  (kele-kubectl-do "config" "set-context" context "--namespace" namespace))
+  (kele-kubectl-do "config" "set-context" (kele-current-context-name) "--namespace" namespace))
 
-(defun kele--namespace-annotate (namespace-name)
+;; TODO
+(defun kele--namespace-annotate (_namespace-name)
   "Return annotation text for the namespace named NAMESPACE-NAME."
   "")
 
