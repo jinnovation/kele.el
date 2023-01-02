@@ -14,6 +14,8 @@ nav:
       - how-tos/integrations.md
   - Explanations:
       - explanations/comparisons.md
+  - References:
+      - references/changelog.md
 
 theme:
   name: material
