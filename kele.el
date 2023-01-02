@@ -379,7 +379,14 @@ The stored values are cleaned up after
   "Keymap for actions on Kubernetes contexts.
 
 Only populated if Embark is installed.")
-(defconst kele--embark-keymap-entries '((kele-context . kele--context-keymap)))
+
+(defvar kele--namespace-keymap nil
+  "Keymap for actions on Kubernetes namespaces.
+
+Only populated if Embark is installed.")
+
+(defconst kele--embark-keymap-entries '((kele-context . kele--context-keymap)
+                                        (kele-namespace . kele--namespace-keymap)))
 
 (defun kele--setup-embark-maybe ()
   "Optionally set up Embark integration."
@@ -389,6 +396,9 @@ Only populated if Embark is installed.")
                                    (define-key map "s" #'kele-context-switch)
                                    (define-key map "r" #'kele-context-rename)
                                    (make-composed-keymap map embark-general-map)))
+      (setq kele--namespace-keymap (let ((map (make-sparse-keymap)))
+                                     (define-key map "s" #'kele-namespace-switch)
+                                     (make-composed-keymap map embark-general-map)))
       (dolist (entry kele--embark-keymap-entries)
         (add-to-list 'embark-keymap-alist entry)))))
 
