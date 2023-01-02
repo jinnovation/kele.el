@@ -23,18 +23,38 @@ e.g. [Embark], that you can take advantage of in your own configs.
 
 ## Getting Started
 
-### The Hard Way
+=== "The Hard Way"
 
-Clone this repository and put it in your load-path.
+    Clone this repository and put it in your load-path.
 
-### Use-package + Straight
+    ```emacs-lisp
+    (require 'kele)
+    (kele-mode 1)
+    ```
 
-```emacs-lisp
-(use-package kele
-  :straight (kele :type git :host github :repo "jinnovation/kele.el")
-  :config
-  (kele-mode 1))
-```
+=== "Use-package"
+
+    ```emacs-lisp
+    (use-package kele
+      :config
+      (kele-mode 1))
+    ```
+
+=== "Straight"
+
+    ```emacs-lisp
+    (straight-use-package kele)
+    (kele-mode 1)
+    ```
+
+=== "Use-package + Straight"
+
+    ```emacs-lisp
+    (use-package kele
+      :straight t
+      :config
+      (kele-mode 1))
+    ```
 
 ## Design Ethos
 
