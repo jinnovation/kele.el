@@ -233,6 +233,34 @@ configuration, e.g. via `kubectl config'."
     ;; TODO: Show proxy status
     (s-concat " (" cluster-name ", " server ")")))
 
+(defun kele--namespaces-complete (str pred action &optional context)
+  "Complete input for selection of namespaces.
+
+STR, PRED, and ACTION are as defined in completion functions.
+
+If CONTEXT is nil, the current context will be used."
+  (if (eq action 'metadata)
+      '(metadata (annotation-function . kele--namespace-annotate)
+                 (category . kele-namespace))
+    (complete-with-action
+     action
+     (kele--get-namespaces (or context (kele-current-context-name)))
+     str
+     pred)))
+
+(defun kele-namespace-switch (namespace &optional context)
+  "Switch to NAMESPACE for CONTEXT."
+  (interactive
+   (let ((context (kele-current-context-name)))
+     (list
+      (completing-read (format "Namespace (%s): " context) #'kele--namespaces-complete)
+      context)))
+  (kele-kubectl-do "config" "set-context" "--current" "--namespace" namespace))
+
+(defun kele--namespace-annotate (namespace-name)
+  "Return annotation text for the namespace named NAMESPACE-NAME."
+  "")
+
 (defun kele--contexts-complete (str pred action)
   "Complete input for selection of contexts.
 
