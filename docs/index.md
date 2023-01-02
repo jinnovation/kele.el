@@ -13,6 +13,10 @@ Kele comes with "batteries included." It contains several
 take advantage of in your own configs. These also serve to demonstrate Keles's
 capabilities.
 
+!!! note
+
+    Kele is not an official Kubernetes project.
+
 ## Getting Started
 
 ### The Hard Way

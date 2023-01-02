@@ -20,6 +20,8 @@ tutorials for replicating these integrations yourselves.
 
 *For full documentation, please visit [[https://jonathanj.in/kele.el][jonathanj.in/kele.el]]*.
 
+/Kele is not an official Kubernetes project./
+
 * Getting Started
 
 ** The Hard Way
