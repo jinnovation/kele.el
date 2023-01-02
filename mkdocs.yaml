@@ -12,6 +12,8 @@ nav:
   - How-Tos:
       - how-tos/index.md
       - how-tos/integrations.md
+  - Explanations:
+      - explanations/comparisons.md
 
 theme:
   name: material
