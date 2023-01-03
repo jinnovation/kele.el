@@ -11,6 +11,10 @@ versioning][semver].
 
 ## Upcoming
 
+## 0.1.0
+
+Kele is born!
+
 This initial release of Kele has a very simple goal: "[`kubectx` and
 `kubens`][1], but make it Emacs." Its feature set is limited but lays the
 foundation -- both in terms of implementation and "design philosophy" -- for
