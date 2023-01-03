@@ -160,7 +160,9 @@ If WAIT is non-nil, `kele--proxy-process' will wait for the proxy
       (sleep-for 2)
       (kele--retry (lambda ()
                      (and (= 200 (request-response-status-code (kele--request-option ready-addr nil)))
-                          (= 200 (request-response-status-code (kele--request-option live-addr nil)))))))
+                          (= 200 (request-response-status-code (kele--request-option live-addr nil)))))
+                   :wait 2
+                   :count 10))
     proc))
 
 (cl-defun kele-kubectl-do (&rest args)
