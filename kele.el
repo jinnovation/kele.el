@@ -137,6 +137,8 @@ If WAIT is non-nil, `kele--proxy-process' will wait for the proxy
          (s-port (number-to-string chosen-port))
          (proc-name (format "kele: proxy (%s, %s)" context s-port))
          (cmd (list kele-kubectl-executable
+                    "--context"
+                    context
                     "proxy"
                     "--port"
                     s-port

@@ -11,6 +11,11 @@ versioning][semver].
 
 ## Upcoming
 
+### Fixed
+
+- Issue where proxies were being created for the current context, regardless of
+  which context it was actually requested for
+
 ## 0.1.0
 
 Kele is born!
