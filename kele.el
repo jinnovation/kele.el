@@ -8,7 +8,7 @@
 ;; Homepage: https://github.com/jinnovation/kele.el
 ;; Keywords: kubernetes tools
 ;; SPDX-License-Identifier: Apache-2.0
-;; Package-Requires: ((emacs "27.1") (dash "2.19.1") (f "0.20.0") (ht "2.3") (request "0.3.2") (yaml "0.5.1"))
+;; Package-Requires: ((emacs "27.1") (dash "2.19.1") (f "0.20.0") (ht "2.3") (plz "0.3") (request "0.3.2") (yaml "0.5.1"))
 
 ;;; Commentary:
 
@@ -24,7 +24,7 @@
 (require 'f)
 (require 'filenotify)
 (require 'ht)
-(require 'request)
+(require 'plz)
 (require 'subr-x)
 (require 'yaml)
 
@@ -96,23 +96,6 @@ Returns the retval of FN."
       (ignore-errors (delete-process proc))
       (ignore-errors (kill-buffer buf)))))
 
-(defun kele--request-option (url fatal &rest body)
-  "Send request to URL using BODY, returning error or the response.
-
-If FATAL is nil, instead of an error, simply return nil.
-
-This function injects :sync t into BODY."
-  (if-let* ((updated-plist
-             (plist-put (plist-put body :sync t)
-                        ;; Suppress the default request.el error handler; we
-                        ;; check the error later
-                        :error (cl-function (lambda (&rest _args &key _error-thrown &allow-other-keys)
-                                              nil))))
-            (resp (apply #'request url updated-plist))
-            (err (request-response-error-thrown resp)))
-      (if fatal (signal 'error (list (cdr err))) nil)
-    resp))
-
 (defconst kele--random-port-range '(1000 9000))
 
 (defun kele--random-port ()
@@ -161,8 +144,13 @@ If WAIT is non-nil, `kele--proxy-process' will wait for the proxy
       ;; return error code 7 which to request.el is a "peculiar error"
       (sleep-for 2)
       (kele--retry (lambda ()
-                     (and (= 200 (request-response-status-code (kele--request-option ready-addr nil)))
-                          (= 200 (request-response-status-code (kele--request-option live-addr nil)))))
+                     ;; /readyz and /livez can sometimes return nil, maybe when
+                     ;; the proxy is just starting up. Add retries for these.
+                     (when-let* ((resp-ready (plz 'get ready-addr :as 'response))
+                                 (resp-live (plz 'get live-addr :as 'response))
+                                 (status-ready (plz-response-status resp-ready))
+                                 (status-live (plz-response-status resp-live)))
+                       (and (= 200 status-ready) (= 200 status-live))))
                    :wait 2
                    :count 10))
     proc))
@@ -388,10 +376,9 @@ If not cached, will fetch and cache the namespaces."
   "Fetch namespaces for CONTEXT."
   (-if-let* (((&alist 'port port) (kele--ensure-proxy context))
              (url (format "http://localhost:%s/api/v1/namespaces" port))
-             (resp (kele--request-option url t))
-             (data (json-parse-string (request-response-data resp)))
-             ((&hash "items" items) data))
-      (-map (-lambda ((&hash "metadata" (&hash "name" name))) name)
+             (data (plz 'get url :as #'json-read))
+             ((&alist 'items items) data))
+      (-map (-lambda ((&alist 'metadata (&alist 'name name))) name)
             (append items '()))
     (signal 'error "Failed to fetch namespaces")))
 

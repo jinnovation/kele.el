@@ -18,6 +18,14 @@ versioning][semver].
 - Fixed an issue in `kele-namespace-switch-for-context` where the selection
   candidates were pulled for the **current** context rather than the argument
   context
+- Fixed an issue where attempting to pull completion candidates via queries to
+  the proxy API server resulted in an error, as well as multiple proxy server
+  processes being inadvertently spun up for the same context
+
+### Changed
+
+- Removed [`requests`](https://github.com/tkf/emacs-request) dependency
+- Added [`plz`](https://github.com/alphapapa/plz.el) dependency
 
 ## 0.1.0
 
