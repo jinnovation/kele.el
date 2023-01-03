@@ -272,7 +272,10 @@ If CONTEXT is nil, the current context will be used."
   "Switch to NAMESPACE for CONTEXT."
   (interactive (let ((context (completing-read "Context: " #'kele--contexts-complete)))
                  (list context
-                       (completing-read (format "Namespace (%s): " context) #'kele--namespaces-complete))))
+                       (completing-read (format "Namespace (%s): " context)
+                                        (lambda (str pred action)
+                                          (kele--namespaces-complete str pred
+                                                                     action context))))))
   (kele-kubectl-do "config" "set-context" context "--namespace" namespace))
 
 (defun kele-namespace-switch-for-current-context (namespace)

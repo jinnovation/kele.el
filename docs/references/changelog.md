@@ -13,8 +13,11 @@ versioning][semver].
 
 ### Fixed
 
-- Issue where proxies were being created for the current context, regardless of
-  which context it was actually requested for
+- Fixed an issue where proxies were being created for the current context,
+  regardless of which context it was actually requested for
+- Fixed an issue in `kele-namespace-switch-for-context` where the selection
+  candidates were pulled for the **current** context rather than the argument
+  context
 
 ## 0.1.0
 
