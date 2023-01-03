@@ -5,7 +5,6 @@
 (load-file "./tests/undercover-init.el")
 
 (require 'f)
-(require 'request)
 
 (require 'kele)
 
@@ -67,25 +66,6 @@
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
     (kele--update)
     (expect (kele--context-cluster "development") :to-equal "development-cluster")))
-
-(describe "kele--request-option"
-  (describe "when request throws an error"
-    (before-each
-      (spy-on 'request
-              :and-call-fake (lambda (&rest _)
-                               (make-request-response
-                                :status-code 404
-                                :error-thrown (error . ("bar"))))))
-    (it "throws an error"
-      (expect (kele--request-option "foo" t) :to-throw 'error)))
-  (describe "when request returns successfully"
-    (before-each
-      (spy-on 'request
-              :and-return-value (make-request-response
-                                 :status-code 200
-                                 :error-thrown nil)))
-    (it "returns the response"
-      (expect (kele--request-option "foo" t) :to-be-truthy))))
 
 (describe "kele--retry"
   :var (foo)
