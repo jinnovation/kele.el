@@ -172,18 +172,8 @@ If WAIT is non-nil, `kele--proxy-process' will wait for the proxy
 The value is kept up-to-date with any changes to the underlying
 configuration, e.g. via `kubectl config'.")
 
-(defun kele--get-config ()
-  "Get the config at `kele-kubeconfig-path'.
-
-The config will be represented as a hash table."
-  (yaml-parse-string (f-read kele-kubeconfig-path)
-                     :object-type 'alist
-                     :sequence-type 'list))
-
 (defun kele--update (&optional _)
-  "Update `kele--config'.
-
-Values are parsed from the contents at `kele-kubeconfig-path'."
+  "Update `kele--config' with the values from `kele-kubeconfig-path'."
   (require 'async)
   (async-start `(lambda ()
                   ;; TODO: How to just do all of these in one fell swoop?
@@ -194,10 +184,9 @@ Values are parsed from the contents at `kele-kubeconfig-path'."
                   (require 'yaml)
                   (require 'f)
                   ,(async-inject-variables "kele-kubeconfig-path")
-                  (defalias 'get-config ,(symbol-function 'kele--get-config))
-                  ;; FIXME: This will not work because of:
-                  ;; https://github.com/jwiegley/emacs-async/issues/164
-                  (get-config))
+                  (yaml-parse-string (f-read kele-kubeconfig-path)
+                                     :object-type 'alist
+                                     :sequence-type 'list))
                (lambda (config)
                  (setq kele--config config))))
 
