@@ -167,14 +167,14 @@ If WAIT is non-nil, `kele--proxy-process' will wait for the proxy
 (defvar kele--kubeconfig-watcher nil
   "Descriptor of the file watcher on `kele-kubeconfig-path'.")
 
-(defvar kele--config nil
+(defvar kele--kubeconfig nil
   "The current kubeconfig.
 
 The value is kept up-to-date with any changes to the underlying
 configuration, e.g. via `kubectl config'.")
 
-(defun kele--update (&optional _)
-  "Update `kele--config' with the values from `kele-kubeconfig-path'.
+(defun kele--update-kubeconfig (&optional _)
+  "Update `kele--kubeconfig' with the values from `kele-kubeconfig-path'.
 
 This is done asynchronously.  To wait on the results, pass the
 retval into `async-wait'."
@@ -191,14 +191,14 @@ retval into `async-wait'."
                                      :object-type 'alist
                                      :sequence-type 'list))
                (lambda (config)
-                 (setq kele--config config))))
+                 (setq kele--kubeconfig config))))
 
 (defun kele-current-context-name ()
   "Get the current context name.
 
 The value is kept up-to-date with any changes to the underlying
 configuration, e.g. via `kubectl config'."
-  (alist-get 'current-context kele--config))
+  (alist-get 'current-context kele--kubeconfig))
 
 (defun kele-current-namespace ()
   "Get the current context's default namespace.
@@ -208,7 +208,7 @@ configuration, e.g. via `kubectl config'."
   (-if-let* (((&alist 'context (&alist 'namespace namespace))
               (-first (lambda (elem)
                         (string= (alist-get 'name elem) (kele-current-context-name)))
-                      (alist-get 'contexts kele--config))))
+                      (alist-get 'contexts kele--kubeconfig))))
       namespace))
 
 (defun kele-status-simple ()
@@ -225,12 +225,12 @@ configuration, e.g. via `kubectl config'."
 
 (defun kele-context-names ()
   "Get the names of all known contexts."
-  (-map (lambda (elem) (alist-get 'name elem)) (alist-get 'contexts kele--config)))
+  (-map (lambda (elem) (alist-get 'name elem)) (alist-get 'contexts kele--kubeconfig)))
 
 (defun kele--context-cluster (context-name)
   "Get the cluster of the context named CONTEXT-NAME."
   (if-let ((context (-first (lambda (elem) (string= (alist-get 'name elem) context-name))
-                            (alist-get 'contexts kele--config))))
+                            (alist-get 'contexts kele--kubeconfig))))
       (alist-get 'cluster (alist-get 'context context))
     (error "Could not find context of name %s" context-name)))
 
@@ -238,11 +238,11 @@ configuration, e.g. via `kubectl config'."
   "Return annotation text for the context named CONTEXT-NAME."
   (let* ((context (-first (lambda (elem)
                             (string= (alist-get 'name elem) context-name))
-                          (alist-get 'contexts kele--config)))
+                          (alist-get 'contexts kele--kubeconfig)))
          (cluster-name (alist-get 'cluster (alist-get 'context context)))
          (cluster (-first (lambda (elem)
                             (string= (alist-get 'name elem) cluster-name))
-                          (-concat (alist-get 'clusters kele--config) '())))
+                          (-concat (alist-get 'clusters kele--kubeconfig) '())))
          (server (alist-get 'server (alist-get 'cluster cluster))))
     ;; TODO: Show proxy status
     (s-concat " (" cluster-name ", " server ")")))
@@ -411,6 +411,16 @@ The cache has a TTL as defined by
 
 Only populated if Embark is installed.")
 
+(cl-defun kele-get-object (&key type name namespace context)
+  "Get the manifest of TYPE named NAME.
+
+If NAMESPACE and CONTEXT are nil, use the current context and
+namespace respectively."
+  "hello")
+
+(defvar kele-default-resource-keymap (let ((map (make-sparse-keymap)))
+                                       (define-key "g" #'kele-get-object)))
+
 (defvar kele--namespace-keymap nil
   "Keymap for actions on Kubernetes namespaces.
 
@@ -445,12 +455,12 @@ Only populated if Embark is installed.")
   "Enables Kele functionality."
   (setq kele--kubeconfig-watcher
         ;; FIXME: Update the watcher when `kele-kubeconfig-path' changes.
-        (file-notify-add-watch kele-kubeconfig-path '(change) #'kele--update))
+        (file-notify-add-watch kele-kubeconfig-path '(change) #'kele--update-kubeconfig))
   (kele--setup-embark-maybe)
   (if (featurep 'awesome-tray)
       (with-suppressed-warnings ((free-vars awesome-tray-module-alist))
         (add-to-list 'awesome-tray-module-alist kele--awesome-tray-module)))
-  (kele--update))
+  (kele--update-kubeconfig))
 
 (defun kele--disable ()
   "Disable Kele functionality."
