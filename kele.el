@@ -28,6 +28,7 @@
 (require 'plz)
 (require 'subr-x)
 (require 'yaml)
+(require 'json)
 
 (defgroup kele nil
   "Integration constructs for Kubernetes."
