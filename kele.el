@@ -4,10 +4,11 @@
 
 ;; Author: Jonathan Jin <me@jonathanj.in>
 
-;; Version: 0.0.1
+;; Version: 0.1.0
 ;; Homepage: https://github.com/jinnovation/kele.el
 ;; Keywords: kubernetes tools
-;; Package-Requires: ((emacs "27.1") (dash "2.19.1") (f "0.20.0") (ht "2.3") (request "0.3.2") (yaml "0.5.1"))
+;; SPDX-License-Identifier: Apache-2.0
+;; Package-Requires: ((emacs "27.1") (async "1.9.7") (dash "2.19.1") (f "0.20.0") (ht "2.3") (plz "0.3") (request "0.3.2") (yaml "0.5.1"))
 
 ;;; Commentary:
 
@@ -19,11 +20,12 @@
 
 ;;; Code:
 
+(require 'async)
 (require 'dash)
 (require 'f)
 (require 'filenotify)
 (require 'ht)
-(require 'request)
+(require 'plz)
 (require 'subr-x)
 (require 'yaml)
 
@@ -95,23 +97,6 @@ Returns the retval of FN."
       (ignore-errors (delete-process proc))
       (ignore-errors (kill-buffer buf)))))
 
-(defun kele--request-option (url fatal &rest body)
-  "Send request to URL using BODY, returning error or the response.
-
-If FATAL is nil, instead of an error, simply return nil.
-
-This function injects :sync t into BODY."
-  (if-let* ((updated-plist
-             (plist-put (plist-put body :sync t)
-                        ;; Suppress the default request.el error handler; we
-                        ;; check the error later
-                        :error (cl-function (lambda (&rest args &key error-thrown &allow-other-keys)
-                                              nil))))
-            (resp (apply #'request url updated-plist))
-            (err (request-response-error-thrown resp)))
-      (if fatal (signal 'error (list (cdr err))) nil)
-    resp))
-
 (defconst kele--random-port-range '(1000 9000))
 
 (defun kele--random-port ()
@@ -136,6 +121,8 @@ If WAIT is non-nil, `kele--proxy-process' will wait for the proxy
          (s-port (number-to-string chosen-port))
          (proc-name (format "kele: proxy (%s, %s)" context s-port))
          (cmd (list kele-kubectl-executable
+                    "--context"
+                    context
                     "proxy"
                     "--port"
                     s-port
@@ -158,8 +145,15 @@ If WAIT is non-nil, `kele--proxy-process' will wait for the proxy
       ;; return error code 7 which to request.el is a "peculiar error"
       (sleep-for 2)
       (kele--retry (lambda ()
-                     (and (= 200 (request-response-status-code (kele--request-option ready-addr nil)))
-                          (= 200 (request-response-status-code (kele--request-option live-addr nil)))))))
+                     ;; /readyz and /livez can sometimes return nil, maybe when
+                     ;; the proxy is just starting up. Add retries for these.
+                     (when-let* ((resp-ready (plz 'get ready-addr :as 'response))
+                                 (resp-live (plz 'get live-addr :as 'response))
+                                 (status-ready (plz-response-status resp-ready))
+                                 (status-live (plz-response-status resp-live)))
+                       (and (= 200 status-ready) (= 200 status-live))))
+                   :wait 2
+                   :count 10))
     proc))
 
 (cl-defun kele-kubectl-do (&rest args)
@@ -179,20 +173,25 @@ If WAIT is non-nil, `kele--proxy-process' will wait for the proxy
 The value is kept up-to-date with any changes to the underlying
 configuration, e.g. via `kubectl config'.")
 
-(defun kele--get-config ()
-  "Get the config at `kele-kubeconfig-path'.
-
-The config will be represented as a hash table."
-  (yaml-parse-string (f-read kele-kubeconfig-path)
-                     :object-type 'alist
-                     :sequence-type 'list))
-
-;; TODO: Can this be done async?
 (defun kele--update (&optional _)
-  "Update `kele--config'.
+  "Update `kele--config' with the values from `kele-kubeconfig-path'.
 
-Values are parsed from the contents at `kele-kubeconfig-path'."
-  (setq kele--config (kele--get-config)))
+This is done asynchronously.  To wait on the results, pass the
+retval into `async-wait'."
+  (async-start `(lambda ()
+                  ;; TODO: How to just do all of these in one fell swoop?
+                  (add-to-list 'load-path (file-name-directory ,(locate-library "yaml")))
+                  (add-to-list 'load-path (file-name-directory ,(locate-library "f")))
+                  (add-to-list 'load-path (file-name-directory ,(locate-library "s")))
+                  (add-to-list 'load-path (file-name-directory ,(locate-library "dash")))
+                  (require 'yaml)
+                  (require 'f)
+                  ,(async-inject-variables "kele-kubeconfig-path")
+                  (yaml-parse-string (f-read kele-kubeconfig-path)
+                                     :object-type 'alist
+                                     :sequence-type 'list))
+               (lambda (config)
+                 (setq kele--config config))))
 
 (defun kele-current-context-name ()
   "Get the current context name.
@@ -263,16 +262,23 @@ If CONTEXT is nil, the current context will be used."
      str
      pred)))
 
-(defun kele-namespace-switch (namespace &optional context)
+(defun kele-namespace-switch-for-context (context namespace)
   "Switch to NAMESPACE for CONTEXT."
-  (interactive
-   (let ((context (kele-current-context-name)))
-     (list
-      (completing-read (format "Namespace (%s): " context) #'kele--namespaces-complete)
-      context)))
-  (kele-kubectl-do "config" "set-context" "--current" "--namespace" namespace))
+  (interactive (let ((context (completing-read "Context: " #'kele--contexts-complete)))
+                 (list context
+                       (completing-read (format "Namespace (%s): " context)
+                                        (lambda (str pred action)
+                                          (kele--namespaces-complete str pred
+                                                                     action context))))))
+  (kele-kubectl-do "config" "set-context" context "--namespace" namespace))
 
-(defun kele--namespace-annotate (namespace-name)
+(defun kele-namespace-switch-for-current-context (namespace)
+  "Switch to NAMESPACE for the current context."
+  (interactive (list (completing-read (format "Namespace (%s): " (kele-current-context-name)) #'kele--namespaces-complete)))
+  (kele-kubectl-do "config" "set-context" (kele-current-context-name) "--namespace" namespace))
+
+;; TODO
+(defun kele--namespace-annotate (_namespace-name)
   "Return annotation text for the namespace named NAMESPACE-NAME."
   "")
 
@@ -383,10 +389,9 @@ If not cached, will fetch and cache the namespaces."
   "Fetch namespaces for CONTEXT."
   (-if-let* (((&alist 'port port) (kele--ensure-proxy context))
              (url (format "http://localhost:%s/api/v1/namespaces" port))
-             (resp (kele--request-option url t))
-             (data (json-parse-string (request-response-data resp)))
-             ((&hash "items" items) data))
-      (-map (-lambda ((&hash "metadata" (&hash "name" name))) name)
+             (data (plz 'get url :as #'json-read))
+             ((&alist 'items items) data))
+      (-map (-lambda ((&alist 'metadata (&alist 'name name))) name)
             (append items '()))
     (signal 'error "Failed to fetch namespaces")))
 
@@ -428,9 +433,10 @@ Only populated if Embark is installed.")
       (setq kele--context-keymap (let ((map (make-sparse-keymap)))
                                    (define-key map "s" #'kele-context-switch)
                                    (define-key map "r" #'kele-context-rename)
+                                   (define-key map "n" #'kele-namespace-switch-for-context)
                                    (make-composed-keymap map embark-general-map)))
       (setq kele--namespace-keymap (let ((map (make-sparse-keymap)))
-                                     (define-key map "s" #'kele-namespace-switch)
+                                     (define-key map "s" #'kele-namespace-switch-for-current-context)
                                      (make-composed-keymap map embark-general-map)))
       (dolist (entry kele--embark-keymap-entries)
         (add-to-list 'embark-keymap-alist entry)))))
