@@ -427,22 +427,17 @@ The cache has a TTL as defined by
 (defun kele--get-discovery-cache-for-context (&optional context)
   "Get discovery cache for CONTEXT."
   (->> (list (or context (kele-current-context-name)))
-   (-map (lambda (context)
-           (-let* (((&alist 'cluster (&alist 'server server)) (kele--context-cluster context))
-                   (discovery-cache-path (format "%s/discovery/%s"
-                                                 kele-cache-dir
-                                                 (url-host (url-generic-parse-url server))))
-                   (api-list-files (f-files discovery-cache-path
-                                            (lambda (file)
-                                              (equal (f-ext file) "json"))
-                                            t))
-                   (api-lists (-map #'json-read-file api-list-files))
-                   (parsed-api-lists (-map (lambda (api-list)
-                     (-map (-lambda ((resource &as &alist 'name name))
-                             '(name . resource))
-                           (alist-get 'resources api-list)))
-                   api-lists)))
-             `(,context . ,api-lists))))))
+       (-map (lambda (context)
+               (-let* (((&alist 'cluster (&alist 'server server)) (kele--context-cluster context))
+                       (discovery-cache-path (format "%s/discovery/%s"
+                                                     kele-cache-dir
+                                                     (url-host (url-generic-parse-url server))))
+                       (api-list-files (f-files discovery-cache-path
+                                                (lambda (file)
+                                                  (equal (f-ext file) "json"))
+                                                t))
+                       (api-lists (-map #'json-read-file api-list-files)))
+                 `(,context . ,api-lists))))))
 
 (defvar kele--context-keymap nil
   "Keymap for actions on Kubernetes contexts.
