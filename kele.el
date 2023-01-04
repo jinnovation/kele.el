@@ -20,6 +20,7 @@
 
 ;;; Code:
 
+(require 'async)
 (require 'dash)
 (require 'f)
 (require 'filenotify)
@@ -177,7 +178,6 @@ configuration, e.g. via `kubectl config'.")
 
 This is done asynchronously.  To wait on the results, pass the
 retval into `async-wait'."
-  (require 'async)
   (async-start `(lambda ()
                   ;; TODO: How to just do all of these in one fell swoop?
                   (add-to-list 'load-path (file-name-directory ,(locate-library "yaml")))
