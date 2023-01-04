@@ -1,1 +1,2 @@
 .cask
+/tests/kubeconfig.yaml

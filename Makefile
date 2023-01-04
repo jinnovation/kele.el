@@ -30,3 +30,9 @@ test: compile
 
 .PHONY: all
 testall: checkdoc package-lint test
+
+.PHONY: fake-cluster
+fake-cluster:
+	kind create cluster --kubeconfig ./tests/kubeconfig.yaml --config ./tests/test-cluster.yaml
+	kind delete cluster --kubeconfig ./tests/kubeconfig.yaml --name kele-test-cluster
+
