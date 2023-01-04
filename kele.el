@@ -411,16 +411,6 @@ The cache has a TTL as defined by
 
 Only populated if Embark is installed.")
 
-(cl-defun kele-get-object (&key type name namespace context)
-  "Get the manifest of TYPE named NAME.
-
-If NAMESPACE and CONTEXT are nil, use the current context and
-namespace respectively."
-  "hello")
-
-(defvar kele-default-resource-keymap (let ((map (make-sparse-keymap)))
-                                       (define-key "g" #'kele-get-object)))
-
 (defvar kele--namespace-keymap nil
   "Keymap for actions on Kubernetes namespaces.
 
