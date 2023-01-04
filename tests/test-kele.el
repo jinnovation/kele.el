@@ -4,6 +4,7 @@
 
 (load-file "./tests/undercover-init.el")
 
+(require 'async)
 (require 'f)
 
 (require 'kele)
@@ -25,19 +26,19 @@
 (describe "kele-current-context-name"
   (it "returns the correct current-context value"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
-    (kele--update)
+    (async-wait (kele--update))
     (expect (kele-current-context-name) :to-equal "development")))
 
 (describe "kele--context-annotate"
   (it "returns the proper annotation text"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
-    (kele--update)
+    (async-wait (kele--update))
     (expect (kele--context-annotate "development") :to-equal " (development-cluster, https://development.org/server)")))
 
 (describe "kele-context-names"
   (it "returns the correct cluster names"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
-    (kele--update)
+    (async-wait (kele--update))
 
     (expect (kele-context-names) :to-equal '("development" "no-namespace"))))
 
@@ -53,7 +54,7 @@
 (describe "kele-current-namespace"
   (before-each
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
-    (kele--update))
+    (async-wait (kele--update)))
   (it "returns the default namespace for the current cluster"
     (spy-on 'kele-current-context-name :and-return-value "development")
     (expect (kele-current-namespace) :to-equal "development-namespace"))
@@ -64,7 +65,7 @@
 (describe "kele--context-cluster"
   (it "returns the correct cluster"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
-    (kele--update)
+    (async-wait (kele--update))
     (expect (kele--context-cluster "development") :to-equal "development-cluster")))
 
 (describe "kele--retry"

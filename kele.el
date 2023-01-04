@@ -8,7 +8,7 @@
 ;; Homepage: https://github.com/jinnovation/kele.el
 ;; Keywords: kubernetes tools
 ;; SPDX-License-Identifier: Apache-2.0
-;; Package-Requires: ((emacs "27.1") (dash "2.19.1") (f "0.20.0") (ht "2.3") (plz "0.3") (request "0.3.2") (yaml "0.5.1"))
+;; Package-Requires: ((emacs "27.1") (async "1.9.7") (dash "2.19.1") (f "0.20.0") (ht "2.3") (plz "0.3") (request "0.3.2") (yaml "0.5.1"))
 
 ;;; Commentary:
 
@@ -20,6 +20,7 @@
 
 ;;; Code:
 
+(require 'async)
 (require 'dash)
 (require 'f)
 (require 'filenotify)
@@ -172,20 +173,25 @@ If WAIT is non-nil, `kele--proxy-process' will wait for the proxy
 The value is kept up-to-date with any changes to the underlying
 configuration, e.g. via `kubectl config'.")
 
-(defun kele--get-config ()
-  "Get the config at `kele-kubeconfig-path'.
-
-The config will be represented as a hash table."
-  (yaml-parse-string (f-read kele-kubeconfig-path)
-                     :object-type 'alist
-                     :sequence-type 'list))
-
-;; TODO: Can this be done async?
 (defun kele--update (&optional _)
-  "Update `kele--config'.
+  "Update `kele--config' with the values from `kele-kubeconfig-path'.
 
-Values are parsed from the contents at `kele-kubeconfig-path'."
-  (setq kele--config (kele--get-config)))
+This is done asynchronously.  To wait on the results, pass the
+retval into `async-wait'."
+  (async-start `(lambda ()
+                  ;; TODO: How to just do all of these in one fell swoop?
+                  (add-to-list 'load-path (file-name-directory ,(locate-library "yaml")))
+                  (add-to-list 'load-path (file-name-directory ,(locate-library "f")))
+                  (add-to-list 'load-path (file-name-directory ,(locate-library "s")))
+                  (add-to-list 'load-path (file-name-directory ,(locate-library "dash")))
+                  (require 'yaml)
+                  (require 'f)
+                  ,(async-inject-variables "kele-kubeconfig-path")
+                  (yaml-parse-string (f-read kele-kubeconfig-path)
+                                     :object-type 'alist
+                                     :sequence-type 'list))
+               (lambda (config)
+                 (setq kele--config config))))
 
 (defun kele-current-context-name ()
   "Get the current context name.
