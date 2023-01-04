@@ -173,7 +173,10 @@ The value is kept up-to-date with any changes to the underlying
 configuration, e.g. via `kubectl config'.")
 
 (defun kele--update (&optional _)
-  "Update `kele--config' with the values from `kele-kubeconfig-path'."
+  "Update `kele--config' with the values from `kele-kubeconfig-path'.
+
+This is done asynchronously.  To wait on the results, pass the
+retval into `async-wait'."
   (require 'async)
   (async-start `(lambda ()
                   ;; TODO: How to just do all of these in one fell swoop?
