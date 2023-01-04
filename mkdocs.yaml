@@ -11,7 +11,12 @@ nav:
   - Home: index.md
   - How-Tos:
       - how-tos/index.md
+      - how-tos/usage.md
       - how-tos/integrations.md
+  - Explanations:
+      - explanations/comparisons.md
+  - References:
+      - references/changelog.md
 
 theme:
   name: material

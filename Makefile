@@ -28,4 +28,4 @@ test: compile
 	cask exec buttercup -L . tests/
 
 .PHONY: all
-all: checkdoc package-lint test
+testall: checkdoc package-lint test
