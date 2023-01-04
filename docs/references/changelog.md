@@ -31,6 +31,7 @@ versioning][semver].
 
 - Removed dependency: [`requests`](https://github.com/tkf/emacs-request)
 - Added dependency: [`plz`](https://github.com/alphapapa/plz.el)
+- Added dependency: [`async`](https://github.com/jwiegley/emacs-async/)
 
 ## 0.1.0
 
