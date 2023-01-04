@@ -8,7 +8,7 @@
 ;; Homepage: https://github.com/jinnovation/kele.el
 ;; Keywords: kubernetes tools
 ;; SPDX-License-Identifier: Apache-2.0
-;; Package-Requires: ((emacs "27.1") (dash "2.19.1") (f "0.20.0") (ht "2.3") (plz "0.3") (request "0.3.2") (yaml "0.5.1"))
+;; Package-Requires: ((emacs "27.1") (async "1.9.7") (dash "2.19.1") (f "0.20.0") (ht "2.3") (plz "0.3") (request "0.3.2") (yaml "0.5.1"))
 
 ;;; Commentary:
 
@@ -184,7 +184,22 @@ The config will be represented as a hash table."
   "Update `kele--config'.
 
 Values are parsed from the contents at `kele-kubeconfig-path'."
-  (setq kele--config (kele--get-config)))
+  (require 'async)
+  (async-start `(lambda ()
+                  ;; TODO: How to just do all of these in one fell swoop?
+                  (add-to-list 'load-path (file-name-directory ,(locate-library "yaml")))
+                  (add-to-list 'load-path (file-name-directory ,(locate-library "f")))
+                  (add-to-list 'load-path (file-name-directory ,(locate-library "s")))
+                  (add-to-list 'load-path (file-name-directory ,(locate-library "dash")))
+                  (require 'yaml)
+                  (require 'f)
+                  ,(async-inject-variables "kele-kubeconfig-path")
+                  (defalias 'get-config ,(symbol-function 'kele--get-config))
+                  ;; FIXME: This will not work because of:
+                  ;; https://github.com/jwiegley/emacs-async/issues/164
+                  (get-config))
+               (lambda (config)
+                 (setq kele--config config))))
 
 (defun kele-current-context-name ()
   "Get the current context name.
@@ -203,31 +218,6 @@ configuration, e.g. via `kubectl config'."
                         (string= (alist-get 'name elem) (kele-current-context-name)))
                       (alist-get 'contexts kele--config))))
       namespace))
-
-(defun kele--update-async (&optional _)
-  (require 'async)
-  (async-start `(lambda ()
-                  ;; TODO: How to just do all of these in one fell swoop?
-                  (add-to-list 'load-path (file-name-directory ,(locate-library "yaml")))
-                  (add-to-list 'load-path (file-name-directory ,(locate-library "f")))
-                  (add-to-list 'load-path (file-name-directory ,(locate-library "s")))
-                  (add-to-list 'load-path (file-name-directory ,(locate-library "dash")))
-                  (require 'yaml)
-                  (require 'f)
-                  ,(async-inject-variables "kele-kubeconfig-path")
-                  (defalias 'get-config ,(symbol-function 'kele--get-config))
-                  ;; FIXME: This will not work because of:
-                  ;; https://github.com/jwiegley/emacs-async/issues/164
-                  (get-config))
-               (lambda (config)
-                 (when-let* ((current-context (ht-get config 'current-context))
-                             (contexts (-concat (ht-get config 'contexts) '()))
-                             (context (-first (lambda (elem) (string= (ht-get elem 'name) current-context)) contexts)))
-                   (let ((namespace (ht-get* context 'context 'namespace)))
-                     (setq kele-current-context current-context
-                           kele-current-namespace namespace
-                           kele--config config
-                           kele--contexts contexts))))))
 
 (defun kele-status-simple ()
   "Return a simple status string suitable for modeline display."
