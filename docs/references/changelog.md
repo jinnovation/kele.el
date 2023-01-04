@@ -11,6 +11,11 @@ versioning][semver].
 
 ## Upcoming
 
+### Added
+
+- The primary update loop reading from kubeconfig and listening for changes on
+  it is now asynchronous and therefore non-blocking!
+
 ### Fixed
 
 - Fixed an issue where proxies were being created for the current context,
@@ -24,8 +29,8 @@ versioning][semver].
 
 ### Changed
 
-- Removed [`requests`](https://github.com/tkf/emacs-request) dependency
-- Added [`plz`](https://github.com/alphapapa/plz.el) dependency
+- Removed dependency: [`requests`](https://github.com/tkf/emacs-request)
+- Added dependency: [`plz`](https://github.com/alphapapa/plz.el)
 
 ## 0.1.0
 
