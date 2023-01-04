@@ -425,9 +425,16 @@ The cache has a TTL as defined by
    #'kele--clear-namespaces-for-context
    context))
 
-(defun kele--get-discovery-cache-for-context (&optional context)
-  "Get discovery cache for CONTEXT."
-  (->> (list (or context (kele-current-context-name)))
+(defun kele--get-discovery-cache-for-contexts (&rest context-names)
+  "Get discovery cache for CONTEXT-NAMES.
+
+If CONTEXT-NAMES is not provided, the current context name is
+used.
+
+Retval is an alist where the key is the context name and the
+  value is a list of all the APIGroupLists and APIResourceLists
+  found in the cache for that context."
+  (->> (or context-names (list (kele-current-context-name)))
        (-map (lambda (context)
                (-let* (((&alist 'cluster (&alist 'server server)) (kele--context-cluster context))
                        (discovery-cache-path (format "%s/discovery/%s"
