@@ -195,8 +195,6 @@ Values are parsed from the contents at `kele-kubeconfig-path'."
                   (require 'f)
                   ,(async-inject-variables "kele-kubeconfig-path")
                   (defalias 'get-config ,(symbol-function 'kele--get-config))
-                  ;; FIXME: This will not work because of:
-                  ;; https://github.com/jwiegley/emacs-async/issues/164
                   (get-config))
                (lambda (config)
                  (setq kele--config config))))
