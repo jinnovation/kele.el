@@ -24,7 +24,8 @@ jobs:
         id: kind
         uses: helm/kind-action@v1.4.0
         with:
-          config: $GITHUB_WORKSPACE/tests/test-cluster.yaml
+          config: tests/test-cluster.yaml
+          cluster_name: kele-test-cluster0
       - name: Setup Emacs
         uses: purcell/setup-emacs@master
         with:
