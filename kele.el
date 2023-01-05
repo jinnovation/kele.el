@@ -47,8 +47,7 @@
   (f-join (f-dirname kele-kubeconfig-path) "cache")
   "Path to the kubectl cache."
   :group 'kele
-  :type 'string                         ; directory?
-  )
+  :type 'directory)
 
 (defcustom kele-kubectl-executable "kubectl"
   "The kubectl executable to use."
