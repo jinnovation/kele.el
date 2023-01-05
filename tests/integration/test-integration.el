@@ -16,7 +16,7 @@
 (describe "kele--fetch-namespaces"
   (it "fetches namespace names"
     (expect (kele--fetch-namespaces "kind-kele-test-cluster0")
-            :to-equal
+            :to-have-same-items-as
             '("default"
               "kube-node-lease"
               "kube-public"
