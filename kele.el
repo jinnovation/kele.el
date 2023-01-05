@@ -25,10 +25,11 @@
 (require 'f)
 (require 'filenotify)
 (require 'ht)
+(require 'json)
 (require 'plz)
 (require 'subr-x)
+(require 'url-parse)
 (require 'yaml)
-(require 'json)
 
 (defgroup kele nil
   "Integration constructs for Kubernetes."
