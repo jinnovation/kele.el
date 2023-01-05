@@ -42,10 +42,21 @@ jobs:
           cask build --verbose
           make compile
 
-      - name: Test
+      - name: Run unit and static tests
         if: steps.install.outcome == 'success' && steps.install.conclusion == 'success'
         run: |
           make testall
+
+      - name: Setup integration test cluster
+        id: kind
+        uses: helm/kind-action@v1.4.0
+        with:
+          config: ./tests/test-cluster.yaml
+
+      - name: Run integration tests
+        if: steps.kind.outcome == 'success' and steps.kind.conclusion == 'success'
+        run: |
+          make integration-test
 
       - name: Upload coverage
         if: steps.install.outcome == 'success' && steps.install.conclusion == 'success'
