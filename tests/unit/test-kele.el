@@ -2,7 +2,7 @@
 ;;; Commentary:
 ;;; Code:
 
-(load-file "./tests/undercover-init.el")
+(load-file "./tests/unit/undercover-init.el")
 
 (require 'async)
 (require 'f)
