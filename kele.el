@@ -39,7 +39,7 @@
 (defcustom kele-kubeconfig-path
   (expand-file-name (or (getenv "KUBECONFIG") "~/.kube/config"))
   "Path to the kubeconfig file."
-  :type 'file
+  :type 'directory
   :group 'kele)
 
 (defcustom kele-kubectl-executable "kubectl"
