@@ -6,9 +6,6 @@
 (require 'buttercup)
 
 (describe "config interactions"
-  (before-all
-    (setq kele-kubeconfig-path (f-expand "./tests/kubeconfig.yaml")))
-
   (describe "kele-namespace-switch-for-context"
     (it "switches context properly"
       (kele-context-switch "kind-kele-test-cluster0")
