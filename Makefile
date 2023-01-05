@@ -26,13 +26,14 @@ package-lint:
 .PHONY: test
 test: compile
 	cask clean-elc
-	cask exec buttercup -L . tests/
+	cask exec buttercup -L . tests/unit/
 
 .PHONY: all
 testall: checkdoc package-lint test
 
-.PHONY: fake-cluster
-fake-cluster:
+.PHONY: integration-test
+integration-test:
 	kind create cluster --kubeconfig ./tests/kubeconfig.yaml --config ./tests/test-cluster.yaml
-	kind delete cluster --kubeconfig ./tests/kubeconfig.yaml --name kele-test-cluster
+	cask exec buttercup -L . tests/integration/
+	kind delete cluster --kubeconfig ./tests/kubeconfig.yaml --name kele-test-cluster0
 
