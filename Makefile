@@ -32,7 +32,7 @@ test: compile
 testall: checkdoc package-lint test
 
 .PHONY: test-cluster-create
-test-cluster-create:
+test-cluster-create: test-cluster-stop
 	kind create cluster --kubeconfig ./tests/kubeconfig.yaml --config ./tests/test-cluster.yaml
 
 .PHONY: integration-test
@@ -40,5 +40,5 @@ integration-test: test-cluster-create
 	KUBECONFIG=./tests/kubeconfig.yaml cask exec buttercup -L . tests/integration/
 
 .PHONY: test-cluster-stop
-test-cluster-stop: integration-test
+test-cluster-stop:
 	kind delete cluster --kubeconfig ./tests/kubeconfig.yaml --name kele-test-cluster0

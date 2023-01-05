@@ -33,7 +33,7 @@
   (it "returns the proper annotation text"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
     (async-wait (kele--update-kubeconfig))
-    (expect (kele--context-annotate "development") :to-equal " (development-cluster, https://development.org/server)")))
+    (expect (kele--context-annotate "development") :to-equal " (development-cluster, https://123.456.789.0)")))
 
 (describe "kele-context-names"
   (it "returns the correct cluster names"
@@ -62,11 +62,11 @@
     (spy-on 'kele-current-context-name :and-return-value "no-namespace")
     (expect (kele-current-namespace) :to-equal nil)))
 
-(describe "kele--context-cluster"
+(describe "kele--context-cluster-name"
   (it "returns the correct cluster"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
     (async-wait (kele--update-kubeconfig))
-    (expect (kele--context-cluster "development") :to-equal "development-cluster")))
+    (expect (kele--context-cluster-name "development") :to-equal "development-cluster")))
 
 (describe "kele--retry"
   :var (foo)
@@ -156,4 +156,13 @@
   (describe "when a resource has no TTL override"
     (it "uses the default value"
       (expect (kele--get-cache-ttl-for-resource 'bar) :to-equal 60))))
+
+(describe "kele--get-discovery-cache-for-contexts"
+  (before-each
+    (setq kele-cache-dir (f-expand "./tests/testdata/cache")))
+
+  (it "retrieves the discovery cache, keyed on context"
+    (let ((res (kele--get-discovery-cache-for-contexts "development")))
+      (expect res :to-equal nil)        ; obviously incorrect
+      )))
 ;;; test-kele.el ends here

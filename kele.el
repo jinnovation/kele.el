@@ -27,6 +27,7 @@
 (require 'ht)
 (require 'plz)
 (require 'subr-x)
+(require 'url-parse)
 (require 'yaml)
 (require 'json)
 
@@ -453,16 +454,6 @@ Retval is an alist where the key is the context name and the
   "Keymap for actions on Kubernetes contexts.
 
 Only populated if Embark is installed.")
-
-(cl-defun kele-get-object (&key type name namespace context)
-  "Get the manifest of TYPE named NAME.
-
-If NAMESPACE and CONTEXT are nil, use the current context and
-namespace respectively."
-  "hello")
-
-;; (defvar kele-default-resource-keymap (let ((map (make-sparse-keymap)))
-;;                                        (define-key map "g" #'kele-get-object)))
 
 (defvar kele--namespace-keymap nil
   "Keymap for actions on Kubernetes namespaces.
