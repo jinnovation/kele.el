@@ -56,7 +56,7 @@ jobs:
       - name: Run integration tests
         if: steps.kind.outcome == 'success' && steps.kind.conclusion == 'success'
         run: |
-          make integration-test
+          cask exec buttercup -L . tests/integration/
 
       - name: Upload coverage
         if: steps.install.outcome == 'success' && steps.install.conclusion == 'success'
