@@ -51,7 +51,7 @@ jobs:
         id: kind
         uses: helm/kind-action@v1.4.0
         with:
-          config: ./tests/test-cluster.yaml
+          config: tests/test-cluster.yaml
 
       - name: Run integration tests
         if: steps.kind.outcome == 'success' && steps.kind.conclusion == 'success'
