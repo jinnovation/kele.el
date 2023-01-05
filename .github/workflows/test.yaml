@@ -20,6 +20,7 @@ jobs:
     env:
       EMACS_VERSION: ${{ matrix.emacs_version }}
     steps:
+      - uses: actions/checkout@v3
       - name: Setup integration test cluster
         id: kind
         uses: helm/kind-action@v1.4.0
@@ -39,7 +40,6 @@ jobs:
         uses: conao3/setup-cask@master
         with:
           version: "snapshot"
-      - uses: actions/checkout@v3
       - name: Install
         id: install
         continue-on-error: ${{ matrix.ignore_error != '' && matrix.ignore_error }}
