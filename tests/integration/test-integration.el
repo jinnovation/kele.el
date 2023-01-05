@@ -15,5 +15,5 @@
 
 (describe "kele--proxy-process"
   (it "successfully creates a proxy process"
-    (kele--proxy-process "kind-kele-test-cluster0" 9999 :wait t :read-only t)
+    (kele--proxy-process "kind-kele-test-cluster0" :port 9999 :wait t :read-only t)
     (expect (plz 'get "http://127.0.0.1:9999/readyz") :to-equal "ok")))
