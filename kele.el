@@ -159,7 +159,9 @@ If WAIT is non-nil, `kele--proxy-process' will wait for the proxy
 
 (cl-defun kele-kubectl-do (&rest args)
   "Execute kubectl with ARGS."
-  (let ((cmd (append (list kele-kubectl-executable) args)))
+  (let ((cmd (append (list kele-kubectl-executable)
+                     `("--kubeconfig" ,kele-kubeconfig-path)
+                     args)))
     (make-process
      :name (format "kele: %s" (s-join " " cmd))
      :command cmd

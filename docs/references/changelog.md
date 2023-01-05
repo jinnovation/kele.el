@@ -26,6 +26,8 @@ versioning][semver].
 - Fixed an issue where attempting to pull completion candidates via queries to
   the proxy API server resulted in an error, as well as multiple proxy server
   processes being inadvertently spun up for the same context
+- Fixed an issue where custom kubeconfig path is not respected by `kubectl`
+  invocations
 
 ### Changed
 
