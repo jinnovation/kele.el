@@ -13,6 +13,16 @@
       (async-wait (kele--update-kubeconfig))
       (expect (kele-current-namespace) :to-equal "kube-public"))))
 
+(describe "kele--fetch-namespaces"
+  (it "fetches namespace names"
+    (expect (kele--fetch-namespaces "kind-kele-test-cluster0")
+            :to-equal
+            '("default"
+              "kube-node-lease"
+              "kube-public"
+              "kube-system"
+              "local-path-storage"))))
+
 (describe "kele--proxy-process"
   (it "successfully creates a proxy process"
     (kele--proxy-process "kind-kele-test-cluster0" :port 9999 :wait t :read-only t)
