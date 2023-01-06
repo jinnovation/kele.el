@@ -157,26 +157,83 @@
     (it "uses the default value"
       (expect (kele--get-cache-ttl-for-resource 'bar) :to-equal 60))))
 
-(describe "kele--get-discovery-cache"
-  (before-each
-    (setq kele-cache-dir (f-expand "./tests/testdata/cache")))
-
+(describe "kele--update-discovery-cache"
   (describe "the retval"
-    :var (retval)
-
-    (before-each
-      (setq retval (kele--get-discovery-cache)))
     (it "is keyed on host"
-      (expect (map-keys retval) :to-have-same-items-as '("123.456.789.0")))
+      (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
+      (async-wait (kele--update-discovery-cache))
+
+      (expect (map-keys kele--discovery-cache) :to-have-same-items-as '("123.456.789.0")))
 
     (it "contains the expected resources"
-      (let* ((api-resource-lists (alist-get "123.456.789.0" retval nil nil #'equal))
+      (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
+      (async-wait (kele--update-discovery-cache))
+      (let* ((api-resource-lists (alist-get "123.456.789.0" kele--discovery-cache nil nil #'equal))
              (resource-lists (-map (lambda (arl) (alist-get 'resources arl))
                                    api-resource-lists))
              (resources (-flatten-n 1 resource-lists))
              (names (-map (lambda (r) (alist-get 'name r)) resources)))
-        (expect names :to-contain "bindings")
-        (expect names :to-contain "configmaps")
-        (expect names :to-contain "nodes")
-        (expect names :to-contain "pods")))))
+        (expect names :to-have-same-items-as
+                '("componentstatuses"
+                  "configmaps"
+                  "namespaces"
+                  "namespaces/finalize"
+                  "namespaces/status"
+                  "nodes"
+                  "nodes/status"
+                  "pods"
+                  "pods/attach"
+                  "pods/binding"
+                  "pods/eviction"
+                  "pods/exec"
+                  "pods/log"
+                  "pods/portforward"
+                  "pods/proxy"
+                  "pods/status"
+                  "replicationcontrollers"
+                  "replicationcontrollers/scale"
+                  "replicationcontrollers/status"
+                  "resourcequotas"
+                  "resourcequotas/status"
+                  "secrets"
+                  "serviceaccounts"
+                  "services"
+                  "services/proxy"
+                  "services/status")
+                )))))
+
+(describe "kele--get-resource-types-for-context"
+  (it "contains the expected resources"
+    (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
+    (async-wait (kele--update-discovery-cache))
+
+    (let ((res (kele--get-resource-types-for-context "development")))
+      (expect res
+              :to-have-same-items-as
+              '("componentstatuses"
+                "configmaps"
+                "namespaces"
+                "namespaces/finalize"
+                "namespaces/status"
+                "nodes"
+                "nodes/status"
+                "pods"
+                "pods/attach"
+                "pods/binding"
+                "pods/eviction"
+                "pods/exec"
+                "pods/log"
+                "pods/portforward"
+                "pods/proxy"
+                "pods/status"
+                "replicationcontrollers"
+                "replicationcontrollers/scale"
+                "replicationcontrollers/status"
+                "resourcequotas"
+                "resourcequotas/status"
+                "secrets"
+                "serviceaccounts"
+                "services"
+                "services/proxy"
+                "services/status")))))
 ;;; test-kele.el ends here

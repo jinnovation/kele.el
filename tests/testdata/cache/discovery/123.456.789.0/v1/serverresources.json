@@ -1,15 +1,6 @@
 {
     "resources": [
         {
-            "verbs": [
-                "create"
-            ],
-            "kind": "Binding",
-            "namespaced": true,
-            "singularName": "",
-            "name": "bindings"
-        },
-        {
             "shortNames": [
                 "cs"
             ],
@@ -41,66 +32,6 @@
             "namespaced": true,
             "singularName": "",
             "name": "configmaps"
-        },
-        {
-            "storageVersionHash": "fWeeMqaN/OA=",
-            "shortNames": [
-                "ep"
-            ],
-            "verbs": [
-                "create",
-                "delete",
-                "deletecollection",
-                "get",
-                "list",
-                "patch",
-                "update",
-                "watch"
-            ],
-            "kind": "Endpoints",
-            "namespaced": true,
-            "singularName": "",
-            "name": "endpoints"
-        },
-        {
-            "storageVersionHash": "r2yiGXH7wu8=",
-            "shortNames": [
-                "ev"
-            ],
-            "verbs": [
-                "create",
-                "delete",
-                "deletecollection",
-                "get",
-                "list",
-                "patch",
-                "update",
-                "watch"
-            ],
-            "kind": "Event",
-            "namespaced": true,
-            "singularName": "",
-            "name": "events"
-        },
-        {
-            "storageVersionHash": "EBKMFVe6cwo=",
-            "shortNames": [
-                "limits"
-            ],
-            "verbs": [
-                "create",
-                "delete",
-                "deletecollection",
-                "get",
-                "list",
-                "patch",
-                "update",
-                "watch"
-            ],
-            "kind": "LimitRange",
-            "namespaced": true,
-            "singularName": "",
-            "name": "limitranges"
         },
         {
             "storageVersionHash": "Q3oi5N2YM8M=",
@@ -163,19 +94,6 @@
         },
         {
             "verbs": [
-                "create",
-                "delete",
-                "get",
-                "patch",
-                "update"
-            ],
-            "kind": "NodeProxyOptions",
-            "namespaced": false,
-            "singularName": "",
-            "name": "nodes/proxy"
-        },
-        {
-            "verbs": [
                 "get",
                 "patch",
                 "update"
@@ -184,68 +102,6 @@
             "namespaced": false,
             "singularName": "",
             "name": "nodes/status"
-        },
-        {
-            "storageVersionHash": "QWTyNDq0dC4=",
-            "shortNames": [
-                "pvc"
-            ],
-            "verbs": [
-                "create",
-                "delete",
-                "deletecollection",
-                "get",
-                "list",
-                "patch",
-                "update",
-                "watch"
-            ],
-            "kind": "PersistentVolumeClaim",
-            "namespaced": true,
-            "singularName": "",
-            "name": "persistentvolumeclaims"
-        },
-        {
-            "verbs": [
-                "get",
-                "patch",
-                "update"
-            ],
-            "kind": "PersistentVolumeClaim",
-            "namespaced": true,
-            "singularName": "",
-            "name": "persistentvolumeclaims/status"
-        },
-        {
-            "storageVersionHash": "HN/zwEC+JgM=",
-            "shortNames": [
-                "pv"
-            ],
-            "verbs": [
-                "create",
-                "delete",
-                "deletecollection",
-                "get",
-                "list",
-                "patch",
-                "update",
-                "watch"
-            ],
-            "kind": "PersistentVolume",
-            "namespaced": false,
-            "singularName": "",
-            "name": "persistentvolumes"
-        },
-        {
-            "verbs": [
-                "get",
-                "patch",
-                "update"
-            ],
-            "kind": "PersistentVolume",
-            "namespaced": false,
-            "singularName": "",
-            "name": "persistentvolumes/status"
         },
         {
             "storageVersionHash": "xPOwRZ+Yhw8=",
@@ -352,23 +208,6 @@
             "namespaced": true,
             "singularName": "",
             "name": "pods/status"
-        },
-        {
-            "storageVersionHash": "LIXB2x4IFpk=",
-            "verbs": [
-                "create",
-                "delete",
-                "deletecollection",
-                "get",
-                "list",
-                "patch",
-                "update",
-                "watch"
-            ],
-            "kind": "PodTemplate",
-            "namespaced": true,
-            "singularName": "",
-            "name": "podtemplates"
         },
         {
             "storageVersionHash": "Jond2If31h0=",
@@ -484,17 +323,6 @@
             "namespaced": true,
             "singularName": "",
             "name": "serviceaccounts"
-        },
-        {
-            "verbs": [
-                "create"
-            ],
-            "kind": "TokenRequest",
-            "version": "v1",
-            "group": "authentication.k8s.io",
-            "namespaced": true,
-            "singularName": "",
-            "name": "serviceaccounts/token"
         },
         {
             "storageVersionHash": "0/CO1lhkEBI=",
