@@ -456,7 +456,7 @@ said cache."
                  `(,key . ,api-lists))))))
 
 (defun kele--update-discovery-cache (&optional _)
-  "Update `kele--discovery-cache' with the values fro `kele-cache-dir'.
+  "Update `kele--discovery-cache' with the values from `kele-cache-dir'.
 
 This is done asynchronously.  To wait on the results, pass the
 retval into `async-wait'."
