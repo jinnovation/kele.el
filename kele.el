@@ -446,7 +446,11 @@ Retval is an alist where the key is the context name and the
                                                 (lambda (file)
                                                   (equal (f-ext file) "json"))
                                                 t))
-                       (api-lists (-map #'json-read-file api-list-files)))
+                       (api-lists (-map (lambda (file)
+                                          (json-parse-string (f-read file)
+                                                             :object-type 'alist
+                                                             :array-type 'list))
+                                        api-list-files)))
                  `(,context . ,api-lists))))))
 
 (defvar kele--context-keymap nil

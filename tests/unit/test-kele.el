@@ -5,6 +5,7 @@
 (load-file "./tests/unit/undercover-init.el")
 
 (require 'async)
+(require 'dash)
 (require 'f)
 
 (require 'kele)
@@ -130,7 +131,6 @@
   (describe "when context is present in cache"
     (it "deletes the entry"
       (kele--clear-namespaces-for-context "foo")
-      (message "%s" kele--context-namespaces)
       (expect kele--context-namespaces :to-equal nil))))
 
 (describe "kele--cache-namespaces"
@@ -161,8 +161,22 @@
   (before-each
     (setq kele-cache-dir (f-expand "./tests/testdata/cache")))
 
-  (it "retrieves the discovery cache, keyed on context"
-    (let ((res (kele--get-discovery-cache-for-contexts "development")))
-      (expect res :to-equal nil)        ; obviously incorrect
-      )))
+  (describe "the retval"
+    :var (retval)
+
+    (before-each
+      (setq retval (kele--get-discovery-cache-for-contexts "development")))
+
+    (it "is keyed on context"
+      (expect (map-keys retval) :to-have-same-items-as '("development")))
+    (it "contains the expected resources"
+      (let* ((api-resource-lists (alist-get "development" retval nil nil #'equal))
+             (resource-lists (-map (lambda (arl) (alist-get 'resources arl))
+                                   api-resource-lists))
+             (resources (-flatten-n 1 resource-lists))
+             (names (-map (lambda (r) (alist-get 'name r)) resources)))
+        (expect names :to-contain "bindings")
+        (expect names :to-contain "configmaps")
+        (expect names :to-contain "nodes")
+        (expect names :to-contain "pods")))))
 ;;; test-kele.el ends here
