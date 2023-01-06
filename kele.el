@@ -180,7 +180,9 @@ If WAIT is non-nil, `kele--proxy-process' will wait for the proxy
 (defvar kele--discovery-cache nil
   "Discovery cache.
 
-Alist mapping contexts to the discovered APIs.")
+Alist mapping contexts to the discovered APIs.  Key is the host
+name and the value is a list of all the APIGroupLists and
+APIResourceLists found in said cache.")
 
 ;; TODO: At some point it might become necessary to return select metadata about
 ;; the resources, e.g. group and version
@@ -447,26 +449,6 @@ The cache has a TTL as defined by
    nil
    #'kele--clear-namespaces-for-context
    context))
-
-(defun kele--get-discovery-cache ()
-  "Get the discovery cache.
-
-Retval is an alist where the key is the host name and the value
-is a list of all the APIGroupLists and APIResourceLists found in
-said cache."
-  (->> (f-entries (f-join kele-cache-dir "discovery"))
-       (-map (lambda (dir)
-               (let* ((api-list-files (f-files dir
-                                               (lambda (file)
-                                                 (equal (f-ext file) "json"))
-                                               t))
-                      (api-lists (-map (lambda (file)
-                                         (json-parse-string (f-read file)
-                                                            :object-type 'alist
-                                                            :array-type 'list))
-                                       api-list-files))
-                      (key (f-relative dir (f-join kele-cache-dir "discovery"))))
-                 `(,key . ,api-lists))))))
 
 (defun kele--update-discovery-cache (&optional _)
   "Update `kele--discovery-cache' with the values from `kele-cache-dir'.
