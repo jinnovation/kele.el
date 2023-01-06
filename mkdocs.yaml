@@ -21,6 +21,7 @@ nav:
 
 theme:
   name: material
+  logo: assets/logo.png
   palette:
     scheme: slate
   features:
