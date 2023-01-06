@@ -15,6 +15,7 @@ nav:
       - how-tos/integrations.md
   - Explanations:
       - explanations/comparisons.md
+      - explanations/design.md
   - References:
       - references/changelog.md
 
