@@ -62,6 +62,7 @@ jobs:
           max_attempts: 3
           retry_on: timeout
           timeout_minutes: 3
+          on_retry_command: rm ./coverage/integration/lcov-buttercup.info
           command: |
             cask exec buttercup -L . tests/integration/
 
