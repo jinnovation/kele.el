@@ -48,7 +48,7 @@ This initial release of Kele has a very simple goal: "[`kubectx` and
 foundation -- both in terms of implementation and "design philosophy" -- for
 future enhancements.
 
-## Added
+### Added
 
 - Added ability to switch and rename contexts, with completion and caching
 - Added ability to switch namespaces for any given context
