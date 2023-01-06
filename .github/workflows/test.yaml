@@ -62,8 +62,8 @@ jobs:
           max_attempts: 3
           retry_on: timeout
           timeout_minutes: 3
-        run: |
-          cask exec buttercup -L . tests/integration/
+          command: |
+            cask exec buttercup -L . tests/integration/
 
       - name: Upload coverage
         if: steps.install.outcome == 'success' && steps.install.conclusion == 'success'
