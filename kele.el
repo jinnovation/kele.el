@@ -531,8 +531,8 @@ Only populated if Embark is installed.")
         ;; FIXME: Update the watcher when `kele-kubeconfig-path' changes.
         (file-notify-add-watch kele-kubeconfig-path '(change) #'kele--update-kubeconfig))
 
-  ;; FIXME: Setting this on directory only tracks file additions or deletions,
-  ;; not changes to the files themselves
+  ;; FIXME: Need to set watchers on each subdirectory containing
+  ;; clusterresources.json, as file watch is not recursive
   ;; (setq kele--discovery-cache-watcher
   ;;       (file-notify-add-watch (f-join kele-cache-dir "discovery/") '(change) #'kele--update-discovery-cache))
 
