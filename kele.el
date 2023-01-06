@@ -335,11 +335,18 @@ STR, PRED, and ACTION are as defined in completion functions."
                  (category . kele-context))
     (complete-with-action action (kele-context-names) str pred)))
 
+(defmacro kele--with-progress (msg &rest body)
+  "Execute BODY with a progress reporter using MSG."
+  (declare (indent defun))
+  `(let ((prog (make-progress-reporter ,msg)))
+    ,@body
+    (progress-reporter-done prog)))
+
 (defun kele-context-switch (context)
   "Switch to CONTEXT."
   (interactive (list (completing-read "Context: " #'kele--contexts-complete)))
-  ;; TODO: Message that this has been done
-  (kele-kubectl-do "config" "use-context" context))
+  (kele--with-progress (format "Switching to use context `%s'..." context)
+    (kele-kubectl-do "config" "use-context" context)))
 
 (defun kele-context-rename (old-name new-name)
   "Rename context named OLD-NAME to NEW-NAME."
