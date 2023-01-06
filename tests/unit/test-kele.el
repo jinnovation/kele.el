@@ -157,7 +157,7 @@
     (it "uses the default value"
       (expect (kele--get-cache-ttl-for-resource 'bar) :to-equal 60))))
 
-(describe "kele--get-discovery-cache-for-contexts"
+(describe "kele--get-discovery-cache"
   (before-each
     (setq kele-cache-dir (f-expand "./tests/testdata/cache")))
 
@@ -165,12 +165,12 @@
     :var (retval)
 
     (before-each
-      (setq retval (kele--get-discovery-cache-for-contexts "development")))
+      (setq retval (kele--get-discovery-cache)))
+    (it "is keyed on host"
+      (expect (map-keys retval) :to-have-same-items-as '("123.456.789.0")))
 
-    (it "is keyed on context"
-      (expect (map-keys retval) :to-have-same-items-as '("development")))
     (it "contains the expected resources"
-      (let* ((api-resource-lists (alist-get "development" retval nil nil #'equal))
+      (let* ((api-resource-lists (alist-get "123.456.789.0" retval nil nil #'equal))
              (resource-lists (-map (lambda (arl) (alist-get 'resources arl))
                                    api-resource-lists))
              (resources (-flatten-n 1 resource-lists))

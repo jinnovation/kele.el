@@ -182,6 +182,11 @@ If WAIT is non-nil, `kele--proxy-process' will wait for the proxy
 
 Alist mapping contexts to the discovered APIs.")
 
+(defvar kele--discovery-cache-watcher nil
+  "Descriptor of the file watcher on the discovery cache.
+
+The discovery cache is assumed to live under `kele-cache-dir'.")
+
 (defvar kele--kubeconfig nil
   "The current kubeconfig.
 
@@ -430,31 +435,48 @@ The cache has a TTL as defined by
    #'kele--clear-namespaces-for-context
    context))
 
-(defun kele--get-discovery-cache-for-contexts (&rest context-names)
-  "Get discovery cache for CONTEXT-NAMES.
+(defun kele--get-discovery-cache ()
+  "Get the discovery cache.
 
-If CONTEXT-NAMES is not provided, the current context name is
-used.
+Retval is an alist where the key is the host name and the value
+is a list of all the APIGroupLists and APIResourceLists found in
+said cache."
+  (->> (f-entries (f-join kele-cache-dir "discovery"))
+       (-map (lambda (dir)
+               (let* ((api-list-files (f-files dir
+                                               (lambda (file)
+                                                 (equal (f-ext file) "json"))
+                                               t))
+                      (api-lists (-map (lambda (file)
+                                         (json-parse-string (f-read file)
+                                                            :object-type 'alist
+                                                            :array-type 'list))
+                                       api-list-files))
+                      (key (f-relative dir (f-join kele-cache-dir "discovery"))))
+                 `(,key . ,api-lists))))))
 
-Retval is an alist where the key is the context name and the
-  value is a list of all the APIGroupLists and APIResourceLists
-  found in the cache for that context."
-  (->> (or context-names (list (kele-current-context-name)))
-       (-map (lambda (context)
-               (-let* (((&alist 'cluster (&alist 'server server)) (kele--context-cluster context))
-                       (discovery-cache-path (format "%s/discovery/%s"
-                                                     kele-cache-dir
-                                                     (url-host (url-generic-parse-url server))))
-                       (api-list-files (f-files discovery-cache-path
-                                                (lambda (file)
-                                                  (equal (f-ext file) "json"))
-                                                t))
-                       (api-lists (-map (lambda (file)
-                                          (json-parse-string (f-read file)
-                                                             :object-type 'alist
-                                                             :array-type 'list))
-                                        api-list-files)))
-                 `(,context . ,api-lists))))))
+(defun kele--update-discovery-cache (&optional _)
+  "Update `kele--discovery-cache' with the values fro `kele-cache-dir'.
+
+This is done asynchronously.  To wait on the results, pass the
+retval into `async-wait'."
+  (let* ((progress-reporter (make-progress-reporter "Pulling discovery cache..."))
+         (func-complete (lambda (cache)
+                          (setq kele--discovery-cache cache)
+                          (progress-reporter-done progress-reporter))))
+    (async-start `(lambda ()
+                    (add-to-list 'load-path (file-name-directory ,(locate-library "dash")))
+                    (add-to-list 'load-path (file-name-directory ,(locate-library "f")))
+                    (add-to-list 'load-path (file-name-directory ,(locate-library "s")))
+                    (add-to-list 'load-path (file-name-directory ,(locate-library "yaml")))
+                    (require 'f)
+                    (require 'json)
+                    (require 'yaml)
+                    (defalias 'get-discovery-cache ,(symbol-function 'kele--get-discovery-cache))
+
+                    ,(async-inject-variables "kele-cache-dir")
+                    (get-discovery-cache))
+                 func-complete)))
 
 (defvar kele--context-keymap nil
   "Keymap for actions on Kubernetes contexts.
@@ -496,6 +518,12 @@ Only populated if Embark is installed.")
   (setq kele--kubeconfig-watcher
         ;; FIXME: Update the watcher when `kele-kubeconfig-path' changes.
         (file-notify-add-watch kele-kubeconfig-path '(change) #'kele--update-kubeconfig))
+
+  ;; FIXME: Setting this on directory only tracks file additions or deletions,
+  ;; not changes to the files themselves
+  ;; (setq kele--discovery-cache-watcher
+  ;;       (file-notify-add-watch (f-join kele-cache-dir "discovery/") '(change) #'kele--update-discovery-cache))
+
   (kele--setup-embark-maybe)
   (if (featurep 'awesome-tray)
       (with-suppressed-warnings ((free-vars awesome-tray-module-alist))
