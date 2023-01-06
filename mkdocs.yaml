@@ -14,8 +14,8 @@ nav:
       - how-tos/usage.md
       - how-tos/integrations.md
   - Explanations:
-      - explanations/comparisons.md
       - explanations/design.md
+      - explanations/comparisons.md
   - References:
       - references/changelog.md
 
