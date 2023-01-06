@@ -11,6 +11,8 @@ versioning][semver].
 
 ## Upcoming
 
+## 0.1.1
+
 ### Added
 
 - Kubeconfig file watching is now asynchronous and therefore non-blocking!
