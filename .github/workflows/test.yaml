@@ -53,8 +53,15 @@ jobs:
         with:
           config: tests/test-cluster.yaml
           cluster_name: kele-test-cluster0
+
       - name: Run integration tests
         if: steps.kind.outcome == 'success' && steps.kind.conclusion == 'success'
+        uses: nick-fields/retry@v2
+        with:
+          # at least one test is flaky. See #40
+          max_attempts: 3
+          retry_on: timeout
+          timeout_minutes: 3
         run: |
           cask exec buttercup -L . tests/integration/
 
