@@ -180,7 +180,22 @@ If WAIT is non-nil, `kele--proxy-process' will wait for the proxy
 (defvar kele--discovery-cache nil
   "Discovery cache.
 
-Alist mapping contexts to the discovered APIs.")
+Alist mapping contexts to the discovered APIs.  Key is the host
+name and the value is a list of all the APIGroupLists and
+APIResourceLists found in said cache.")
+
+;; TODO: At some point it might become necessary to return select metadata about
+;; the resources, e.g. group and version
+(defun kele--get-resource-types-for-context (context-name)
+  "Retrieve the names of all resource types for CONTEXT-NAME."
+  (-if-let* (((&alist 'cluster (&alist 'server server)) (kele--context-cluster context-name))
+             (host (url-host (url-generic-parse-url server))))
+      (->> (alist-get host kele--discovery-cache nil nil #'equal)
+           (-filter (lambda (resource-list) (equal (alist-get 'kind resource-list) "APIResourceList")))
+           (-map (lambda (list) (alist-get 'resources list)))
+           (-flatten-n 1)
+           (-map (lambda (resource) (alist-get 'name resource)))
+           (-uniq))))
 
 (defvar kele--discovery-cache-watcher nil
   "Descriptor of the file watcher on the discovery cache.
@@ -435,26 +450,6 @@ The cache has a TTL as defined by
    #'kele--clear-namespaces-for-context
    context))
 
-(defun kele--get-discovery-cache ()
-  "Get the discovery cache.
-
-Retval is an alist where the key is the host name and the value
-is a list of all the APIGroupLists and APIResourceLists found in
-said cache."
-  (->> (f-entries (f-join kele-cache-dir "discovery"))
-       (-map (lambda (dir)
-               (let* ((api-list-files (f-files dir
-                                               (lambda (file)
-                                                 (equal (f-ext file) "json"))
-                                               t))
-                      (api-lists (-map (lambda (file)
-                                         (json-parse-string (f-read file)
-                                                            :object-type 'alist
-                                                            :array-type 'list))
-                                       api-list-files))
-                      (key (f-relative dir (f-join kele-cache-dir "discovery"))))
-                 `(,key . ,api-lists))))))
-
 (defun kele--update-discovery-cache (&optional _)
   "Update `kele--discovery-cache' with the values from `kele-cache-dir'.
 
@@ -472,10 +467,20 @@ retval into `async-wait'."
                     (require 'f)
                     (require 'json)
                     (require 'yaml)
-                    (defalias 'kele--get-discovery-cache-copy ,(symbol-function 'kele--get-discovery-cache))
-
                     ,(async-inject-variables "kele-cache-dir")
-                    (kele--get-discovery-cache-copy))
+                    (->> (f-entries (f-join kele-cache-dir "discovery"))
+                         (-map (lambda (dir)
+                                 (let* ((api-list-files (f-files dir
+                                                                 (lambda (file)
+                                                                   (equal (f-ext file) "json"))
+                                                                 t))
+                                        (api-lists (-map (lambda (file)
+                                                           (json-parse-string (f-read file)
+                                                                              :object-type 'alist
+                                                                              :array-type 'list))
+                                                         api-list-files))
+                                        (key (f-relative dir (f-join kele-cache-dir "discovery"))))
+                                   `(,key . ,api-lists))))))
                  func-complete)))
 
 (defvar kele--context-keymap nil
