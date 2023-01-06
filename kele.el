@@ -43,6 +43,12 @@
   :type 'directory
   :group 'kele)
 
+(defcustom kele-cache-dir
+  (f-join (f-dirname kele-kubeconfig-path) "cache")
+  "Path to the kubectl cache."
+  :group 'kele
+  :type 'directory)
+
 (defcustom kele-kubectl-executable "kubectl"
   "The kubectl executable to use."
   :type 'string
@@ -171,6 +177,11 @@ If WAIT is non-nil, `kele--proxy-process' will wait for the proxy
 (defvar kele--kubeconfig-watcher nil
   "Descriptor of the file watcher on `kele-kubeconfig-path'.")
 
+(defvar kele--discovery-cache nil
+  "Discovery cache.
+
+Alist mapping contexts to the discovered APIs.")
+
 (defvar kele--kubeconfig nil
   "The current kubeconfig.
 
@@ -232,7 +243,13 @@ configuration, e.g. via `kubectl config'."
   (-map (lambda (elem) (alist-get 'name elem)) (alist-get 'contexts kele--kubeconfig)))
 
 (defun kele--context-cluster (context-name)
-  "Get the cluster of the context named CONTEXT-NAME."
+  "Get the cluster metadata for the context named CONTEXT-NAME."
+  (-first (lambda (elem) (string= (alist-get 'name elem)
+                                  (kele--context-cluster-name context-name)))
+          (alist-get 'clusters kele--kubeconfig)))
+
+(defun kele--context-cluster-name (context-name)
+  "Get the name of the cluster of the context named CONTEXT-NAME."
   (if-let ((context (-first (lambda (elem) (string= (alist-get 'name elem) context-name))
                             (alist-get 'contexts kele--kubeconfig))))
       (alist-get 'cluster (alist-get 'context context))
@@ -409,6 +426,32 @@ The cache has a TTL as defined by
    nil
    #'kele--clear-namespaces-for-context
    context))
+
+(defun kele--get-discovery-cache-for-contexts (&rest context-names)
+  "Get discovery cache for CONTEXT-NAMES.
+
+If CONTEXT-NAMES is not provided, the current context name is
+used.
+
+Retval is an alist where the key is the context name and the
+  value is a list of all the APIGroupLists and APIResourceLists
+  found in the cache for that context."
+  (->> (or context-names (list (kele-current-context-name)))
+       (-map (lambda (context)
+               (-let* (((&alist 'cluster (&alist 'server server)) (kele--context-cluster context))
+                       (discovery-cache-path (format "%s/discovery/%s"
+                                                     kele-cache-dir
+                                                     (url-host (url-generic-parse-url server))))
+                       (api-list-files (f-files discovery-cache-path
+                                                (lambda (file)
+                                                  (equal (f-ext file) "json"))
+                                                t))
+                       (api-lists (-map (lambda (file)
+                                          (json-parse-string (f-read file)
+                                                             :object-type 'alist
+                                                             :array-type 'list))
+                                        api-list-files)))
+                 `(,context . ,api-lists))))))
 
 (defvar kele--context-keymap nil
   "Keymap for actions on Kubernetes contexts.
