@@ -472,10 +472,10 @@ retval into `async-wait'."
                     (require 'f)
                     (require 'json)
                     (require 'yaml)
-                    (defalias 'get-discovery-cache ,(symbol-function 'kele--get-discovery-cache))
+                    (defalias 'kele--get-discovery-cache-copy ,(symbol-function 'kele--get-discovery-cache))
 
                     ,(async-inject-variables "kele-cache-dir")
-                    (get-discovery-cache))
+                    (kele--get-discovery-cache-copy))
                  func-complete)))
 
 (defvar kele--context-keymap nil
