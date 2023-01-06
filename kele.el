@@ -193,20 +193,23 @@ configuration, e.g. via `kubectl config'.")
 
 This is done asynchronously.  To wait on the results, pass the
 retval into `async-wait'."
-  (async-start `(lambda ()
-                  ;; TODO: How to just do all of these in one fell swoop?
-                  (add-to-list 'load-path (file-name-directory ,(locate-library "yaml")))
-                  (add-to-list 'load-path (file-name-directory ,(locate-library "f")))
-                  (add-to-list 'load-path (file-name-directory ,(locate-library "s")))
-                  (add-to-list 'load-path (file-name-directory ,(locate-library "dash")))
-                  (require 'yaml)
-                  (require 'f)
-                  ,(async-inject-variables "kele-kubeconfig-path")
-                  (yaml-parse-string (f-read kele-kubeconfig-path)
-                                     :object-type 'alist
-                                     :sequence-type 'list))
-               (lambda (config)
-                 (setq kele--kubeconfig config))))
+  (let* ((progress-reporter (make-progress-reporter "Pulling kubeconfig contents..."))
+         (func-complete (lambda (config)
+                          (setq kele--kubeconfig config)
+                          (progress-reporter-done progress-reporter))))
+    (async-start `(lambda ()
+                    ;; TODO: How to just do all of these in one fell swoop?
+                    (add-to-list 'load-path (file-name-directory ,(locate-library "yaml")))
+                    (add-to-list 'load-path (file-name-directory ,(locate-library "f")))
+                    (add-to-list 'load-path (file-name-directory ,(locate-library "s")))
+                    (add-to-list 'load-path (file-name-directory ,(locate-library "dash")))
+                    (require 'yaml)
+                    (require 'f)
+                    ,(async-inject-variables "kele-kubeconfig-path")
+                    (yaml-parse-string (f-read kele-kubeconfig-path)
+                                       :object-type 'alist
+                                       :sequence-type 'list))
+                 func-complete)))
 
 (defun kele-current-context-name ()
   "Get the current context name.

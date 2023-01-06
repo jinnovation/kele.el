@@ -13,8 +13,10 @@ versioning][semver].
 
 ### Added
 
-- The primary update loop reading from kubeconfig and listening for changes on
-  it is now asynchronous and therefore non-blocking!
+- Kubeconfig file watching is now asynchronous and therefore non-blocking!
+- Kubeconfig file watching now prints a [progress report] denoting when changes
+  were detected (and thus reading has begun asynchronously) and when reading has
+  completed
 
 ### Fixed
 
@@ -50,3 +52,4 @@ future enhancements.
 - Added ability to switch namespaces for any given context
 
 [1]: https://github.com/ahmetb/kubectx
+[progress report]: https://www.gnu.org/software/emacs/manual/html_node/elisp/Progress.html
