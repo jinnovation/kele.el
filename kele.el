@@ -31,6 +31,8 @@
 (require 'url-parse)
 (require 'yaml)
 
+(require 'kele-fnr)
+
 (defgroup kele nil
   "Integration constructs for Kubernetes."
   :group 'external
@@ -531,6 +533,10 @@ Only populated if Embark is installed.")
         ;; FIXME: Update the watcher when `kele-kubeconfig-path' changes.
         (file-notify-add-watch kele-kubeconfig-path '(change) #'kele--update-kubeconfig))
 
+  (setq kele--discovery-cache-watcher
+        ;; FIXME: Update the watcher when `kele-cache-dir' changes.
+        (kele--fnr-add-watch (f-join kele-cache-dir "discovery/") '(change) #'kele--update-discovery-cache))
+
   ;; FIXME: Need to set watchers on each subdirectory containing
   ;; clusterresources.json, as file watch is not recursive
   ;; (setq kele--discovery-cache-watcher
@@ -545,6 +551,7 @@ Only populated if Embark is installed.")
 (defun kele--disable ()
   "Disable Kele functionality."
   (file-notify-rm-watch kele--kubeconfig-watcher)
+  (kele--fnr-rm-watch kele--discovery-cache-watcher)
   (kele--teardown-embark-maybe)
   (if (featurep 'awesome-tray)
       (with-suppressed-warnings ((free-vars awesome-tray-module-alist))
