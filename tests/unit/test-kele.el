@@ -159,19 +159,22 @@
 
 (describe "kele--update-discovery-cache"
   (describe "the retval"
-    (it "is keyed on host"
+    (before-each
       (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
-      (async-wait (kele--update-discovery-cache))
-
+      (async-wait (kele--update-discovery-cache)))
+    (it "is keyed on host"
       (expect (map-keys kele--discovery-cache) :to-have-same-items-as '("123.456.789.0")))
 
+    (it "is sub-keyed on group-version"
+      (expect (map-keys (alist-get "123.456.789.0" kele--discovery-cache nil nil #'equal))
+              :to-have-same-items-as '("v1")))
+
     (it "contains the expected resources"
-      (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
-      (async-wait (kele--update-discovery-cache))
-      (let* ((api-resource-lists (alist-get "123.456.789.0" kele--discovery-cache nil nil #'equal))
-             (resource-lists (-map (lambda (arl) (alist-get 'resources arl))
-                                   api-resource-lists))
-             (resources (-flatten-n 1 resource-lists))
+      (let* ((api-resource-list (alist-get
+                                  "v1"
+                                  (alist-get "123.456.789.0" kele--discovery-cache nil nil #'equal)
+                                  nil nil #'equal))
+             (resources (alist-get 'resources api-resource-list))
              (names (-map (lambda (r) (alist-get 'name r)) resources)))
         (expect names :to-have-same-items-as
                 '("componentstatuses"
@@ -199,8 +202,7 @@
                   "serviceaccounts"
                   "services"
                   "services/proxy"
-                  "services/status")
-                )))))
+                  "services/status"))))))
 
 (describe "kele--get-resource-types-for-context"
   (it "contains the expected resources"

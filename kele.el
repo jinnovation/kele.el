@@ -182,12 +182,11 @@ If WAIT is non-nil, `kele--proxy-process' will wait for the proxy
 (defvar kele--discovery-cache nil
   "Discovery cache.
 
-Alist mapping contexts to the discovered APIs.  Key is the host
-name and the value is a list of all the APIGroupLists and
-APIResourceLists found in said cache.")
+Alist mapping contexts to the discovered APIs.
 
-;; TODO: At some point it might become necessary to return select metadata about
-;; the resources, e.g. group and version
+Key is the host name; sub-key is the group-version, e.g. \"apps.k8s.io/v1\";
+value is the APIResourceList payload serialized into an alist.")
+
 (defun kele--get-resource-types-for-context (context-name)
   "Retrieve the names of all resource types for CONTEXT-NAME."
   (-if-let* (((&alist 'cluster (&alist 'server server)) (kele--context-cluster context-name))
@@ -459,6 +458,18 @@ The cache has a TTL as defined by
    #'kele--clear-namespaces-for-context
    context))
 
+;; TODO: class for filesystem-based cache
+;;
+;; fields:
+;;   file-watch ID
+;;   alist cache
+;;
+;; methods:
+;;   (cl-defgeneric bootstrap)
+;;   (cl-defgeneric update)
+;;   (cl-defgeneric start)
+;;   (cl-defgeneric teardown)
+
 (defun kele--update-discovery-cache (&optional _)
   "Update `kele--discovery-cache' with the values from `kele-cache-dir'.
 
@@ -477,19 +488,27 @@ retval into `async-wait'."
                     (require 'json)
                     (require 'yaml)
                     ,(async-inject-variables "kele-cache-dir")
-                    (->> (f-entries (f-join kele-cache-dir "discovery"))
-                         (-map (lambda (dir)
-                                 (let* ((api-list-files (f-files dir
-                                                                 (lambda (file)
-                                                                   (equal (f-ext file) "json"))
-                                                                 t))
-                                        (api-lists (-map (lambda (file)
-                                                           (json-parse-string (f-read file)
-                                                                              :object-type 'alist
-                                                                              :array-type 'list))
-                                                         api-list-files))
-                                        (key (f-relative dir (f-join kele-cache-dir "discovery"))))
-                                   `(,key . ,api-lists))))))
+
+                    (->> (f-files (f-join kele-cache-dir "discovery")
+                                  (lambda (file)
+                                    (and (equal (f-ext file) "json")
+                                         (not (equal (f-base file) "servergroups"))))
+                                  t)
+                         (-map (lambda (file)
+                                 (cons (s-split-up-to "/"
+                                                      (f-relative
+                                                       (f-dirname file)
+                                                       (f-join kele-cache-dir "discovery"))
+                                                      1)
+                                       (json-parse-string (f-read file)
+                                                          :object-type 'alist
+                                                          :array-type 'list))))
+                         (--group-by (car (car it)))
+                         (-map (lambda (host-entries)
+                                 (let* ((entries (cdr host-entries))
+                                        (processed-entries (-map (lambda (entry) `(,(cadr (car entry)) . ,(cdr entry)))
+                                                                 entries)))
+                                   `(,(car host-entries) . ,processed-entries))))))
                  func-complete)))
 
 (defvar kele--context-keymap nil
@@ -536,11 +555,6 @@ Only populated if Embark is installed.")
   (setq kele--discovery-cache-watcher
         ;; FIXME: Update the watcher when `kele-cache-dir' changes.
         (kele--fnr-add-watch (f-join kele-cache-dir "discovery/") '(change) #'kele--update-discovery-cache))
-
-  ;; FIXME: Need to set watchers on each subdirectory containing
-  ;; clusterresources.json, as file watch is not recursive
-  ;; (setq kele--discovery-cache-watcher
-  ;;       (file-notify-add-watch (f-join kele-cache-dir "discovery/") '(change) #'kele--update-discovery-cache))
 
   (kele--setup-embark-maybe)
   (if (featurep 'awesome-tray)
