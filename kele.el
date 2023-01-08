@@ -1,6 +1,6 @@
 ;;; kele.el --- Interface with Kubernetes -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2022-2022 Jonathan Jin
+;; Copyright (C) 2022-2023 Jonathan Jin
 
 ;; Author: Jonathan Jin <me@jonathanj.in>
 
