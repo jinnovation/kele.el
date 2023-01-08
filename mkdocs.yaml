@@ -14,12 +14,14 @@ nav:
       - how-tos/usage.md
       - how-tos/integrations.md
   - Explanations:
+      - explanations/design.md
       - explanations/comparisons.md
   - References:
       - references/changelog.md
 
 theme:
   name: material
+  logo: assets/logo.png
   palette:
     scheme: slate
   features:

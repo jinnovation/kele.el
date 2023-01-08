@@ -2,9 +2,10 @@
 ;;; Commentary:
 ;;; Code:
 
-(load-file "./tests/undercover-init.el")
+(load-file "./tests/unit/undercover-init.el")
 
 (require 'async)
+(require 'dash)
 (require 'f)
 
 (require 'kele)
@@ -26,19 +27,19 @@
 (describe "kele-current-context-name"
   (it "returns the correct current-context value"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
-    (async-wait (kele--update))
+    (async-wait (kele--update-kubeconfig))
     (expect (kele-current-context-name) :to-equal "development")))
 
 (describe "kele--context-annotate"
   (it "returns the proper annotation text"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
-    (async-wait (kele--update))
-    (expect (kele--context-annotate "development") :to-equal " (development-cluster, https://development.org/server)")))
+    (async-wait (kele--update-kubeconfig))
+    (expect (kele--context-annotate "development") :to-equal " (development-cluster, https://123.456.789.0)")))
 
 (describe "kele-context-names"
   (it "returns the correct cluster names"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
-    (async-wait (kele--update))
+    (async-wait (kele--update-kubeconfig))
 
     (expect (kele-context-names) :to-equal '("development" "no-namespace"))))
 
@@ -54,7 +55,7 @@
 (describe "kele-current-namespace"
   (before-each
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
-    (async-wait (kele--update)))
+    (async-wait (kele--update-kubeconfig)))
   (it "returns the default namespace for the current cluster"
     (spy-on 'kele-current-context-name :and-return-value "development")
     (expect (kele-current-namespace) :to-equal "development-namespace"))
@@ -62,11 +63,11 @@
     (spy-on 'kele-current-context-name :and-return-value "no-namespace")
     (expect (kele-current-namespace) :to-equal nil)))
 
-(describe "kele--context-cluster"
+(describe "kele--context-cluster-name"
   (it "returns the correct cluster"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
-    (async-wait (kele--update))
-    (expect (kele--context-cluster "development") :to-equal "development-cluster")))
+    (async-wait (kele--update-kubeconfig))
+    (expect (kele--context-cluster-name "development") :to-equal "development-cluster")))
 
 (describe "kele--retry"
   :var (foo)
@@ -130,7 +131,6 @@
   (describe "when context is present in cache"
     (it "deletes the entry"
       (kele--clear-namespaces-for-context "foo")
-      (message "%s" kele--context-namespaces)
       (expect kele--context-namespaces :to-equal nil))))
 
 (describe "kele--cache-namespaces"
@@ -156,4 +156,84 @@
   (describe "when a resource has no TTL override"
     (it "uses the default value"
       (expect (kele--get-cache-ttl-for-resource 'bar) :to-equal 60))))
+
+(describe "kele--update-discovery-cache"
+  (describe "the retval"
+    (it "is keyed on host"
+      (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
+      (async-wait (kele--update-discovery-cache))
+
+      (expect (map-keys kele--discovery-cache) :to-have-same-items-as '("123.456.789.0")))
+
+    (it "contains the expected resources"
+      (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
+      (async-wait (kele--update-discovery-cache))
+      (let* ((api-resource-lists (alist-get "123.456.789.0" kele--discovery-cache nil nil #'equal))
+             (resource-lists (-map (lambda (arl) (alist-get 'resources arl))
+                                   api-resource-lists))
+             (resources (-flatten-n 1 resource-lists))
+             (names (-map (lambda (r) (alist-get 'name r)) resources)))
+        (expect names :to-have-same-items-as
+                '("componentstatuses"
+                  "configmaps"
+                  "namespaces"
+                  "namespaces/finalize"
+                  "namespaces/status"
+                  "nodes"
+                  "nodes/status"
+                  "pods"
+                  "pods/attach"
+                  "pods/binding"
+                  "pods/eviction"
+                  "pods/exec"
+                  "pods/log"
+                  "pods/portforward"
+                  "pods/proxy"
+                  "pods/status"
+                  "replicationcontrollers"
+                  "replicationcontrollers/scale"
+                  "replicationcontrollers/status"
+                  "resourcequotas"
+                  "resourcequotas/status"
+                  "secrets"
+                  "serviceaccounts"
+                  "services"
+                  "services/proxy"
+                  "services/status")
+                )))))
+
+(describe "kele--get-resource-types-for-context"
+  (it "contains the expected resources"
+    (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
+    (async-wait (kele--update-discovery-cache))
+
+    (let ((res (kele--get-resource-types-for-context "development")))
+      (expect res
+              :to-have-same-items-as
+              '("componentstatuses"
+                "configmaps"
+                "namespaces"
+                "namespaces/finalize"
+                "namespaces/status"
+                "nodes"
+                "nodes/status"
+                "pods"
+                "pods/attach"
+                "pods/binding"
+                "pods/eviction"
+                "pods/exec"
+                "pods/log"
+                "pods/portforward"
+                "pods/proxy"
+                "pods/status"
+                "replicationcontrollers"
+                "replicationcontrollers/scale"
+                "replicationcontrollers/status"
+                "resourcequotas"
+                "resourcequotas/status"
+                "secrets"
+                "serviceaccounts"
+                "services"
+                "services/proxy"
+                "services/status")))))
 ;;; test-kele.el ends here

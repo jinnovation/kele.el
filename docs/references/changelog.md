@@ -11,10 +11,14 @@ versioning][semver].
 
 ## Upcoming
 
+## 0.1.1
+
 ### Added
 
-- The primary update loop reading from kubeconfig and listening for changes on
-  it is now asynchronous and therefore non-blocking!
+- Kubeconfig file watching is now asynchronous and therefore non-blocking!
+- Kubeconfig file watching now prints a [progress report] denoting when changes
+  were detected (and thus reading has begun asynchronously) and when reading has
+  completed
 
 ### Fixed
 
@@ -26,6 +30,8 @@ versioning][semver].
 - Fixed an issue where attempting to pull completion candidates via queries to
   the proxy API server resulted in an error, as well as multiple proxy server
   processes being inadvertently spun up for the same context
+- Fixed an issue where custom kubeconfig path is not respected by `kubectl`
+  invocations
 
 ### Changed
 
@@ -42,9 +48,10 @@ This initial release of Kele has a very simple goal: "[`kubectx` and
 foundation -- both in terms of implementation and "design philosophy" -- for
 future enhancements.
 
-## Added
+### Added
 
 - Added ability to switch and rename contexts, with completion and caching
 - Added ability to switch namespaces for any given context
 
 [1]: https://github.com/ahmetb/kubectx
+[progress report]: https://www.gnu.org/software/emacs/manual/html_node/elisp/Progress.html

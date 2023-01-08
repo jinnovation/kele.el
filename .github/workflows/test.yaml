@@ -42,15 +42,34 @@ jobs:
           cask build --verbose
           make compile
 
-      - name: Test
+      - name: Run unit and static tests
         if: steps.install.outcome == 'success' && steps.install.conclusion == 'success'
         run: |
           make testall
+
+      - name: Setup integration test cluster
+        id: kind
+        uses: helm/kind-action@v1.4.0
+        with:
+          config: tests/test-cluster.yaml
+          cluster_name: kele-test-cluster0
+
+      - name: Run integration tests
+        if: steps.kind.outcome == 'success' && steps.kind.conclusion == 'success'
+        uses: nick-fields/retry@v2
+        with:
+          # at least one test is flaky. See #40
+          max_attempts: 6
+          retry_on: timeout
+          timeout_minutes: 3
+          on_retry_command: rm ./coverage/integration/lcov-buttercup.info
+          command: |
+            cask exec buttercup -L . tests/integration/
 
       - name: Upload coverage
         if: steps.install.outcome == 'success' && steps.install.conclusion == 'success'
         uses: codecov/codecov-action@v2
         with:
           env_vars: EMACS_VERSION
-          files: ./coverage/lcov-buttercup.info
+          files: ./coverage/unit/lcov-buttercup.info,./coverage/integration/lcov-buttercup.info
           fail_ci_if_error: true
