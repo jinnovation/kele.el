@@ -470,6 +470,7 @@ The cache has a TTL as defined by
 ;;   (cl-defgeneric start)
 ;;   (cl-defgeneric teardown)
 
+;; FIXME: Expand testdata with another group-version
 (defun kele--update-discovery-cache (&optional _)
   "Update `kele--discovery-cache' with the values from `kele-cache-dir'.
 

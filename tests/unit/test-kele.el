@@ -166,8 +166,9 @@
       (expect (map-keys kele--discovery-cache) :to-have-same-items-as '("123.456.789.0")))
 
     (it "is sub-keyed on group-version"
-      (expect (map-keys (alist-get "123.456.789.0" kele--discovery-cache nil nil #'equal))
-              :to-have-same-items-as '("v1")))
+      (setq cluster-resources (alist-get "123.456.789.0" kele--discovery-cache nil nil #'equal))
+      (expect (length (map-keys cluster-resources)) :to-equal 2)
+      (expect (map-keys cluster-resources) :to-have-same-items-as '("v1" "velero.io/v1")))
 
     (it "contains the expected resources"
       (let* ((api-resource-list (alist-get

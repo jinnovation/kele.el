@@ -1,0 +1,205 @@
+{
+    "resources": [
+        {
+            "storageVersionHash": "sOwQVuRwz8U=",
+            "verbs": [
+                "delete",
+                "deletecollection",
+                "get",
+                "list",
+                "patch",
+                "create",
+                "update",
+                "watch"
+            ],
+            "kind": "Restore",
+            "namespaced": true,
+            "singularName": "restore",
+            "name": "restores"
+        },
+        {
+            "storageVersionHash": "L1O4F2+johI=",
+            "verbs": [
+                "delete",
+                "deletecollection",
+                "get",
+                "list",
+                "patch",
+                "create",
+                "update",
+                "watch"
+            ],
+            "kind": "ServerStatusRequest",
+            "namespaced": true,
+            "singularName": "serverstatusrequest",
+            "name": "serverstatusrequests"
+        },
+        {
+            "storageVersionHash": "lCxRgK0TLZw=",
+            "verbs": [
+                "delete",
+                "deletecollection",
+                "get",
+                "list",
+                "patch",
+                "create",
+                "update",
+                "watch"
+            ],
+            "kind": "BackupStorageLocation",
+            "namespaced": true,
+            "singularName": "backupstoragelocation",
+            "name": "backupstoragelocations"
+        },
+        {
+            "verbs": [
+                "get",
+                "patch",
+                "update"
+            ],
+            "kind": "BackupStorageLocation",
+            "namespaced": true,
+            "singularName": "",
+            "name": "backupstoragelocations/status"
+        },
+        {
+            "storageVersionHash": "EUOGSxMo4pI=",
+            "verbs": [
+                "delete",
+                "deletecollection",
+                "get",
+                "list",
+                "patch",
+                "create",
+                "update",
+                "watch"
+            ],
+            "kind": "PodVolumeRestore",
+            "namespaced": true,
+            "singularName": "podvolumerestore",
+            "name": "podvolumerestores"
+        },
+        {
+            "storageVersionHash": "86y9y2kpfzQ=",
+            "verbs": [
+                "delete",
+                "deletecollection",
+                "get",
+                "list",
+                "patch",
+                "create",
+                "update",
+                "watch"
+            ],
+            "kind": "DownloadRequest",
+            "namespaced": true,
+            "singularName": "downloadrequest",
+            "name": "downloadrequests"
+        },
+        {
+            "storageVersionHash": "eSTCs+S6z7U=",
+            "verbs": [
+                "delete",
+                "deletecollection",
+                "get",
+                "list",
+                "patch",
+                "create",
+                "update",
+                "watch"
+            ],
+            "kind": "Backup",
+            "namespaced": true,
+            "singularName": "backup",
+            "name": "backups"
+        },
+        {
+            "storageVersionHash": "OlMdqSZm8Rc=",
+            "verbs": [
+                "delete",
+                "deletecollection",
+                "get",
+                "list",
+                "patch",
+                "create",
+                "update",
+                "watch"
+            ],
+            "kind": "ResticRepository",
+            "namespaced": true,
+            "singularName": "resticrepository",
+            "name": "resticrepositories"
+        },
+        {
+            "storageVersionHash": "bn7KSbsL/Bk=",
+            "verbs": [
+                "delete",
+                "deletecollection",
+                "get",
+                "list",
+                "patch",
+                "create",
+                "update",
+                "watch"
+            ],
+            "kind": "Schedule",
+            "namespaced": true,
+            "singularName": "schedule",
+            "name": "schedules"
+        },
+        {
+            "storageVersionHash": "Yz+6xcUGI1c=",
+            "verbs": [
+                "delete",
+                "deletecollection",
+                "get",
+                "list",
+                "patch",
+                "create",
+                "update",
+                "watch"
+            ],
+            "kind": "DeleteBackupRequest",
+            "namespaced": true,
+            "singularName": "deletebackuprequest",
+            "name": "deletebackuprequests"
+        },
+        {
+            "storageVersionHash": "oGQi+TzjJgg=",
+            "verbs": [
+                "delete",
+                "deletecollection",
+                "get",
+                "list",
+                "patch",
+                "create",
+                "update",
+                "watch"
+            ],
+            "kind": "VolumeSnapshotLocation",
+            "namespaced": true,
+            "singularName": "volumesnapshotlocation",
+            "name": "volumesnapshotlocations"
+        },
+        {
+            "storageVersionHash": "953rG1H5cho=",
+            "verbs": [
+                "delete",
+                "deletecollection",
+                "get",
+                "list",
+                "patch",
+                "create",
+                "update",
+                "watch"
+            ],
+            "kind": "PodVolumeBackup",
+            "namespaced": true,
+            "singularName": "podvolumebackup",
+            "name": "podvolumebackups"
+        }
+    ],
+    "groupVersion": "velero.io/v1",
+    "apiVersion": "v1",
+    "kind": "APIResourceList"
+}
