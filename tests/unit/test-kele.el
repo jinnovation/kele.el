@@ -161,14 +161,14 @@
   (describe "the retval"
     (it "is keyed on host"
       (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
-      (async-wait (kele--update-discovery-cache))
+      (async-wait (kele--cache-update kele--global-discovery-cache))
 
-      (expect (map-keys kele--discovery-cache) :to-have-same-items-as '("123.456.789.0")))
+      (expect (map-keys (oref kele--global-discovery-cache contents)) :to-have-same-items-as '("123.456.789.0")))
 
     (it "contains the expected resources"
       (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
-      (async-wait (kele--update-discovery-cache))
-      (let* ((api-resource-lists (alist-get "123.456.789.0" kele--discovery-cache nil nil #'equal))
+      (async-wait (kele--cache-update kele--global-discovery-cache))
+      (let* ((api-resource-lists (alist-get "123.456.789.0" (oref kele--global-discovery-cache contents) nil nil #'equal))
              (resource-lists (-map (lambda (arl) (alist-get 'resources arl))
                                    api-resource-lists))
              (resources (-flatten-n 1 resource-lists))
@@ -205,7 +205,7 @@
 (describe "kele--get-resource-types-for-context"
   (it "contains the expected resources"
     (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
-    (async-wait (kele--update-discovery-cache))
+    (async-wait (kele--cache-update kele--global-discovery-cache))
 
     (let ((res (kele--get-resource-types-for-context "development")))
       (expect res
