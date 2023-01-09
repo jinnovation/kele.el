@@ -79,7 +79,7 @@
     (kele--retry 'foo :count 5 :wait 0)
     (expect 'foo :to-have-been-called-times 5)))
 
-(describe "kele--start-proxy"
+(describe "kele-proxy-start"
   (before-each
     (spy-on 'kele--proxy-process :and-return-value 'fake-proc)
     (spy-on 'run-with-timer :and-return-value 'fake-timer)
@@ -87,7 +87,7 @@
 
   (describe "when ephemeral is nil"
     (it "adds an entry with no timer"
-      (expect (kele--start-proxy "foobar" :port 9999 :ephemeral nil)
+      (expect (kele-proxy-start "foobar" :port 9999 :ephemeral nil)
               :to-equal
               '((proc . fake-proc)
                 (timer . nil)
@@ -100,7 +100,7 @@
 
   (describe "when ephemeral is non-nil"
     (it "adds an entry with a timer"
-      (kele--start-proxy "foobar" :port 9999)
+      (kele-proxy-start "foobar" :port 9999)
       (expect (alist-get 'foobar kele--context-proxy-ledger)
               :to-equal
               '((proc . fake-proc)
@@ -109,7 +109,7 @@
 
 (describe "kele--ensure-proxy"
   (before-each
-    (spy-on 'kele--start-proxy)
+    (spy-on 'kele-proxy-start)
     (setq kele--context-proxy-ledger nil))
   (describe "when proxy present"
     (before-each
@@ -123,7 +123,7 @@
   (describe "when proxy not already present"
     (it "creates the proxy"
       (kele--ensure-proxy "foobar")
-      (expect 'kele--start-proxy :to-have-been-called-with "foobar"))))
+      (expect 'kele-proxy-start :to-have-been-called-with "foobar"))))
 
 (describe "kele--clear-namespaces-for-context"
   (before-each

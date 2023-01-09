@@ -474,14 +474,15 @@ STR, PRED, and ACTION are as defined in completion functions."
   ;; TODO: This needs to update `kele--context-proxy-ledger' as well.
   (kele-kubectl-do "config" "rename-context" old-name new-name))
 
-(cl-defun kele--cleanup-proxy-for-context (context)
+(cl-defun kele-proxy-stop (context)
   "Clean up the proxy for CONTEXT."
+  (interactive (list (completing-read "Stop proxy for context: " #'kele--contexts-complete)))
   (-let (((&alist 'proc proc 'timer timer) (alist-get (intern context) kele--context-proxy-ledger)))
     (kele--kill-process-quietly proc)
     (when timer (cancel-timer timer)))
   (setq kele--context-proxy-ledger (assoc-delete-all (intern context) kele--context-proxy-ledger)))
 
-(cl-defun kele--start-proxy (context &key port (ephemeral t))
+(cl-defun kele-proxy-start (context &key port (ephemeral t))
   "Start a proxy process for CONTEXT at PORT.
 
 If EPHEMERAL is non-nil, the proxy process will be cleaned up
@@ -490,22 +491,39 @@ after a certain amount of time.
 If PORT is nil, a random port will be chosen.
 
 Returns the proxy process."
-  (let* ((selected-port (or port (kele--random-port)))
-         (key (intern context))
-         (proc (kele--proxy-process context :port selected-port))
-         (cleanup (when ephemeral
-                    (run-with-timer kele-proxy-ttl nil #'kele--cleanup-proxy-for-context context)))
-         (entry `((proc . ,proc)
-                  (timer . ,cleanup)
-                  (port . ,selected-port))))
-    (add-to-list 'kele--context-proxy-ledger `(,key . ,entry))
-    entry))
+  (interactive (list (completing-read "Start proxy for context: " #'kele--contexts-complete)
+                     :port nil
+                     :ephemeral t))
+  (kele--with-progress (format "Starting proxy server process for `%s'..." context)
+    (let* ((selected-port (or port (kele--random-port)))
+           (key (intern context))
+           (proc (kele--proxy-process context :port selected-port))
+           (cleanup (when ephemeral
+                      (run-with-timer kele-proxy-ttl nil #'kele-proxy-stop context)))
+           (entry `((proc . ,proc)
+                    (timer . ,cleanup)
+                    (port . ,selected-port))))
+      (add-to-list 'kele--context-proxy-ledger `(,key . ,entry))
+      entry)))
+
+(defun kele--proxy-enabled-p (context)
+  "Return non-nil if proxy server process active for CONTEXT."
+  (alist-get (intern context) kele--context-proxy-ledger))
+
+(defun kele-proxy-toggle (context)
+  "Start or stop proxy server process for CONTEXT."
+  (interactive (list (completing-read
+                      "Start/stop proxy for context: "
+                      #'kele--contexts-complete)))
+  (funcall
+   (if (kele--proxy-enabled-p context) #'kele-proxy-stop #'kele-proxy-start)
+   context))
 
 (cl-defun kele--ensure-proxy (context)
   "Return a proxy process for CONTEXT, creating one if needed."
   (if-let* ((entry (alist-get (intern context) kele--context-proxy-ledger)))
       entry
-    (kele--start-proxy context)))
+    (kele-proxy-start context)))
 
 (defvar kele--context-resources nil
   "An alist mapping contexts to their cached resources.
@@ -578,6 +596,7 @@ Only populated if Embark is installed.")
       (setq kele--context-keymap (let ((map (make-sparse-keymap)))
                                    (define-key map "s" #'kele-context-switch)
                                    (define-key map "r" #'kele-context-rename)
+                                   (define-key map "p" #'kele-proxy-toggle)
                                    (define-key map "n" #'kele-namespace-switch-for-context)
                                    (make-composed-keymap map embark-general-map)))
       (setq kele--namespace-keymap (let ((map (make-sparse-keymap)))
