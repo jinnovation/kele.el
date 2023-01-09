@@ -494,6 +494,7 @@ Returns the proxy process."
   (interactive (list (completing-read "Start proxy for context: " #'kele--contexts-complete)
                      :port nil
                      :ephemeral t))
+  ;; TODO: Throw error if proxy already active for context
   (kele--with-progress (format "Starting proxy server process for `%s'..." context)
     (let* ((selected-port (or port (kele--random-port)))
            (key (intern context))
