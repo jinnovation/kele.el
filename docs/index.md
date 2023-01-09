@@ -1,5 +1,9 @@
 # 🥤 kele.el (Kubernetes Enablement Layer for Emacs)
 
+[![MELPA](https://melpa.org/packages/kele-badge.svg)](https://melpa.org/#/kele)
+[![MELPA Stable](https://stable.melpa.org/packages/kele-badge.svg)](https://stable.melpa.org/#/kele)
+[![License](https://img.shields.io/github/license/jinnovation/kele.el)](https://github.com/jinnovation/kele.el/blob/main/LICENSE)
+
 ![](./img/kele.jpg)
 
 Kele (*kě lè*, or *kə-ˈlə*) ("Kubernetes Enablement Layer for Emacs") is a
@@ -23,13 +27,13 @@ e.g. [Embark], that you can take advantage of in your own configs.
 
 ## Getting Started
 
-=== "The Hard Way"
-
-    Clone this repository and put it in your load-path.
+=== "Use-package + Straight"
 
     ```emacs-lisp
-    (require 'kele)
-    (kele-mode 1)
+    (use-package kele
+      :straight t
+      :config
+      (kele-mode 1))
     ```
 
 === "Use-package"
@@ -47,13 +51,13 @@ e.g. [Embark], that you can take advantage of in your own configs.
     (kele-mode 1)
     ```
 
-=== "Use-package + Straight"
+=== "The Hard Way"
+
+    Clone this repository and all dependencies and put them in your load-path.
 
     ```emacs-lisp
-    (use-package kele
-      :straight t
-      :config
-      (kele-mode 1))
+    (require 'kele)
+    (kele-mode 1)
     ```
 
 ## Design Ethos

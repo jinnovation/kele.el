@@ -33,7 +33,7 @@ configs.
 
    #+begin_src emacs-lisp
      (use-package kele
-       :straight (kele :type git :host github :repo "jinnovation/kele.el")
+       :straight t
        :config
        (kele-mode 1))
    #+end_src
