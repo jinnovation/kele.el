@@ -42,3 +42,7 @@ configs.
 
   The name Kele comes from the Mandarin term for cola, 可乐 (/kě lè/). It is
   also an abbreviation of "Kubernetes Enablement Layer for Emacs."
+
+* Stargazers over time
+
+  [[https://starchart.cc/jinnovation/kele.el][file:https://starchart.cc/jinnovation/kele.el.svg]]
