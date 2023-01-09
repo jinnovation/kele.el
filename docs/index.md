@@ -5,6 +5,7 @@
 [![License](https://img.shields.io/github/license/jinnovation/kele.el)](https://github.com/jinnovation/kele.el/blob/main/LICENSE)
 
 ![](./img/kele.jpg)
+![](./img/screenshot.png)
 
 Kele (*kě lè*, or *kə-ˈlə*) ("Kubernetes Enablement Layer for Emacs") is a
 Kubernetes cluster management package. It empowers you to perform operations as
