@@ -200,16 +200,20 @@ Key is the host name and the value is a list of all the
    APIGroupLists and APIResourceLists found in said cache.")
    (filewatch-id
     :documentation "The ID of the file watcher."))
-  "A class for loading a Kubernetes discovery cache and keeping it
-  in sync with the filesystem.")
+  "Track the Kubernetes discovery cache.
+
+A class for loading a Kubernetes discovery cache and keeping it
+in sync with the filesystem.")
 
 (defclass kele--kubeconfig-cache ()
   ((contents
     :documentation "The loaded kubeconfig contents.")
    (filewatch-id
     :documentation "The ID of the file watcher."))
-  "A class for loading kubeconfig contents and keeping them in
-  sync with the filesystem.")
+  "Track the kubeconfig cache.
+
+A class for loading kubeconfig contents and keeping them in sync
+with the filesystem.")
 
 (cl-defmethod kele--cache-update ((cache kele--discovery-cache) &optional _)
   "Update CACHE with the values from `kele-cache-dir'.
@@ -245,6 +249,9 @@ retval into `async-wait'."
                  func-complete)))
 
 (cl-defmethod kele--cache-start ((cache kele--discovery-cache) &key bootstrap)
+  "Start file-watch for CACHE.
+
+If BOOTSTRAP is non-nil, perform an initial read."
   (kele--fnr-add-watch
    (f-join kele-cache-dir "discovery/")
    '(change)
@@ -253,6 +260,7 @@ retval into `async-wait'."
     (kele--cache-update cache)))
 
 (cl-defmethod kele--cache-stop ((cache kele--discovery-cache))
+  "Stop file-watch for CACHE."
   (kele--fnr-rm-watch (oref cache filewatch-id)))
 
 (defvar kele--global-kubeconfig-cache (kele--kubeconfig-cache))
