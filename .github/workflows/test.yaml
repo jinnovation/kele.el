@@ -60,7 +60,6 @@ jobs:
         with:
           # at least one test is flaky. See #40
           max_attempts: 6
-          retry_on: timeout
           timeout_minutes: 3
           on_retry_command: rm ./coverage/integration/lcov-buttercup.info
           command: |
