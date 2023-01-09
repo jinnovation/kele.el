@@ -27,19 +27,19 @@
 (describe "kele-current-context-name"
   (it "returns the correct current-context value"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
-    (async-wait (kele--update-kubeconfig))
+    (async-wait (kele--cache-update kele--global-kubeconfig-cache))
     (expect (kele-current-context-name) :to-equal "development")))
 
 (describe "kele--context-annotate"
   (it "returns the proper annotation text"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
-    (async-wait (kele--update-kubeconfig))
+    (async-wait (kele--cache-update kele--global-kubeconfig-cache))
     (expect (kele--context-annotate "development") :to-equal " (development-cluster, https://123.456.789.0)")))
 
 (describe "kele-context-names"
   (it "returns the correct cluster names"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
-    (async-wait (kele--update-kubeconfig))
+    (async-wait (kele--cache-update kele--global-kubeconfig-cache))
 
     (expect (kele-context-names) :to-equal '("development" "no-namespace"))))
 
@@ -55,7 +55,7 @@
 (describe "kele-current-namespace"
   (before-each
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
-    (async-wait (kele--update-kubeconfig)))
+    (async-wait (kele--cache-update kele--global-kubeconfig-cache)))
   (it "returns the default namespace for the current cluster"
     (spy-on 'kele-current-context-name :and-return-value "development")
     (expect (kele-current-namespace) :to-equal "development-namespace"))
@@ -66,7 +66,7 @@
 (describe "kele--context-cluster-name"
   (it "returns the correct cluster"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
-    (async-wait (kele--update-kubeconfig))
+    (async-wait (kele--cache-update kele--global-kubeconfig-cache))
     (expect (kele--context-cluster-name "development") :to-equal "development-cluster")))
 
 (describe "kele--retry"
@@ -161,14 +161,14 @@
   (describe "the retval"
     (it "is keyed on host"
       (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
-      (async-wait (kele--update-discovery-cache))
+      (async-wait (kele--cache-update kele--global-discovery-cache))
 
-      (expect (map-keys kele--discovery-cache) :to-have-same-items-as '("123.456.789.0")))
+      (expect (map-keys (oref kele--global-discovery-cache contents)) :to-have-same-items-as '("123.456.789.0")))
 
     (it "contains the expected resources"
       (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
-      (async-wait (kele--update-discovery-cache))
-      (let* ((api-resource-lists (alist-get "123.456.789.0" kele--discovery-cache nil nil #'equal))
+      (async-wait (kele--cache-update kele--global-discovery-cache))
+      (let* ((api-resource-lists (alist-get "123.456.789.0" (oref kele--global-discovery-cache contents) nil nil #'equal))
              (resource-lists (-map (lambda (arl) (alist-get 'resources arl))
                                    api-resource-lists))
              (resources (-flatten-n 1 resource-lists))
@@ -205,7 +205,7 @@
 (describe "kele--get-resource-types-for-context"
   (it "contains the expected resources"
     (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
-    (async-wait (kele--update-discovery-cache))
+    (async-wait (kele--cache-update kele--global-discovery-cache))
 
     (let ((res (kele--get-resource-types-for-context "development")))
       (expect res
