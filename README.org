@@ -1,10 +1,11 @@
 # -*- before-save-hook: (delete-trailing-whitespace); -*-
 #+TITLE: 🥤 kele.el (Kubernetes Enablement Layer for Emacs)
 
+#+html: <a href="https://melpa.org/#/kele"><img alt="MELPA" src="https://melpa.org/packages/kele-badge.svg"/></a>
+#+html: <a href="https://stable.melpa.org/#/kele"><img alt="MELPA Stable" src="https://stable.melpa.org/packages/kele-badge.svg"/></a>
+#+html: <a href="https://github.com/jinnovation/kele.el/blob/main/LICENSE"><img alt="License badge" src="https://img.shields.io/github/license/jinnovation/kele.el"/></a>
 #+html: <a href="https://codecov.io/gh/jinnovation/kele.el" > <img src="https://codecov.io/gh/jinnovation/kele.el/branch/main/graph/badge.svg?token=LR7RDREPZF"/> </a>
 #+html: <a href="https://github.com/jinnovation/kele.el/actions"> <img src="https://github.com/jinnovation/kele.el/workflows/test/badge.svg?branch=main"/></a>
-#+html: <a href="https://github.com/jinnovation/kele.el/blob/main/LICENSE"><img alt="License badge" src="https://img.shields.io/github/license/jinnovation/kele.el"/></a>
-#+html: <a href="https://melpa.org/#/kele"><img alt="MELPA" src="https://melpa.org/packages/kele-badge.svg"/></a>
 
 [[file:docs/img/kele.jpg]]
 
