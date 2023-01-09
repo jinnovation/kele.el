@@ -34,7 +34,7 @@
   (it "returns the proper annotation text"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
     (async-wait (kele--cache-update kele--global-kubeconfig-cache))
-    (expect (kele--context-annotate "development") :to-equal " (development-cluster, https://123.456.789.0)")))
+    (expect (kele--context-annotate "development") :to-equal " (development-cluster, https://123.456.789.0, Proxy OFF)")))
 
 (describe "kele-context-names"
   (it "returns the correct cluster names"
