@@ -236,4 +236,33 @@
                 "services"
                 "services/proxy"
                 "services/status")))))
+
+(describe "kele--kubeconfig-cache"
+  :var (cache)
+  (describe "kele--cache-start"
+    (before-each
+      (setq cache (kele--kubeconfig-cache))
+      (spy-on 'file-notify-add-watch :and-return-value :fnotify-id)
+      (spy-on 'kele--cache-update)
+      (kele--cache-start cache :bootstrap t))
+    (describe "when :bootstrap t"
+      (it "performs an initial update"
+        (expect 'kele--cache-update :to-have-been-called-with cache)))
+    (it "sets the filewatch field"
+      (expect (oref cache filewatch-id) :to-equal :fnotify-id))))
+
+(describe "kele--discovery-cache"
+  :var (cache)
+  (describe "kele--cache-start"
+    (before-each
+      (setq cache (kele--discovery-cache))
+      (spy-on 'kele--fnr-add-watch :and-return-value :fnotify-id)
+      (spy-on 'kele--cache-update)
+      (kele--cache-start cache :bootstrap t))
+
+    (describe "when :bootstrap t"
+      (it "performs an initial update"
+        (expect 'kele--cache-update :to-have-been-called-with cache)))
+    (it "sets the filewatch field"
+      (expect (oref cache filewatch-id) :to-equal :fnotify-id))))
 ;;; test-kele.el ends here

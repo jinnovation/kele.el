@@ -16,6 +16,11 @@ versioning][semver].
 - Context annotations now display whether a proxy server is currently active for
   the given context
 
+### Fixed
+
+- Fixed an issue where disabling `kele-mode` resulted in an error reporting
+  unbound slot `filewatch-id` on `kele--discovery-cache`
+
 ## 0.1.1
 
 ### Added

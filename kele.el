@@ -252,10 +252,12 @@ retval into `async-wait'."
   "Start file-watch for CACHE.
 
 If BOOTSTRAP is non-nil, perform an initial read."
-  (kele--fnr-add-watch
-   (f-join kele-cache-dir "discovery/")
-   '(change)
-   (-partial #'kele--cache-update cache))
+  (oset cache
+        filewatch-id
+        (kele--fnr-add-watch
+         (f-join kele-cache-dir "discovery/")
+         '(change)
+         (-partial #'kele--cache-update cache)))
   (when bootstrap
     (kele--cache-update cache)))
 
