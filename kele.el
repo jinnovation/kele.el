@@ -307,6 +307,24 @@ contents."
   (when bootstrap
     (kele--cache-update cache)))
 
+(defvar kele--context-proxy-ledger nil
+  "An alist mapping contexts to their corresponding proxy processes.
+
+Keys are context names.  Values are alists with the keys `proc',
+`timer', and `port'.  If nil, there is no active proxy for that
+context.
+
+The values at each are as follows:
+
+  - The value at `proc' is the kubectl proxy process;
+
+  - `timer' is a timer object that terminates the proxy and
+    cleans up the proxy process.  If nil, the proxy process will
+    not be automatically cleaned up and it is user responsibility
+    to do so;
+
+  - `port' is the port that the proxy was opened on.")
+
 ;; TODO: At some point it might become necessary to return select metadata about
 ;; the resources, e.g. group and version
 (defun kele--get-resource-types-for-context (context-name)
@@ -374,13 +392,21 @@ configuration, e.g. via `kubectl config'."
   (let* ((context (-first (lambda (elem)
                             (string= (alist-get 'name elem) context-name))
                           (alist-get 'contexts (oref kele--global-kubeconfig-cache contents))))
-         (cluster-name (alist-get 'cluster (alist-get 'context context)))
+         (cluster-name (or (alist-get 'cluster (alist-get 'context context)) ""))
          (cluster (-first (lambda (elem)
                             (string= (alist-get 'name elem) cluster-name))
                           (-concat (alist-get 'clusters (oref kele--global-kubeconfig-cache contents)) '())))
-         (server (alist-get 'server (alist-get 'cluster cluster))))
-    ;; TODO: Show proxy status
-    (s-concat " (" cluster-name ", " server ")")))
+         (server (or (alist-get 'server (alist-get 'cluster cluster)) ""))
+         (proxy-active-p (assoc (intern context-name) kele--context-proxy-ledger))
+         (proxy-status (if proxy-active-p
+                           (propertize "Proxy ON" 'face 'warning)
+                         (propertize "Proxy OFF" 'face 'shadow))))
+    (format " %s%s, %s, %s%s"
+            (propertize "(" 'face 'completions-annotations)
+            (propertize cluster-name 'face 'completions-annotations)
+            (propertize server 'face 'completions-annotations)
+            proxy-status
+            (propertize ")" 'face 'completions-annotations))))
 
 (defun kele--namespaces-complete (str pred action &optional context)
   "Complete input for selection of namespaces.
@@ -445,24 +471,6 @@ STR, PRED, and ACTION are as defined in completion functions."
                      (read-from-minibuffer "Rename to: ")))
   ;; TODO: This needs to update `kele--context-proxy-ledger' as well.
   (kele-kubectl-do "config" "rename-context" old-name new-name))
-
-(defvar kele--context-proxy-ledger nil
-  "An alist mapping contexts to their corresponding proxy processes.
-
-Keys are context names.  Values are alists with the keys `proc',
-`timer', and `port'.  If nil, there is no active proxy for that
-context.
-
-The values at each are as follows:
-
-  - The value at `proc' is the kubectl proxy process;
-
-  - `timer' is a timer object that terminates the proxy and
-    cleans up the proxy process.  If nil, the proxy process will
-    not be automatically cleaned up and it is user responsibility
-    to do so;
-
-  - `port' is the port that the proxy was opened on.")
 
 (cl-defun kele--cleanup-proxy-for-context (context)
   "Clean up the proxy for CONTEXT."

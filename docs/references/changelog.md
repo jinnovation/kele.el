@@ -11,6 +11,11 @@ versioning][semver].
 
 ## Upcoming
 
+### Added
+
+- Context annotations now display whether a proxy server is currently active for
+  the given context
+
 ## 0.1.1
 
 ### Added
