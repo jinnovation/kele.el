@@ -176,8 +176,6 @@
       (expect (map-keys cluster-resources) :to-have-same-items-as '("v1" "velero.io/v1")))
 
     (it "contains the expected resources"
-      (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
-      (async-wait (kele--cache-update kele--global-discovery-cache))
       (let* ((api-resource-list (alist-get
                                   "v1"
                                   (alist-get "123.456.789.0" (oref kele--global-discovery-cache contents) nil nil #'equal)
@@ -245,7 +243,19 @@
                 "serviceaccounts"
                 "services"
                 "services/proxy"
-                "services/status")))))
+                "services/status"
+                "restores"
+                "serverstatusrequests"
+                "backupstoragelocations"
+                "backupstoragelocations/status"
+                "podvolumerestores"
+                "downloadrequests"
+                "backups"
+                "resticrepositories"
+                "schedules"
+                "deletebackuprequests"
+                "volumesnapshotlocations"
+                "podvolumebackups")))))
 
 (describe "kele--kubeconfig-cache"
   :var (cache)
