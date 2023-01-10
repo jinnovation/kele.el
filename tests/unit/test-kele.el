@@ -10,6 +10,10 @@
 
 (require 'kele)
 
+(describe "kele--with-progress"
+  (it "returns the retval of the last evaluated sexp"
+    (expect (kele--with-progress "foobar" (= 1 1)) :to-equal t)))
+
 (describe "kele-status-simple"
   (it "renders with context and namespace"
     (spy-on 'kele-current-context-name :and-return-value "foo")
