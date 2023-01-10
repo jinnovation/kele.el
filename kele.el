@@ -455,11 +455,14 @@ STR, PRED, and ACTION are as defined in completion functions."
     (complete-with-action action (kele-context-names) str pred)))
 
 (defmacro kele--with-progress (msg &rest body)
-  "Execute BODY with a progress reporter using MSG."
+  "Execute BODY with a progress reporter using MSG.
+
+Returns the last evaluated value of BODY."
   (declare (indent defun))
-  `(let ((prog (make-progress-reporter ,msg)))
-    ,@body
-    (progress-reporter-done prog)))
+  `(let ((prog (make-progress-reporter ,msg))
+         (res (progn ,@body)))
+    (progress-reporter-done prog)
+    res))
 
 (defun kele-context-switch (context)
   "Switch to CONTEXT."
