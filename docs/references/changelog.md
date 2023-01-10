@@ -11,6 +11,18 @@ versioning][semver].
 
 ## Upcoming
 
+### Added
+
+- Context annotations now display whether a proxy server is currently active for
+  the given context
+- Implemented interactive functions for per-context proxy server management:
+  `kele-proxy-start`, `kele-proxy-stop`, and `kele-proxy-toggle`
+
+### Fixed
+
+- Fixed an issue where disabling `kele-mode` resulted in an error reporting
+  unbound slot `filewatch-id` on `kele--discovery-cache`
+
 ## 0.1.1
 
 ### Added

@@ -10,6 +10,10 @@
 
 (require 'kele)
 
+(describe "kele--with-progress"
+  (it "returns the retval of the last evaluated sexp"
+    (expect (kele--with-progress "foobar" (= 1 1)) :to-equal t)))
+
 (describe "kele-status-simple"
   (it "renders with context and namespace"
     (spy-on 'kele-current-context-name :and-return-value "foo")
@@ -27,19 +31,19 @@
 (describe "kele-current-context-name"
   (it "returns the correct current-context value"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
-    (async-wait (kele--update-kubeconfig))
+    (async-wait (kele--cache-update kele--global-kubeconfig-cache))
     (expect (kele-current-context-name) :to-equal "development")))
 
 (describe "kele--context-annotate"
   (it "returns the proper annotation text"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
-    (async-wait (kele--update-kubeconfig))
-    (expect (kele--context-annotate "development") :to-equal " (development-cluster, https://123.456.789.0)")))
+    (async-wait (kele--cache-update kele--global-kubeconfig-cache))
+    (expect (kele--context-annotate "development") :to-equal " (development-cluster, https://123.456.789.0, Proxy OFF)")))
 
 (describe "kele-context-names"
   (it "returns the correct cluster names"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
-    (async-wait (kele--update-kubeconfig))
+    (async-wait (kele--cache-update kele--global-kubeconfig-cache))
 
     (expect (kele-context-names) :to-equal '("development" "no-namespace"))))
 
@@ -55,7 +59,7 @@
 (describe "kele-current-namespace"
   (before-each
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
-    (async-wait (kele--update-kubeconfig)))
+    (async-wait (kele--cache-update kele--global-kubeconfig-cache)))
   (it "returns the default namespace for the current cluster"
     (spy-on 'kele-current-context-name :and-return-value "development")
     (expect (kele-current-namespace) :to-equal "development-namespace"))
@@ -66,7 +70,7 @@
 (describe "kele--context-cluster-name"
   (it "returns the correct cluster"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
-    (async-wait (kele--update-kubeconfig))
+    (async-wait (kele--cache-update kele--global-kubeconfig-cache))
     (expect (kele--context-cluster-name "development") :to-equal "development-cluster")))
 
 (describe "kele--retry"
@@ -79,7 +83,7 @@
     (kele--retry 'foo :count 5 :wait 0)
     (expect 'foo :to-have-been-called-times 5)))
 
-(describe "kele--start-proxy"
+(describe "kele-proxy-start"
   (before-each
     (spy-on 'kele--proxy-process :and-return-value 'fake-proc)
     (spy-on 'run-with-timer :and-return-value 'fake-timer)
@@ -87,7 +91,7 @@
 
   (describe "when ephemeral is nil"
     (it "adds an entry with no timer"
-      (expect (kele--start-proxy "foobar" :port 9999 :ephemeral nil)
+      (expect (kele-proxy-start "foobar" :port 9999 :ephemeral nil)
               :to-equal
               '((proc . fake-proc)
                 (timer . nil)
@@ -100,7 +104,7 @@
 
   (describe "when ephemeral is non-nil"
     (it "adds an entry with a timer"
-      (kele--start-proxy "foobar" :port 9999)
+      (kele-proxy-start "foobar" :port 9999)
       (expect (alist-get 'foobar kele--context-proxy-ledger)
               :to-equal
               '((proc . fake-proc)
@@ -109,7 +113,7 @@
 
 (describe "kele--ensure-proxy"
   (before-each
-    (spy-on 'kele--start-proxy)
+    (spy-on 'kele-proxy-start)
     (setq kele--context-proxy-ledger nil))
   (describe "when proxy present"
     (before-each
@@ -123,7 +127,7 @@
   (describe "when proxy not already present"
     (it "creates the proxy"
       (kele--ensure-proxy "foobar")
-      (expect 'kele--start-proxy :to-have-been-called-with "foobar"))))
+      (expect 'kele-proxy-start :to-have-been-called-with "foobar"))))
 
 (describe "kele--clear-namespaces-for-context"
   (before-each
@@ -161,19 +165,22 @@
   (describe "the retval"
     (before-each
       (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
-      (async-wait (kele--update-discovery-cache)))
+      (async-wait (kele--cache-update kele--global-discovery-cache)))
+
     (it "is keyed on host"
-      (expect (map-keys kele--discovery-cache) :to-have-same-items-as '("123.456.789.0")))
+      (expect (map-keys (oref kele--global-discovery-cache contents)) :to-have-same-items-as '("123.456.789.0")))
 
     (it "is sub-keyed on group-version"
-      (setq cluster-resources (alist-get "123.456.789.0" kele--discovery-cache nil nil #'equal))
+      (setq cluster-resources (alist-get "123.456.789.0" (oref kele--global-discovery-cache contents) nil nil #'equal))
       (expect (length (map-keys cluster-resources)) :to-equal 2)
       (expect (map-keys cluster-resources) :to-have-same-items-as '("v1" "velero.io/v1")))
 
     (it "contains the expected resources"
+      (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
+      (async-wait (kele--cache-update kele--global-discovery-cache))
       (let* ((api-resource-list (alist-get
                                   "v1"
-                                  (alist-get "123.456.789.0" kele--discovery-cache nil nil #'equal)
+                                  (alist-get "123.456.789.0" (oref kele--global-discovery-cache contents) nil nil #'equal)
                                   nil nil #'equal))
              (resources (alist-get 'resources api-resource-list))
              (names (-map (lambda (r) (alist-get 'name r)) resources)))
@@ -208,7 +215,7 @@
 (describe "kele--get-resource-types-for-context"
   (it "contains the expected resources"
     (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
-    (async-wait (kele--update-discovery-cache))
+    (async-wait (kele--cache-update kele--global-discovery-cache))
 
     (let ((res (kele--get-resource-types-for-context "development")))
       (expect res
@@ -239,4 +246,33 @@
                 "services"
                 "services/proxy"
                 "services/status")))))
+
+(describe "kele--kubeconfig-cache"
+  :var (cache)
+  (describe "kele--cache-start"
+    (before-each
+      (setq cache (kele--kubeconfig-cache))
+      (spy-on 'file-notify-add-watch :and-return-value :fnotify-id)
+      (spy-on 'kele--cache-update)
+      (kele--cache-start cache :bootstrap t))
+    (describe "when :bootstrap t"
+      (it "performs an initial update"
+        (expect 'kele--cache-update :to-have-been-called-with cache)))
+    (it "sets the filewatch field"
+      (expect (oref cache filewatch-id) :to-equal :fnotify-id))))
+
+(describe "kele--discovery-cache"
+  :var (cache)
+  (describe "kele--cache-start"
+    (before-each
+      (setq cache (kele--discovery-cache))
+      (spy-on 'kele--fnr-add-watch :and-return-value :fnotify-id)
+      (spy-on 'kele--cache-update)
+      (kele--cache-start cache :bootstrap t))
+
+    (describe "when :bootstrap t"
+      (it "performs an initial update"
+        (expect 'kele--cache-update :to-have-been-called-with cache)))
+    (it "sets the filewatch field"
+      (expect (oref cache filewatch-id) :to-equal :fnotify-id))))
 ;;; test-kele.el ends here

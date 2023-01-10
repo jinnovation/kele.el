@@ -1,5 +1,10 @@
 ;;; kele-fnr.el --- filenotify, but recursive -*- coding: utf-8; lexical-binding: t; -*-
 
+;; Copyright (C) 2022-2023 Jonathan Jin
+
+;; Author: Jonathan Jin <me@jonathanj.in>
+;; SPDX-License-Identifier: Apache-2.0
+
 ;;; Commentary:
 ;;
 ;;  This is an extension of the built-in filenotify library, making it apply

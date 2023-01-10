@@ -1,6 +1,6 @@
 ;;; kele.el --- Interface with Kubernetes -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2022-2022 Jonathan Jin
+;; Copyright (C) 2022-2023 Jonathan Jin
 
 ;; Author: Jonathan Jin <me@jonathanj.in>
 
@@ -22,6 +22,7 @@
 
 (require 'async)
 (require 'dash)
+(require 'eieio)
 (require 'f)
 (require 'filenotify)
 (require 'ht)
@@ -94,7 +95,6 @@ Returns the retval of FN."
           (setq count-remaining (- count-remaining 1))
           (sleep-for wait))))
     retval))
-
 
 (defun kele--kill-process-quietly (proc &optional _signal)
   "Kill process PROC silently and the associated buffer, suppressing all errors."
@@ -176,47 +176,112 @@ If WAIT is non-nil, `kele--proxy-process' will wait for the proxy
      :command cmd
      :noquery t)))
 
-(defvar kele--kubeconfig-watcher nil
-  "Descriptor of the file watcher on `kele-kubeconfig-path'.")
+(cl-defgeneric kele--cache-update (&optional _)
+  "Update in response to activity in the underlying filesystem.
 
-(defvar kele--discovery-cache nil
-  "Discovery cache.
+Ideally this should be an asynchronous process.  This function
+should be suitable for use as part of a file-watcher.")
 
-Alist mapping contexts to the discovered APIs.
+(cl-defgeneric kele--cache-stop ()
+  "Stop watching the file system.")
 
-Key is the host name; sub-key is the group-version, e.g. \"apps.k8s.io/v1\";
-value is the APIResourceList payload serialized into an alist.")
+(defclass kele--discovery-cache ()
+  ((contents
+    :documentation
+    "Alist mapping contexts to the discovered APIs.
 
-(defun kele--get-resource-types-for-context (context-name)
-  "Retrieve the names of all resource types for CONTEXT-NAME."
-  (-if-let* (((&alist 'cluster (&alist 'server server)) (kele--context-cluster context-name))
-             (host (url-host (url-generic-parse-url server))))
-      (->> (alist-get host kele--discovery-cache nil nil #'equal)
-           (-filter (lambda (resource-list) (equal (alist-get 'kind resource-list) "APIResourceList")))
-           (-map (lambda (list) (alist-get 'resources list)))
-           (-flatten-n 1)
-           (-map (lambda (resource) (alist-get 'name resource)))
-           (-uniq))))
+Key is the host name and the value is a list of all the
+   APIGroupLists and APIResourceLists found in said cache.")
+   (filewatch-id
+    :documentation "The ID of the file watcher."))
+  "Track the Kubernetes discovery cache.
 
-(defvar kele--discovery-cache-watcher nil
-  "Descriptor of the file watcher on the discovery cache.
+A class for loading a Kubernetes discovery cache and keeping it
+in sync with the filesystem.")
 
-The discovery cache is assumed to live under `kele-cache-dir'.")
+(defclass kele--kubeconfig-cache ()
+  ((contents
+    :documentation "The loaded kubeconfig contents.")
+   (filewatch-id
+    :documentation "The ID of the file watcher."))
+  "Track the kubeconfig cache.
 
-(defvar kele--kubeconfig nil
-  "The current kubeconfig.
+A class for loading kubeconfig contents and keeping them in sync
+with the filesystem.")
 
-The value is kept up-to-date with any changes to the underlying
-configuration, e.g. via `kubectl config'.")
+(cl-defmethod kele--cache-update ((cache kele--discovery-cache) &optional _)
+  "Update CACHE with the values from `kele-cache-dir'.
 
-(defun kele--update-kubeconfig (&optional _)
-  "Update `kele--kubeconfig' with the values from `kele-kubeconfig-path'.
+This is done asynchronously.  To wait on the results, pass the
+retval into `async-wait'."
+  (let* ((progress-reporter (make-progress-reporter "Pulling discovery cache..."))
+         (func-complete (lambda (res)
+                          (oset cache contents res)
+                          (progress-reporter-done progress-reporter))))
+    (async-start `(lambda ()
+                    (add-to-list 'load-path (file-name-directory ,(locate-library "dash")))
+                    (add-to-list 'load-path (file-name-directory ,(locate-library "f")))
+                    (add-to-list 'load-path (file-name-directory ,(locate-library "s")))
+                    (add-to-list 'load-path (file-name-directory ,(locate-library "yaml")))
+                    (require 'f)
+                    (require 'json)
+                    (require 'yaml)
+                    ,(async-inject-variables "kele-cache-dir")
+
+                    (->> (f-files (f-join kele-cache-dir "discovery")
+                                  (lambda (file)
+                                    (and (equal (f-ext file) "json")
+                                         (not (equal (f-base file) "servergroups"))))
+                                  t)
+                         (-map (lambda (file)
+                                 (cons (s-split-up-to "/"
+                                                      (f-relative
+                                                       (f-dirname file)
+                                                       (f-join kele-cache-dir "discovery"))
+                                                      1)
+                                       (json-parse-string (f-read file)
+                                                          :object-type 'alist
+                                                          :array-type 'list))))
+                         (--group-by (car (car it)))
+                         (-map (lambda (host-entries)
+                                 (let* ((entries (cdr host-entries))
+                                        (processed-entries (-map (lambda (entry) `(,(cadr (car entry)) . ,(cdr entry)))
+                                                                 entries)))
+                                   `(,(car host-entries) . ,processed-entries))))))
+                 func-complete)))
+
+(cl-defmethod kele--cache-start ((cache kele--discovery-cache) &key bootstrap)
+  "Start file-watch for CACHE.
+
+If BOOTSTRAP is non-nil, perform an initial read."
+  (oset cache
+        filewatch-id
+        (kele--fnr-add-watch
+         (f-join kele-cache-dir "discovery/")
+         '(change)
+         (-partial #'kele--cache-update cache)))
+  (when bootstrap
+    (kele--cache-update cache)))
+
+(cl-defmethod kele--cache-stop ((cache kele--discovery-cache))
+  "Stop file-watch for CACHE."
+  (kele--fnr-rm-watch (oref cache filewatch-id)))
+
+(defvar kele--global-kubeconfig-cache (kele--kubeconfig-cache))
+(defvar kele--global-discovery-cache (kele--discovery-cache))
+
+(cl-defmethod kele--cache-stop ((cache kele--kubeconfig-cache))
+  "Stop watching `kele-kubeconfig-path' for contents to write to CACHE."
+  (file-notify-rm-watch (oref cache filewatch-id)))
+
+(cl-defmethod kele--cache-update ((cache kele--kubeconfig-cache) &optional _)
+  "Update CACHE with the values from `kele-kubeconfig-path'.
 
 This is done asynchronously.  To wait on the results, pass the
 retval into `async-wait'."
   (let* ((progress-reporter (make-progress-reporter "Pulling kubeconfig contents..."))
          (func-complete (lambda (config)
-                          (setq kele--kubeconfig config)
+                          (oset cache contents config)
                           (progress-reporter-done progress-reporter))))
     (async-start `(lambda ()
                     ;; TODO: How to just do all of these in one fell swoop?
@@ -232,12 +297,57 @@ retval into `async-wait'."
                                        :sequence-type 'list))
                  func-complete)))
 
+(cl-defmethod kele--cache-start ((cache kele--kubeconfig-cache) &key bootstrap)
+  "Start watching `kele-kubeconfig-path' for CACHE.
+
+If BOOTSTRAP is non-nil, will perform an initial load of the
+contents."
+  (oset cache
+        filewatch-id
+        (file-notify-add-watch
+         kele-kubeconfig-path
+         '(change)
+         (-partial #'kele--cache-update cache)))
+  (when bootstrap
+    (kele--cache-update cache)))
+
+(defvar kele--context-proxy-ledger nil
+  "An alist mapping contexts to their corresponding proxy processes.
+
+Keys are context names.  Values are alists with the keys `proc',
+`timer', and `port'.  If nil, there is no active proxy for that
+context.
+
+The values at each are as follows:
+
+  - The value at `proc' is the kubectl proxy process;
+
+  - `timer' is a timer object that terminates the proxy and
+    cleans up the proxy process.  If nil, the proxy process will
+    not be automatically cleaned up and it is user responsibility
+    to do so;
+
+  - `port' is the port that the proxy was opened on.")
+
+;; TODO: At some point it might become necessary to return select metadata about
+;; the resources, e.g. group and version
+(defun kele--get-resource-types-for-context (context-name)
+  "Retrieve the names of all resource types for CONTEXT-NAME."
+  (-if-let* (((&alist 'cluster (&alist 'server server)) (kele--context-cluster context-name))
+             (host (url-host (url-generic-parse-url server))))
+      (->> (alist-get host (oref kele--global-discovery-cache contents) nil nil #'equal)
+           (-filter (lambda (resource-list) (equal (alist-get 'kind resource-list) "APIResourceList")))
+           (-map (lambda (list) (alist-get 'resources list)))
+           (-flatten-n 1)
+           (-map (lambda (resource) (alist-get 'name resource)))
+           (-uniq))))
+
 (defun kele-current-context-name ()
   "Get the current context name.
 
 The value is kept up-to-date with any changes to the underlying
 configuration, e.g. via `kubectl config'."
-  (alist-get 'current-context kele--kubeconfig))
+  (alist-get 'current-context (oref kele--global-kubeconfig-cache contents)))
 
 (defun kele-current-namespace ()
   "Get the current context's default namespace.
@@ -247,7 +357,7 @@ configuration, e.g. via `kubectl config'."
   (-if-let* (((&alist 'context (&alist 'namespace namespace))
               (-first (lambda (elem)
                         (string= (alist-get 'name elem) (kele-current-context-name)))
-                      (alist-get 'contexts kele--kubeconfig))))
+                      (alist-get 'contexts (oref kele--global-kubeconfig-cache contents)))))
       namespace))
 
 (defun kele-status-simple ()
@@ -264,18 +374,20 @@ configuration, e.g. via `kubectl config'."
 
 (defun kele-context-names ()
   "Get the names of all known contexts."
-  (-map (lambda (elem) (alist-get 'name elem)) (alist-get 'contexts kele--kubeconfig)))
+  (-map
+   (lambda (elem) (alist-get 'name elem))
+   (alist-get 'contexts (oref kele--global-kubeconfig-cache contents))))
 
 (defun kele--context-cluster (context-name)
   "Get the cluster metadata for the context named CONTEXT-NAME."
   (-first (lambda (elem) (string= (alist-get 'name elem)
                                   (kele--context-cluster-name context-name)))
-          (alist-get 'clusters kele--kubeconfig)))
+          (alist-get 'clusters (oref kele--global-kubeconfig-cache contents))))
 
 (defun kele--context-cluster-name (context-name)
   "Get the name of the cluster of the context named CONTEXT-NAME."
   (if-let ((context (-first (lambda (elem) (string= (alist-get 'name elem) context-name))
-                            (alist-get 'contexts kele--kubeconfig))))
+                            (alist-get 'contexts (oref kele--global-kubeconfig-cache contents)))))
       (alist-get 'cluster (alist-get 'context context))
     (error "Could not find context of name %s" context-name)))
 
@@ -283,14 +395,22 @@ configuration, e.g. via `kubectl config'."
   "Return annotation text for the context named CONTEXT-NAME."
   (let* ((context (-first (lambda (elem)
                             (string= (alist-get 'name elem) context-name))
-                          (alist-get 'contexts kele--kubeconfig)))
-         (cluster-name (alist-get 'cluster (alist-get 'context context)))
+                          (alist-get 'contexts (oref kele--global-kubeconfig-cache contents))))
+         (cluster-name (or (alist-get 'cluster (alist-get 'context context)) ""))
          (cluster (-first (lambda (elem)
                             (string= (alist-get 'name elem) cluster-name))
-                          (-concat (alist-get 'clusters kele--kubeconfig) '())))
-         (server (alist-get 'server (alist-get 'cluster cluster))))
-    ;; TODO: Show proxy status
-    (s-concat " (" cluster-name ", " server ")")))
+                          (-concat (alist-get 'clusters (oref kele--global-kubeconfig-cache contents)) '())))
+         (server (or (alist-get 'server (alist-get 'cluster cluster)) ""))
+         (proxy-active-p (assoc (intern context-name) kele--context-proxy-ledger))
+         (proxy-status (if proxy-active-p
+                           (propertize "Proxy ON" 'face 'warning)
+                         (propertize "Proxy OFF" 'face 'shadow))))
+    (format " %s%s, %s, %s%s"
+            (propertize "(" 'face 'completions-annotations)
+            (propertize cluster-name 'face 'completions-annotations)
+            (propertize server 'face 'completions-annotations)
+            proxy-status
+            (propertize ")" 'face 'completions-annotations))))
 
 (defun kele--namespaces-complete (str pred action &optional context)
   "Complete input for selection of namespaces.
@@ -337,11 +457,14 @@ STR, PRED, and ACTION are as defined in completion functions."
     (complete-with-action action (kele-context-names) str pred)))
 
 (defmacro kele--with-progress (msg &rest body)
-  "Execute BODY with a progress reporter using MSG."
+  "Execute BODY with a progress reporter using MSG.
+
+Returns the last evaluated value of BODY."
   (declare (indent defun))
-  `(let ((prog (make-progress-reporter ,msg)))
-    ,@body
-    (progress-reporter-done prog)))
+  `(let ((prog (make-progress-reporter ,msg))
+         (res (progn ,@body)))
+    (progress-reporter-done prog)
+    res))
 
 (defun kele-context-switch (context)
   "Switch to CONTEXT."
@@ -356,32 +479,15 @@ STR, PRED, and ACTION are as defined in completion functions."
   ;; TODO: This needs to update `kele--context-proxy-ledger' as well.
   (kele-kubectl-do "config" "rename-context" old-name new-name))
 
-(defvar kele--context-proxy-ledger nil
-  "An alist mapping contexts to their corresponding proxy processes.
-
-Keys are context names.  Values are alists with the keys `proc',
-`timer', and `port'.  If nil, there is no active proxy for that
-context.
-
-The values at each are as follows:
-
-  - The value at `proc' is the kubectl proxy process;
-
-  - `timer' is a timer object that terminates the proxy and
-    cleans up the proxy process.  If nil, the proxy process will
-    not be automatically cleaned up and it is user responsibility
-    to do so;
-
-  - `port' is the port that the proxy was opened on.")
-
-(cl-defun kele--cleanup-proxy-for-context (context)
+(cl-defun kele-proxy-stop (context)
   "Clean up the proxy for CONTEXT."
+  (interactive (list (completing-read "Stop proxy for context: " #'kele--contexts-complete)))
   (-let (((&alist 'proc proc 'timer timer) (alist-get (intern context) kele--context-proxy-ledger)))
     (kele--kill-process-quietly proc)
     (when timer (cancel-timer timer)))
   (setq kele--context-proxy-ledger (assoc-delete-all (intern context) kele--context-proxy-ledger)))
 
-(cl-defun kele--start-proxy (context &key port (ephemeral t))
+(cl-defun kele-proxy-start (context &key port (ephemeral t))
   "Start a proxy process for CONTEXT at PORT.
 
 If EPHEMERAL is non-nil, the proxy process will be cleaned up
@@ -390,22 +496,40 @@ after a certain amount of time.
 If PORT is nil, a random port will be chosen.
 
 Returns the proxy process."
-  (let* ((selected-port (or port (kele--random-port)))
-         (key (intern context))
-         (proc (kele--proxy-process context :port selected-port))
-         (cleanup (when ephemeral
-                    (run-with-timer kele-proxy-ttl nil #'kele--cleanup-proxy-for-context context)))
-         (entry `((proc . ,proc)
-                  (timer . ,cleanup)
-                  (port . ,selected-port))))
-    (add-to-list 'kele--context-proxy-ledger `(,key . ,entry))
-    entry))
+  (interactive (list (completing-read "Start proxy for context: " #'kele--contexts-complete)
+                     :port nil
+                     :ephemeral t))
+  ;; TODO: Throw error if proxy already active for context
+  (kele--with-progress (format "Starting proxy server process for `%s'..." context)
+    (let* ((selected-port (or port (kele--random-port)))
+           (key (intern context))
+           (proc (kele--proxy-process context :port selected-port))
+           (cleanup (when ephemeral
+                      (run-with-timer kele-proxy-ttl nil #'kele-proxy-stop context)))
+           (entry `((proc . ,proc)
+                    (timer . ,cleanup)
+                    (port . ,selected-port))))
+      (add-to-list 'kele--context-proxy-ledger `(,key . ,entry))
+      entry)))
+
+(defun kele--proxy-enabled-p (context)
+  "Return non-nil if proxy server process active for CONTEXT."
+  (alist-get (intern context) kele--context-proxy-ledger))
+
+(defun kele-proxy-toggle (context)
+  "Start or stop proxy server process for CONTEXT."
+  (interactive (list (completing-read
+                      "Start/stop proxy for context: "
+                      #'kele--contexts-complete)))
+  (funcall
+   (if (kele--proxy-enabled-p context) #'kele-proxy-stop #'kele-proxy-start)
+   context))
 
 (cl-defun kele--ensure-proxy (context)
   "Return a proxy process for CONTEXT, creating one if needed."
   (if-let* ((entry (alist-get (intern context) kele--context-proxy-ledger)))
       entry
-    (kele--start-proxy context)))
+    (kele-proxy-start context)))
 
 (defvar kele--context-resources nil
   "An alist mapping contexts to their cached resources.
@@ -458,60 +582,6 @@ The cache has a TTL as defined by
    #'kele--clear-namespaces-for-context
    context))
 
-;; TODO: class for filesystem-based cache
-;;
-;; fields:
-;;   file-watch ID
-;;   alist cache
-;;
-;; methods:
-;;   (cl-defgeneric bootstrap)
-;;   (cl-defgeneric update)
-;;   (cl-defgeneric start)
-;;   (cl-defgeneric teardown)
-
-;; FIXME: Expand testdata with another group-version
-(defun kele--update-discovery-cache (&optional _)
-  "Update `kele--discovery-cache' with the values from `kele-cache-dir'.
-
-This is done asynchronously.  To wait on the results, pass the
-retval into `async-wait'."
-  (let* ((progress-reporter (make-progress-reporter "Pulling discovery cache..."))
-         (func-complete (lambda (cache)
-                          (setq kele--discovery-cache cache)
-                          (progress-reporter-done progress-reporter))))
-    (async-start `(lambda ()
-                    (add-to-list 'load-path (file-name-directory ,(locate-library "dash")))
-                    (add-to-list 'load-path (file-name-directory ,(locate-library "f")))
-                    (add-to-list 'load-path (file-name-directory ,(locate-library "s")))
-                    (add-to-list 'load-path (file-name-directory ,(locate-library "yaml")))
-                    (require 'f)
-                    (require 'json)
-                    (require 'yaml)
-                    ,(async-inject-variables "kele-cache-dir")
-
-                    (->> (f-files (f-join kele-cache-dir "discovery")
-                                  (lambda (file)
-                                    (and (equal (f-ext file) "json")
-                                         (not (equal (f-base file) "servergroups"))))
-                                  t)
-                         (-map (lambda (file)
-                                 (cons (s-split-up-to "/"
-                                                      (f-relative
-                                                       (f-dirname file)
-                                                       (f-join kele-cache-dir "discovery"))
-                                                      1)
-                                       (json-parse-string (f-read file)
-                                                          :object-type 'alist
-                                                          :array-type 'list))))
-                         (--group-by (car (car it)))
-                         (-map (lambda (host-entries)
-                                 (let* ((entries (cdr host-entries))
-                                        (processed-entries (-map (lambda (entry) `(,(cadr (car entry)) . ,(cdr entry)))
-                                                                 entries)))
-                                   `(,(car host-entries) . ,processed-entries))))))
-                 func-complete)))
-
 (defvar kele--context-keymap nil
   "Keymap for actions on Kubernetes contexts.
 
@@ -532,6 +602,7 @@ Only populated if Embark is installed.")
       (setq kele--context-keymap (let ((map (make-sparse-keymap)))
                                    (define-key map "s" #'kele-context-switch)
                                    (define-key map "r" #'kele-context-rename)
+                                   (define-key map "p" #'kele-proxy-toggle)
                                    (define-key map "n" #'kele-namespace-switch-for-context)
                                    (make-composed-keymap map embark-general-map)))
       (setq kele--namespace-keymap (let ((map (make-sparse-keymap)))
@@ -549,24 +620,20 @@ Only populated if Embark is installed.")
 
 (defun kele--enable ()
   "Enables Kele functionality."
-  (setq kele--kubeconfig-watcher
-        ;; FIXME: Update the watcher when `kele-kubeconfig-path' changes.
-        (file-notify-add-watch kele-kubeconfig-path '(change) #'kele--update-kubeconfig))
-
-  (setq kele--discovery-cache-watcher
-        ;; FIXME: Update the watcher when `kele-cache-dir' changes.
-        (kele--fnr-add-watch (f-join kele-cache-dir "discovery/") '(change) #'kele--update-discovery-cache))
+  ;; FIXME: Update the watcher when `kele-kubeconfig-path' changes.
+  (kele--cache-start kele--global-kubeconfig-cache :bootstrap t)
+  ;; FIXME: Update the watcher when `kele-cache-dir' changes.
+  (kele--cache-start kele--global-discovery-cache :bootstrap t)
 
   (kele--setup-embark-maybe)
   (if (featurep 'awesome-tray)
       (with-suppressed-warnings ((free-vars awesome-tray-module-alist))
-        (add-to-list 'awesome-tray-module-alist kele--awesome-tray-module)))
-  (kele--update-kubeconfig))
+        (add-to-list 'awesome-tray-module-alist kele--awesome-tray-module))))
 
 (defun kele--disable ()
   "Disable Kele functionality."
-  (file-notify-rm-watch kele--kubeconfig-watcher)
-  (kele--fnr-rm-watch kele--discovery-cache-watcher)
+  (kele--cache-stop kele--global-kubeconfig-cache)
+  (kele--cache-stop kele--global-discovery-cache)
   (kele--teardown-embark-maybe)
   (if (featurep 'awesome-tray)
       (with-suppressed-warnings ((free-vars awesome-tray-module-alist))

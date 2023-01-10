@@ -1,12 +1,14 @@
 # -*- before-save-hook: (delete-trailing-whitespace); -*-
 #+TITLE: 🥤 kele.el (Kubernetes Enablement Layer for Emacs)
 
+#+html: <a href="https://melpa.org/#/kele"><img alt="MELPA" src="https://melpa.org/packages/kele-badge.svg"/></a>
+#+html: <a href="https://stable.melpa.org/#/kele"><img alt="MELPA Stable" src="https://stable.melpa.org/packages/kele-badge.svg"/></a>
+#+html: <a href="https://github.com/jinnovation/kele.el/blob/main/LICENSE"><img alt="License badge" src="https://img.shields.io/github/license/jinnovation/kele.el"/></a>
 #+html: <a href="https://codecov.io/gh/jinnovation/kele.el" > <img src="https://codecov.io/gh/jinnovation/kele.el/branch/main/graph/badge.svg?token=LR7RDREPZF"/> </a>
 #+html: <a href="https://github.com/jinnovation/kele.el/actions"> <img src="https://github.com/jinnovation/kele.el/workflows/test/badge.svg?branch=main"/></a>
-#+html: <a href="https://github.com/jinnovation/kele.el/blob/main/LICENSE"><img alt="License badge" src="https://img.shields.io/github/license/jinnovation/kele.el"/></a>
 
 [[file:docs/img/kele.jpg]]
-
+[[file:docs/img/screenshot.png]]
 
 Kele (/kě lè/, or /kə-ˈlə/) ("Kubernetes Enablement Layer for Emacs")
 is a Kubernetes cluster management package. It empowers you to perform
@@ -31,7 +33,7 @@ configs.
 
    #+begin_src emacs-lisp
      (use-package kele
-       :straight (kele :type git :host github :repo "jinnovation/kele.el")
+       :straight t
        :config
        (kele-mode 1))
    #+end_src
@@ -40,3 +42,7 @@ configs.
 
   The name Kele comes from the Mandarin term for cola, 可乐 (/kě lè/). It is
   also an abbreviation of "Kubernetes Enablement Layer for Emacs."
+
+* Stargazers over time
+
+  [[https://starchart.cc/jinnovation/kele.el][file:https://starchart.cc/jinnovation/kele.el.svg]]
