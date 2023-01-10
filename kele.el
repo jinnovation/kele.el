@@ -349,16 +349,20 @@ The value is kept up-to-date with any changes to the underlying
 configuration, e.g. via `kubectl config'."
   (alist-get 'current-context (oref kele--global-kubeconfig-cache contents)))
 
+(defun kele--default-namespace-for-context (context)
+  "Get the default namespace for CONTEXT."
+  (-if-let* (((&alist 'context (&alist 'namespace namespace))
+              (-first (lambda (elem)
+                        (string= (alist-get 'name elem) context))
+                      (alist-get 'contexts (oref kele--global-kubeconfig-cache contents)))))
+      namespace))
+
 (defun kele-current-namespace ()
   "Get the current context's default namespace.
 
 The value is kept up-to-date with any changes to the underlying
 configuration, e.g. via `kubectl config'."
-  (-if-let* (((&alist 'context (&alist 'namespace namespace))
-              (-first (lambda (elem)
-                        (string= (alist-get 'name elem) (kele-current-context-name)))
-                      (alist-get 'contexts (oref kele--global-kubeconfig-cache contents)))))
-      namespace))
+  (kele--default-namespace-for-context (kele-current-context-name)))
 
 (defun kele-status-simple ()
   "Return a simple status string suitable for modeline display."
@@ -581,6 +585,28 @@ The cache has a TTL as defined by
    nil
    #'kele--clear-namespaces-for-context
    context))
+
+(cl-defun kele-get-resource (group version kind name &key context namespace)
+  "Get resource according to GROUP, VERSION, KIND, and NAME.
+
+KIND should be the plural form of the kind's name.
+
+If GROUP is nil, look up KIND in the core API group.
+
+If CONTEXT is nil, use the current namespace.
+
+If NAMESPACE is nil and the KIND is namespaced, use the default
+namespace of the given CONTEXT."
+  (-if-let* ((context (or context (kele-current-context-name)))
+             (namespace (or namespace (kele--default-namespace-for-context context)))
+             (gvk-endpoint (if (not group)
+                               (format "api/%s/%s" version kind)
+                             ;; FIXME: This doesn't account for namespace properly
+                             (format "apis/%s/%s/%s" group version kind)))
+             ((&alist 'port port) (kele--ensure-proxy context))
+             (url (format "http://localhost:%s/%s/%s" port gvk-endpoint name))
+             (data (plz 'get url :as #'json-read)))
+      data))
 
 (defvar kele--context-keymap nil
   "Keymap for actions on Kubernetes contexts.
