@@ -10,7 +10,8 @@
 Kele (*kě lè*, or *kə-ˈlə*) ("Kubernetes Enablement Layer for Emacs") is a
 Kubernetes cluster management package. It empowers you to perform operations as
 coarse or fine-grained as you need, **fast**, and get back to your work. See
-[How-Tos](./how-tos/index.md) for example usage.
+[How-Tos > Usage](./how-tos/usage.md) for an overview of what's possible with
+Kele.
 
 Kele also comes with "batteries included." It contains several
 [integrations](./how-tos/integrations.md) with noteworthy packages,
