@@ -347,16 +347,20 @@ The value is kept up-to-date with any changes to the underlying
 configuration, e.g. via `kubectl config'."
   (alist-get 'current-context (oref kele--global-kubeconfig-cache contents)))
 
+(defun kele--default-namespace-for-context (context)
+  "Get the defualt namespace for CONTEXT."
+  (-if-let* (((&alist 'context (&alist 'namespace namespace))
+              (-first (lambda (elem)
+                        (string= (alist-get 'name elem) context))
+                      (alist-get 'contexts (oref kele--global-kubeconfig-cache contents)))))
+      namespace))
+
 (defun kele-current-namespace ()
   "Get the current context's default namespace.
 
 The value is kept up-to-date with any changes to the underlying
 configuration, e.g. via `kubectl config'."
-  (-if-let* (((&alist 'context (&alist 'namespace namespace))
-              (-first (lambda (elem)
-                        (string= (alist-get 'name elem) (kele-current-context-name)))
-                      (alist-get 'contexts (oref kele--global-kubeconfig-cache contents)))))
-      namespace))
+  (kele--default-namespace-for-context (kele-current-context-name)))
 
 (defun kele-status-simple ()
   "Return a simple status string suitable for modeline display."
