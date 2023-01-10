@@ -14,6 +14,18 @@
   (it "returns the retval of the last evaluated sexp"
     (expect (kele--with-progress "foobar" (= 1 1)) :to-equal t)))
 
+(describe "kele--proxy-enabled-p"
+  (before-each
+    (setq kele--context-proxy-ledger '((foo . bar)
+                                       (baz . nil))))
+
+  (it "evals to non-nil if context present in `kele--context-proxy-ledger'"
+    (expect (kele--proxy-enabled-p "foo") :to-be-truthy))
+
+  (it "evals to nil if context not present in `kele--context-proxy-ledger'"
+    (expect (kele--proxy-enabled-p "qux") :not :to-be-truthy)
+    (expect (kele--proxy-enabled-p "baz") :not :to-be-truthy)))
+
 (describe "kele-status-simple"
   (it "renders with context and namespace"
     (spy-on 'kele-current-context-name :and-return-value "foo")
