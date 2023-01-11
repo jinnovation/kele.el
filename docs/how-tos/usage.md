@@ -13,6 +13,8 @@
 M-x kele-context-switch
 ```
 
+![](./img/context-switch.gif)
+
 This can also be done via [Embark] on any selection candidate in any other
 context-related Kele command, e.g. [`kele-context-rename`](#renaming-a-context).
 
@@ -21,6 +23,8 @@ context-related Kele command, e.g. [`kele-context-rename`](#renaming-a-context).
 ```
 M-x kele-context-rename
 ```
+
+![](./img/context-rename.gif)
 
 This can also be done via [Embark] on any selection candidate in any other
 context-related Kele command, e.g. [`kele-context-switch`](#switching-contexts).
