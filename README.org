@@ -8,7 +8,7 @@
 #+html: <a href="https://github.com/jinnovation/kele.el/actions"> <img src="https://github.com/jinnovation/kele.el/workflows/test/badge.svg?branch=main"/></a>
 
 [[file:docs/img/kele.jpg]]
-[[file:docs/img/screenshot.png]]
+[[file:docs/img/demo.gif]]
 
 Kele (/kě lè/, or /kə-ˈlə/) ("Kubernetes Enablement Layer for Emacs")
 is a Kubernetes cluster management package. It empowers you to perform
