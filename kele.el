@@ -196,8 +196,9 @@ bootstrapping update, e.g. `kele--cache-update'.")
     :documentation
     "Alist mapping contexts to the discovered APIs.
 
-Key is the host name and the value is a list of all the
-   APIGroupLists and APIResourceLists found in said cache.")
+Key is the host name.  Sub-key is the group-version.  Values are
+lists of all the APIResourceLists found in said cache.")
+
    (filewatch-id
     :documentation "The ID of the file watcher."))
   "Track the Kubernetes discovery cache.
