@@ -182,6 +182,12 @@ If WAIT is non-nil, `kele--proxy-process' will wait for the proxy
 Ideally this should be an asynchronous process.  This function
 should be suitable for use as part of a file-watcher.")
 
+(cl-defgeneric kele--cache-start (&key bootstrap)
+  "Start watching the file system.
+
+If BOOTSTRAP is non-nil, the implementation should also perform a
+bootstrapping update, e.g. `kele--cache-update'.")
+
 (cl-defgeneric kele--cache-stop ()
   "Stop watching the file system.")
 
