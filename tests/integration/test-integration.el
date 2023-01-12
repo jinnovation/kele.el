@@ -23,6 +23,20 @@
               "kube-system"
               "local-path-storage"))))
 
+(describe "kele--get-namespaced-resource"
+  :var (retval)
+  (it "retrieves the resource as an alist"
+    (setq retval (kele--get-namespaced-resource "apps" "v1" "deployments" "coredns"
+                                                :context "kind-kele-test-cluster0"
+                                                :namespace "kube-system"))
+
+    (expect (let-alist retval .metadata.name) :to-equal "coredns"))
+  (it "returns an error if the resource is nonsense or does not exist"
+    (expect (kele--get-namespaced-resource "hello" "v1" "salaries" "mine"
+                                           :context "kind-kele-test-cluster0"
+                                           :namespace "kube-system")
+            :to-throw 'kele-request-error)))
+
 (describe "kele--proxy-process"
   (it "successfully creates a proxy process"
     (kele--proxy-process "kind-kele-test-cluster0" :port 9999 :wait t :read-only t)
