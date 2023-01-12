@@ -615,6 +615,37 @@ The cache has a TTL as defined by
    #'kele--clear-namespaces-for-context
    context))
 
+(define-error 'kele-request-error "Kele failed in querying the Kubernetes API")
+
+(cl-defun kele--get-namespaced-resource (group version kind name &key context namespace)
+  "Get resource according to GROUP, VERSION, KIND, and NAME.
+
+KIND should be the plural form of the kind's name.
+
+If GROUP is nil, look up KIND in the core API group.
+
+If CONTEXT is nil, use the current namespace.
+
+If NAMESPACE is nil, use the default namespace of the given
+CONTEXT.
+
+Note that this function does *not* handle resource kinds that are
+not namespaced."
+  (-let* ((context (or context (kele-current-context-name)))
+          (namespace (or namespace (kele--default-namespace-for-context context)))
+          (url-gv (if (not group)
+                      (format "api/%s" version)
+                    (format "apis/%s/%s" group version)))
+          (url-ns (format "namespaces/%s" namespace))
+          (url-res (format "%s/%s" kind name))
+          (url-all (s-join "/" `(,url-gv ,url-ns ,url-res)))
+          ((&alist 'port port) (kele--ensure-proxy context))
+          (url (format "http://localhost:%s/%s" port url-all)))
+    (condition-case err
+        (plz 'get url :as #'json-read)
+      (error (signal 'kele-request-error (error-message-string err)))))) ;
+
+
 (defvar kele--context-keymap nil
   "Keymap for actions on Kubernetes contexts.
 
