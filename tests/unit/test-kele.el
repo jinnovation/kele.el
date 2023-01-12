@@ -280,5 +280,28 @@
       (it "performs an initial update"
         (expect 'kele--cache-update :to-have-been-called-with cache)))
     (it "sets the filewatch field"
-      (expect (oref cache filewatch-id) :to-equal :fnotify-id))))
+      (expect (oref cache filewatch-id) :to-equal :fnotify-id)))
+  (describe "kele--get-groupversions-for-type"
+    (before-each
+      (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
+      (async-wait (kele--cache-update kele--global-discovery-cache)))
+    (it "fetches all possible groupversions for the argument type"
+      (expect (kele--get-groupversions-for-type kele--global-discovery-cache
+                                                "componentstatuses")
+              :to-have-same-items-as '("v1"))))
+  (describe "kele--resource-namespaced-p"
+    (before-each
+      (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
+      (async-wait (kele--cache-update kele--global-discovery-cache)))
+
+    (it "returns t if resource is namespaced"
+      (expect (kele--resource-namespaced-p kele--global-discovery-cache
+                                           "v1"
+                                           "pods")
+              :to-be-truthy))
+    (it "returns non-truthy if resource is not namespaced"
+      (expect (kele--resource-namespaced-p kele--global-discovery-cache
+                                           "v1"
+                                           "componentstatuses")
+              :not :to-be-truthy))))
 ;;; test-kele.el ends here
