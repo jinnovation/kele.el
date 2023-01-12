@@ -55,5 +55,21 @@
                                            ,(expand-file-name "a/a1" test-fnr--temp-testdir)
                                            ,(expand-file-name "b" test-fnr--temp-testdir))))))
 
+(describe "kele--fnr-add-watchers"
+  (before-each
+    (spy-on 'file-notify-add-watch
+            :and-call-fake
+            (lambda (dir &rest _)
+              (intern (concat "filewatch-" dir)))))
+  (it "adds a file watcher on each argument directory"
+    (expect
+     (kele--fnr-add-watchers '("dir0" "dir1" "dir2") nil nil)
+     :to-have-same-items-as
+     '(("dir0" . filewatch-dir0)
+       ("dir1" . filewatch-dir1)
+       ("dir2" . filewatch-dir2)))
+
+    (expect 'file-notify-add-watch :to-have-been-called-times 3)))
+
 (provide 'test-fnr)
 ;;; test-fnr.el ends here
