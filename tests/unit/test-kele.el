@@ -280,5 +280,13 @@
       (it "performs an initial update"
         (expect 'kele--cache-update :to-have-been-called-with cache)))
     (it "sets the filewatch field"
-      (expect (oref cache filewatch-id) :to-equal :fnotify-id))))
+      (expect (oref cache filewatch-id) :to-equal :fnotify-id)))
+  (describe "kele--get-groupversions-for-type"
+    (before-each
+      (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
+      (async-wait (kele--cache-update kele--global-discovery-cache)))
+    (it "fetches all possible groupversions for the argument type"
+      (expect (kele--get-groupversions-for-type kele--global-discovery-cache
+                                                "componentstatuses")
+              :to-have-same-items-as '("v1")))))
 ;;; test-kele.el ends here

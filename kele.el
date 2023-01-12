@@ -215,6 +215,25 @@ in sync with the filesystem.")
 A class for loading kubeconfig contents and keeping them in sync
 with the filesystem.")
 
+(cl-defmethod kele--get-groupversions-for-type ((cache kele--discovery-cache)
+                                                type
+                                                &key context)
+  "Look up the groupversions for a given resource TYPE in CACHE.
+
+TYPE is expected to be the plural name of the resource.
+
+If CONTEXT is nil, use the current context."
+  (-when-let* (((&alist 'cluster (&alist 'server server)) (kele--context-cluster (or context (kele-current-context-name))))
+               (host (url-host (url-generic-parse-url server)))
+               (resource-lists (alist-get host (oref cache contents) nil nil #'equal)))
+    (->> resource-lists
+         (-filter (lambda (api-resource-list)
+                   (->> (alist-get 'resources api-resource-list)
+                        (-any (lambda (resource)
+                                (equal (alist-get 'name resource) type))))))
+         (-map (-partial #'alist-get 'groupVersion))
+         (-sort (lambda (a _) (equal a "v1"))))))
+
 (cl-defmethod kele--cache-update ((cache kele--discovery-cache) &optional _)
   "Update CACHE with the values from `kele-cache-dir'.
 
