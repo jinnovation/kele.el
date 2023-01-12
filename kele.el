@@ -617,6 +617,11 @@ The cache has a TTL as defined by
 
 (define-error 'kele-request-error "Kele failed in querying the Kubernetes API")
 
+(cl-defstruct (kele--resource-container
+               (:constructor kele--resource-container-create)
+               (:copier nil))
+  resource context namespace)
+
 (cl-defun kele--get-namespaced-resource (group version kind name &key context namespace)
   "Get resource according to GROUP, VERSION, KIND, and NAME.
 
@@ -642,9 +647,42 @@ not namespaced."
           ((&alist 'port port) (kele--ensure-proxy context))
           (url (format "http://localhost:%s/%s" port url-all)))
     (condition-case err
-        (plz 'get url :as #'json-read)
-      (error (signal 'kele-request-error (error-message-string err)))))) ;
+        (kele--resource-container-create
+         :resource (plz 'get url :as #'json-read)
+         :context context
+         :namespace namespace)
+      (error (signal 'kele-request-error (error-message-string err))))))
 
+;; TODO: add an option to filter out managed fields, similar to `kubectl get
+;; --show-managed-fields false' (the default behavior)
+(cl-defun kele--render-object (object)
+  "Render OBJECT in a buffer as YAML.
+
+OBJECT is either an alist representing a Kubernetes object, or a
+`kele--resource-container'.  If the latter, buffer will have
+context and namespace in its name."
+  (let* ((buf-name (concat " *kele: "
+                           (if (kele--resource-container-p object)
+                                 (format "%s(%s): "
+                                         (kele--resource-container-context
+                                          object)
+                                         (kele--resource-container-namespace
+                                          object)))
+                           (let-alist (if (kele--resource-container-p object)
+                                          (kele--resource-container-resource object)
+                                        object)
+                             (format "%s/%s" .kind .metadata.name))))
+         (buf (get-buffer-create buf-name t)))
+    (with-current-buffer buf
+      ;; TODO: create a dedicated mode for kele displaying objects
+      (erase-buffer)
+      (insert (yaml-encode object))
+      (goto-char (point-min))
+      (yaml-mode)
+      (read-only-mode))
+    (select-window (display-buffer buf))))
+
+;; (kele--render-object (kele--get-namespaced-resource "apps" "v1" "deployments" "workflow-controller"))
 
 (defvar kele--context-keymap nil
   "Keymap for actions on Kubernetes contexts.
