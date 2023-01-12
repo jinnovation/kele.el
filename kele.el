@@ -215,6 +215,11 @@ in sync with the filesystem.")
 A class for loading kubeconfig contents and keeping them in sync
 with the filesystem.")
 
+(defun kele--get-host-for-context (&optional context)
+  "Get host for CONTEXT."
+  (let-alist (kele--context-cluster (or context (kele-current-context-name)))
+    (url-host (url-generic-parse-url .cluster.server))))
+
 (cl-defmethod kele--get-groupversions-for-type ((cache kele--discovery-cache)
                                                 type
                                                 &key context)
@@ -223,16 +228,25 @@ with the filesystem.")
 TYPE is expected to be the plural name of the resource.
 
 If CONTEXT is nil, use the current context."
-  (-when-let* (((&alist 'cluster (&alist 'server server)) (kele--context-cluster (or context (kele-current-context-name))))
-               (host (url-host (url-generic-parse-url server)))
-               (resource-lists (alist-get host (oref cache contents) nil nil #'equal)))
-    (->> resource-lists
+    (->> (alist-get (kele--get-host-for-context context) (oref cache contents) nil nil #'equal)
          (-filter (lambda (api-resource-list)
                    (->> (alist-get 'resources api-resource-list)
                         (-any (lambda (resource)
                                 (equal (alist-get 'name resource) type))))))
          (-map (-partial #'alist-get 'groupVersion))
-         (-sort (lambda (a _) (equal a "v1"))))))
+         (-sort (lambda (a _) (equal a "v1")))))
+
+(cl-defmethod kele--resource-namespaced-p ((cache kele--discovery-cache)
+                                           group-version
+                                           type
+                                           &key context)
+  (->> (alist-get (kele--get-host-for-context context) (oref cache contents) nil nil #'equal)
+       (-first (lambda (resource-list) (equal (alist-get 'groupVersion resource-list) group-version)))
+       (alist-get 'resources)
+       (-first (lambda (resource) (equal (alist-get 'name resource) type)))
+       (alist-get 'namespaced)
+       (eq :false)
+       (not)))
 
 (cl-defmethod kele--cache-update ((cache kele--discovery-cache) &optional _)
   "Update CACHE with the values from `kele-cache-dir'.
@@ -350,14 +364,12 @@ The values at each are as follows:
 ;; the resources, e.g. group and version
 (defun kele--get-resource-types-for-context (context-name)
   "Retrieve the names of all resource types for CONTEXT-NAME."
-  (-if-let* (((&alist 'cluster (&alist 'server server)) (kele--context-cluster context-name))
-             (host (url-host (url-generic-parse-url server))))
-      (->> (alist-get host (oref kele--global-discovery-cache contents) nil nil #'equal)
-           (-filter (lambda (resource-list) (equal (alist-get 'kind resource-list) "APIResourceList")))
-           (-map (lambda (list) (alist-get 'resources list)))
-           (-flatten-n 1)
-           (-map (lambda (resource) (alist-get 'name resource)))
-           (-uniq))))
+  (->> (alist-get (kele--get-host-for-context context-name) (oref kele--global-discovery-cache contents) nil nil #'equal)
+       (-filter (lambda (resource-list) (equal (alist-get 'kind resource-list) "APIResourceList")))
+       (-map (lambda (list) (alist-get 'resources list)))
+       (-flatten-n 1)
+       (-map (lambda (resource) (alist-get 'name resource)))
+       (-uniq)))
 
 (defun kele-current-context-name ()
   "Get the current context name.
