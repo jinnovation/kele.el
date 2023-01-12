@@ -304,4 +304,20 @@
                                            "v1"
                                            "componentstatuses")
               :not :to-be-truthy))))
+
+(describe "kele--render-object"
+  (it "renders the value as YAML"
+    (with-temp-buffer
+      (kele--render-object '((kind . "FakeKind")
+                             (metadata . ((name . "fake-name"))))
+                           (current-buffer))
+      (expect (buffer-string) :to-equal "kind: FakeKind
+metadata:
+  name: fake-name")))
+
+  (describe "buffer titling"
+    (describe "when input is `kele--resource-container'"
+      (xit "buffer name has context and namespace"))
+    (describe "when input is regular alist"
+      (xit "buffer name only has kind and name"))))
 ;;; test-kele.el ends here

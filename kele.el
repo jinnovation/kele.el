@@ -34,6 +34,8 @@
 
 (require 'kele-fnr)
 
+(declare-function yaml-mode "yaml-mode")
+
 (defgroup kele nil
   "Integration constructs for Kubernetes."
   :group 'external
@@ -655,8 +657,11 @@ not namespaced."
 
 ;; TODO: add an option to filter out managed fields, similar to `kubectl get
 ;; --show-managed-fields false' (the default behavior)
-(cl-defun kele--render-object (object)
+(cl-defun kele--render-object (object &optional buffer)
   "Render OBJECT in a buffer as YAML.
+
+If BUFFER is provided, renders into it.  Otherwise, a new buffer
+will be created.
 
 OBJECT is either an alist representing a Kubernetes object, or a
 `kele--resource-container'.  If the latter, buffer will have
@@ -672,13 +677,15 @@ context and namespace in its name."
                                           (kele--resource-container-resource object)
                                         object)
                              (format "%s/%s" .kind .metadata.name))))
-         (buf (get-buffer-create buf-name t)))
+         (buf (or buffer (get-buffer-create buf-name t))))
     (with-current-buffer buf
       ;; TODO: create a dedicated mode for kele displaying objects
       (erase-buffer)
       (insert (yaml-encode object))
+      (whitespace-cleanup)
       (goto-char (point-min))
-      (yaml-mode)
+      (if (featurep 'yaml-mode) (yaml-mode)
+        (message "[kele] For syntax highlighting, install `yaml-mode'."))
       (read-only-mode))
     (select-window (display-buffer buf))))
 
