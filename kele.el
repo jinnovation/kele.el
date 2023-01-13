@@ -253,6 +253,9 @@ If CONTEXT is nil, use the current context."
                                            group-version
                                            type
                                            &key context)
+  "Look up the namespaced-ness of GROUP-VERSION TYPE in CACHE.
+
+If CONTEXT is not provided, the current context is used."
   (->> (kele--get-resource-lists-for-context cache (or context (kele-current-context-name)))
        (-first (lambda (resource-list) (equal (alist-get 'groupVersion resource-list) group-version)))
        (alist-get 'resources)
