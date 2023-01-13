@@ -629,7 +629,7 @@ object.
 "
   resource context namespace)
 
-;; TODO: Make `group' and `version' optional. If ambiguous which one user wants
+;; TODO (#57): Make `group' and `version' optional. If ambiguous which one user wants
 ;; (i.e. same kind name exists in multiple group-versions), error
 (cl-defun kele--get-namespaced-resource (group version kind name &key context namespace)
   "Get resource according to GROUP, VERSION, KIND, and NAME.
