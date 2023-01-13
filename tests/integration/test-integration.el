@@ -65,9 +65,14 @@
       ;; disambiguate on users' behalf, present a completion buffer to users to
       ;; select, etc.
       (it "errors with the group-version options attached to the error"
-        ;; TODO: Test for the group-version options to be extractable from the
-        ;; error value
-        (expect (kele--get-namespaced-resource "ambiguousthings" "fake-name") :to-throw 'kele-ambiguous-groupversion-error)))))
+        (expect (kele--get-namespaced-resource "ambiguousthings" "fake-name")
+                :to-throw 'kele-ambiguous-groupversion-error)
+        (condition-case err
+            (kele--get-namespaced-resource "ambiguousthings" "fake-name")
+          (kele-ambiguous-groupversion-error
+           (expect (cadr err) :to-have-same-items-as '("fake-group/v1"
+                                                       "fake-other-group/v1")))
+          (:success (buttercup-fail "Received unexpected success")))))))
 
 (describe "kele--proxy-process"
   (it "successfully creates a proxy process"
