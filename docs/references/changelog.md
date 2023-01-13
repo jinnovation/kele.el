@@ -23,6 +23,10 @@ versioning][semver].
 - Fixed an issue where disabling `kele-mode` resulted in an error reporting
   unbound slot `filewatch-id` on `kele--discovery-cache`
 
+### Changed
+
+- Buffer for contexts' proxy processes are now hidden
+
 ## 0.1.1
 
 ### Added
