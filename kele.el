@@ -618,6 +618,7 @@ The cache has a TTL as defined by
    context))
 
 (define-error 'kele-request-error "Kele failed in querying the Kubernetes API")
+(define-error 'kele-ambiguous-groupversion-error "TODO")
 
 (cl-defstruct (kele--resource-container
                (:constructor kele--resource-container-create)
@@ -631,10 +632,14 @@ object.
 
 ;; TODO (#57): Make `group' and `version' optional. If ambiguous which one user wants
 ;; (i.e. same kind name exists in multiple group-versions), error
-(cl-defun kele--get-namespaced-resource (group version kind name &key context namespace)
-  "Get resource according to GROUP, VERSION, KIND, and NAME.
+(cl-defun kele--get-namespaced-resource (kind name &key group version context namespace)
+  "Get resource KIND by NAME.
 
-KIND should be the plural form of the kind's name.
+KIND should be the plural form of the kind's name, e.g. \"pods\" instead of \"pod.\"
+
+If GROUP and VERSION are nil, the function will look up the possible
+group-versions for the resource KIND. If there is more than one group-version
+associated with the resource KIND, the function will signal an error.
 
 If GROUP is nil, look up KIND in the core API group.
 
@@ -645,22 +650,32 @@ CONTEXT.
 
 Note that this function does *not* handle resource kinds that are
 not namespaced."
-  (-let* ((context (or context (kele-current-context-name)))
-          (namespace (or namespace (kele--default-namespace-for-context context)))
-          (url-gv (if (not group)
-                      (format "api/%s" version)
-                    (format "apis/%s/%s" group version)))
-          (url-ns (format "namespaces/%s" namespace))
-          (url-res (format "%s/%s" kind name))
-          (url-all (s-join "/" `(,url-gv ,url-ns ,url-res)))
-          ((&alist 'port port) (kele--ensure-proxy context))
-          (url (format "http://localhost:%s/%s" port url-all)))
-    (condition-case err
-        (kele--resource-container-create
-         :resource (plz 'get url :as #'json-read)
-         :context context
-         :namespace namespace)
-      (error (signal 'kele-request-error (error-message-string err))))))
+  (let* ((context (or context (kele-current-context-name)))
+         (namespace (or namespace (kele--default-namespace-for-context context)))
+         (group-versions
+          (cond
+           ((and group version) (list (format "%s/%s" group version)))
+           ((and version (not group)) (list version))
+           (t (kele--get-groupversions-for-type kele--global-discovery-cache
+                                                kind
+                                                :context context)))))
+    (if (> (length group-versions) 1)
+        (signal 'kele-ambiguous-groupversion-error '())
+      (-let* ((gv (car group-versions))
+              (url-gv (if (s-contains-p "/" gv)
+                          (format "apis/%s" gv)
+                        (format "api/%s" gv)))
+              (url-ns (format "namespaces/%s" namespace))
+              (url-res (format "%s/%s" kind name))
+              (url-all (s-join "/" `(,url-gv ,url-ns ,url-res)))
+              ((&alist 'port port) (kele--ensure-proxy context))
+              (url (format "http://localhost:%s/%s" port url-all)))
+        (condition-case err
+            (kele--resource-container-create
+             :resource (plz 'get url :as #'json-read)
+             :context context
+             :namespace namespace)
+          (error (signal 'kele-request-error (error-message-string err))))))))
 
 ;; TODO (#58): add an option to filter out managed fields, similar to `kubectl get
 ;; --show-managed-fields false' (the default behavior)

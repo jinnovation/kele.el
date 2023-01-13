@@ -26,7 +26,9 @@
 (describe "kele--get-namespaced-resource"
   :var (retval)
   (it "retrieves the resource as an alist"
-    (setq retval (kele--get-namespaced-resource "apps" "v1" "deployments" "coredns"
+    (setq retval (kele--get-namespaced-resource "deployments" "coredns"
+                                                :group "apps"
+                                                :version "v1"
                                                 :context "kind-kele-test-cluster0"
                                                 :namespace "kube-system"))
 
@@ -34,12 +36,18 @@
     (expect (let-alist (kele--resource-container-resource retval) .metadata.name) :to-equal "coredns"))
 
   (it "returns an error if the resource is nonsense or does not exist"
-    (expect (kele--get-namespaced-resource "hello" "v1" "salaries" "mine"
+    (expect (kele--get-namespaced-resource "salaries" "mine"
+                                           :group "hello"
+                                           :version "v1"
                                            :context "kind-kele-test-cluster0"
                                            :namespace "kube-system")
             :to-throw 'kele-request-error))
   (describe "when GROUP and VERSION not specified"
     (describe "when only one group-version exists for the argument resource type"
+      (before-each
+        (async-wait (kele--cache-update kele--global-discovery-cache))
+        (async-wait (kele--cache-update kele--global-kubeconfig-cache)))
+
       (it "auto-selects group-version"
         (setq retval (kele--get-namespaced-resource "deployments" "coredns"))
         (expect (let-alist (kele--resource-container-resource retval) .metadata.name) :to-equal "coredns")
@@ -52,9 +60,8 @@
       (before-each
         (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
         (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
-
-        (async-wait (kele--cache-update kele--global-kubeconfig-cache))
-        (async-wait (kele--cache-update kele--global-discovery-cache)))
+        (async-wait (kele--cache-update kele--global-discovery-cache))
+        (async-wait (kele--cache-update kele--global-kubeconfig-cache)))
 
       ;; This would allow consumers of this API to decide if they'd like to
       ;; disambiguate on users' behalf, present a completion buffer to users to
