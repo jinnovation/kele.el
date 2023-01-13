@@ -253,7 +253,10 @@ If CONTEXT is nil, use the current context."
                                            group-version
                                            type
                                            &key context)
-  (->> (kele--get-resource-lists-for-context cache (or context (kele-current-context-name)))
+  "Look up the namespaced-ness of GROUP-VERSION TYPE in CACHE.
+
+If CONTEXT is not provided, the current context is used."
+  (->> (alist-get (kele--get-host-for-context context) (oref cache contents) nil nil #'equal)
        (-first (lambda (resource-list) (equal (alist-get 'groupVersion resource-list) group-version)))
        (alist-get 'resources)
        (-first (lambda (resource) (equal (alist-get 'name resource) type)))
