@@ -695,7 +695,7 @@ context and namespace in its name."
                   (kele--resource-container-resource object)
                 object)))
     (with-current-buffer buf
-      ;; TODO: create a dedicated mode for kele displaying objects
+      ;; TODO (#59): create a dedicated mode for kele displaying objects
       ;;
       ;; Some features:
       ;;   - configurable option to, if out of focus for X amount of time, auto-cleanup
