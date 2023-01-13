@@ -25,6 +25,7 @@
 
 (describe "kele--get-namespaced-resource"
   :var (retval)
+  ;; TODO: Test for when CONTEXT and NAMESPACE not specified
   (it "retrieves the resource as an alist"
     (setq retval (kele--get-namespaced-resource "apps" "v1" "deployments" "coredns"
                                                 :context "kind-kele-test-cluster0"
@@ -37,7 +38,21 @@
     (expect (kele--get-namespaced-resource "hello" "v1" "salaries" "mine"
                                            :context "kind-kele-test-cluster0"
                                            :namespace "kube-system")
-            :to-throw 'kele-request-error)))
+            :to-throw 'kele-request-error))
+  (describe "when GROUP and VERSION not specified"
+    (describe "when only one group-version exists for the argument resource type"
+      (it "auto-selects group-version"
+        (setq retval (kele--get-namespaced-resource "deployments" "coredns"))
+        (expect (let-alist (kele--resource-container-resource retval) .metadata.name) :to-equal "coredns")
+        (expect (alist-get 'apiVersion (kele--resource-container-resource retval)) :to-equal "apps/v1")))
+
+    ;; FIXME: Lol might be time to start adding fixture CRDs to the integration
+    ;; test cluster.......
+    (describe "when multiple group-versions exist for the same resource type"
+      ;; This would allow consumers of this API to decide if they'd like to
+      ;; disambiguate on users' behalf, present a completion buffer to users to
+      ;; select, etc.
+      (xit "errors with the group-version options attached to the error"))))
 
 (describe "kele--proxy-process"
   (it "successfully creates a proxy process"
