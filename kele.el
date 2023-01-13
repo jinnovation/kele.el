@@ -685,7 +685,7 @@ context and namespace in its name."
                                         object)
                              (format "%s/%s" .kind .metadata.name))
                            "*"))
-         (buf (or buffer (get-buffer-create buf-name t)))
+         (buf (or buffer (get-buffer-create buf-name)))
          (obj (if (kele--resource-container-p object)
                   (kele--resource-container-resource object)
                 object)))
