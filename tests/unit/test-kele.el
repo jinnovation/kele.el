@@ -189,9 +189,10 @@
                                    api-resource-lists))
              (resources (-flatten-n 1 resource-lists))
              (names (-map (lambda (r) (alist-get 'name r)) resources)))
-        ;; TODO: Test for
-        ;;   - num of APIResourceLists present
-        ;;   - groupversions assoc'd w/ each APIResourcelist are as expected
+        (expect (length api-resource-lists) :to-equal 3)
+        (expect (--map (let-alist it .groupVersion) api-resource-lists)
+                :to-have-same-items-as
+                '("v1" "fake-other-group/v1" "fake-group/v1"))
         (expect names :to-have-same-items-as
                 '("componentstatuses"
                   "configmaps"
