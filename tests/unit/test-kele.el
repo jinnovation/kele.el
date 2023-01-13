@@ -50,7 +50,7 @@
   (it "returns the proper annotation text"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
     (async-wait (kele--cache-update kele--global-kubeconfig-cache))
-    (expect (kele--context-annotate "development") :to-equal " (development-cluster, https://123.456.789.0, Proxy OFF)")))
+    (expect (kele--context-annotate "development") :to-equal " (development-cluster, https://123.456.789.0:9999, Proxy OFF)")))
 
 (describe "kele-context-names"
   (it "returns the correct cluster names"
@@ -78,6 +78,12 @@
   (it "returns nil if no default namespace"
     (spy-on 'kele-current-context-name :and-return-value "no-namespace")
     (expect (kele-current-namespace) :to-equal nil)))
+
+(describe "kele--get-host-for-context"
+  (it "returns the correct value"
+    (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
+    (async-wait (kele--cache-update kele--global-kubeconfig-cache))
+    (expect (kele--get-host-for-context "development") :to-equal "123.456.789.0:9999")))
 
 (describe "kele--context-cluster-name"
   (it "returns the correct cluster"
@@ -179,12 +185,12 @@
       (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
       (async-wait (kele--cache-update kele--global-discovery-cache))
 
-      (expect (map-keys (oref kele--global-discovery-cache contents)) :to-have-same-items-as '("123.456.789.0")))
+      (expect (map-keys (oref kele--global-discovery-cache contents)) :to-have-same-items-as '("123.456.789.0_9999")))
 
     (it "contains the expected resources"
       (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
       (async-wait (kele--cache-update kele--global-discovery-cache))
-      (let* ((api-resource-lists (alist-get "123.456.789.0" (oref kele--global-discovery-cache contents) nil nil #'equal))
+      (let* ((api-resource-lists (alist-get "123.456.789.0_9999" (oref kele--global-discovery-cache contents) nil nil #'equal))
              (resource-lists (-map (lambda (arl) (alist-get 'resources arl))
                                    api-resource-lists))
              (resources (-flatten-n 1 resource-lists))

@@ -220,7 +220,18 @@ with the filesystem.")
 (defun kele--get-host-for-context (&optional context)
   "Get host for CONTEXT."
   (let-alist (kele--context-cluster (or context (kele-current-context-name)))
-    (url-host (url-generic-parse-url .cluster.server))))
+    (s-concat
+     (url-host (url-generic-parse-url .cluster.server))
+     (if (url-port (url-generic-parse-url .cluster.server))
+         (format ":%s" (url-port (url-generic-parse-url .cluster.server)))
+       ""))))
+
+(cl-defmethod kele--get-resource-lists-for-context ((cache kele--discovery-cache)
+                                                    &optional context)
+  (alist-get
+   (s-replace ":" "_" (kele--get-host-for-context (or context (kele-current-context-name))))
+   (oref cache contents)
+   nil nil #'equal))
 
 (cl-defmethod kele--get-groupversions-for-type ((cache kele--discovery-cache)
                                                 type
@@ -230,7 +241,7 @@ with the filesystem.")
 TYPE is expected to be the plural name of the resource.
 
 If CONTEXT is nil, use the current context."
-    (->> (alist-get (kele--get-host-for-context context) (oref cache contents) nil nil #'equal)
+    (->> (kele--get-resource-lists-for-context cache (or context (kele-current-context-name)))
          (-filter (lambda (api-resource-list)
                    (->> (alist-get 'resources api-resource-list)
                         (-any (lambda (resource)
@@ -242,7 +253,7 @@ If CONTEXT is nil, use the current context."
                                            group-version
                                            type
                                            &key context)
-  (->> (alist-get (kele--get-host-for-context context) (oref cache contents) nil nil #'equal)
+  (->> (kele--get-resource-lists-for-context cache (or context (kele-current-context-name)))
        (-first (lambda (resource-list) (equal (alist-get 'groupVersion resource-list) group-version)))
        (alist-get 'resources)
        (-first (lambda (resource) (equal (alist-get 'name resource) type)))
@@ -366,7 +377,8 @@ The values at each are as follows:
 ;; the resources, e.g. group and version
 (defun kele--get-resource-types-for-context (context-name)
   "Retrieve the names of all resource types for CONTEXT-NAME."
-  (->> (alist-get (kele--get-host-for-context context-name) (oref kele--global-discovery-cache contents) nil nil #'equal)
+  (->> (kele--get-resource-lists-for-context kele--global-discovery-cache
+                                             (or context-name (kele-current-context-name)))
        (-filter (lambda (resource-list) (equal (alist-get 'kind resource-list) "APIResourceList")))
        (-map (lambda (list) (alist-get 'resources list)))
        (-flatten-n 1)
