@@ -44,11 +44,9 @@
             :to-throw 'kele-request-error))
   (describe "when GROUP and VERSION not specified"
     (describe "when only one group-version exists for the argument resource type"
-      (before-each
-        (async-wait (kele--cache-update kele--global-discovery-cache))
-        (async-wait (kele--cache-update kele--global-kubeconfig-cache)))
-
       (it "auto-selects group-version"
+        (async-wait (kele--cache-update kele--global-discovery-cache))
+        (async-wait (kele--cache-update kele--global-kubeconfig-cache))
         (setq retval (kele--get-namespaced-resource "deployments" "coredns"))
         (expect (let-alist (kele--resource-container-resource retval) .metadata.name) :to-equal "coredns")
         (expect (alist-get 'apiVersion (kele--resource-container-resource retval)) :to-equal "apps/v1")))
