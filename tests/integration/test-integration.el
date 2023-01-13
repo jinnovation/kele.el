@@ -25,7 +25,6 @@
 
 (describe "kele--get-namespaced-resource"
   :var (retval)
-  ;; TODO: Test for when CONTEXT and NAMESPACE not specified
   (it "retrieves the resource as an alist"
     (setq retval (kele--get-namespaced-resource "apps" "v1" "deployments" "coredns"
                                                 :context "kind-kele-test-cluster0"
@@ -46,13 +45,24 @@
         (expect (let-alist (kele--resource-container-resource retval) .metadata.name) :to-equal "coredns")
         (expect (alist-get 'apiVersion (kele--resource-container-resource retval)) :to-equal "apps/v1")))
 
-    ;; FIXME: Lol might be time to start adding fixture CRDs to the integration
-    ;; test cluster.......
+    ;; TODO: Revive some of the multiple-groupversion tests from #54
     (describe "when multiple group-versions exist for the same resource type"
+      ;; NB: This is actually a unit test but we're keeping here to co-locate w/
+      ;; the rest of get-namespaced-resource tests
+      (before-each
+        (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
+        (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
+
+        (async-wait (kele--cache-update kele--global-kubeconfig-cache))
+        (async-wait (kele--cache-update kele--global-discovery-cache)))
+
       ;; This would allow consumers of this API to decide if they'd like to
       ;; disambiguate on users' behalf, present a completion buffer to users to
       ;; select, etc.
-      (xit "errors with the group-version options attached to the error"))))
+      (it "errors with the group-version options attached to the error"
+        ;; TODO: Test for the group-version options to be extractable from the
+        ;; error value
+        (expect (kele--get-namespaced-resource "ambiguousthings" "fake-name") :to-throw 'kele-ambiguous-groupversion-error)))))
 
 (describe "kele--proxy-process"
   (it "successfully creates a proxy process"

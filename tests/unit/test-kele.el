@@ -173,7 +173,7 @@
     (it "uses the default value"
       (expect (kele--get-cache-ttl-for-resource 'bar) :to-equal 60))))
 
-(describe "kele--update-discovery-cache"
+(describe "kele--cache-update (kele--discovery-cache)"
   (describe "the retval"
     (it "is keyed on host"
       (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
@@ -189,6 +189,9 @@
                                    api-resource-lists))
              (resources (-flatten-n 1 resource-lists))
              (names (-map (lambda (r) (alist-get 'name r)) resources)))
+        ;; TODO: Test for
+        ;;   - num of APIResourceLists present
+        ;;   - groupversions assoc'd w/ each APIResourcelist are as expected
         (expect names :to-have-same-items-as
                 '("componentstatuses"
                   "configmaps"
@@ -215,7 +218,8 @@
                   "serviceaccounts"
                   "services"
                   "services/proxy"
-                  "services/status")
+                  "services/status"
+                  "ambiguousthings")
                 )))))
 
 (describe "kele--get-resource-types-for-context"
@@ -251,7 +255,8 @@
                 "serviceaccounts"
                 "services"
                 "services/proxy"
-                "services/status")))))
+                "services/status"
+                "ambiguousthings")))))
 
 (describe "kele--kubeconfig-cache"
   :var (cache)
