@@ -34,6 +34,8 @@
 
 (require 'kele-fnr)
 
+(declare-function yaml-mode "yaml-mode")
+
 (defgroup kele nil
   "Integration constructs for Kubernetes."
   :group 'external
@@ -617,6 +619,18 @@ The cache has a TTL as defined by
 
 (define-error 'kele-request-error "Kele failed in querying the Kubernetes API")
 
+(cl-defstruct (kele--resource-container
+               (:constructor kele--resource-container-create)
+               (:copier nil))
+  "Container assocaiting a Kubernetes RESOURCE with its CONTEXT and NAMESPACE.
+
+RESOURCE is expected to be an alist representing the Kubernetes
+object.
+"
+  resource context namespace)
+
+;; TODO (#57): Make `group' and `version' optional. If ambiguous which one user wants
+;; (i.e. same kind name exists in multiple group-versions), error
 (cl-defun kele--get-namespaced-resource (group version kind name &key context namespace)
   "Get resource according to GROUP, VERSION, KIND, and NAME.
 
@@ -642,9 +656,63 @@ not namespaced."
           ((&alist 'port port) (kele--ensure-proxy context))
           (url (format "http://localhost:%s/%s" port url-all)))
     (condition-case err
-        (plz 'get url :as #'json-read)
-      (error (signal 'kele-request-error (error-message-string err)))))) ;
+        (kele--resource-container-create
+         :resource (plz 'get url :as #'json-read)
+         :context context
+         :namespace namespace)
+      (error (signal 'kele-request-error (error-message-string err))))))
 
+;; TODO (#58): add an option to filter out managed fields, similar to `kubectl get
+;; --show-managed-fields false' (the default behavior)
+;;
+;; This could even be a custom, e.g. `kele-filtered-object-fields'
+(cl-defun kele--render-object (object &optional buffer)
+  "Render OBJECT in a buffer as YAML.
+
+If BUFFER is provided, renders into it.  Otherwise, a new buffer
+will be created.
+
+OBJECT is either an alist representing a Kubernetes object, or a
+`kele--resource-container'.  If the latter, buffer will have
+context and namespace in its name."
+  (cl-assert (and object (if (kele--resource-container-p object)
+                             (kele--resource-container-resource object)
+                           t)))
+  (let* ((buf-name (concat " *kele: "
+                           (if (kele--resource-container-p object)
+                                 (format "%s(%s): "
+                                         (kele--resource-container-context
+                                          object)
+                                         (kele--resource-container-namespace
+                                          object)))
+                           (let-alist (if (kele--resource-container-p object)
+                                          (kele--resource-container-resource object)
+                                        object)
+                             (format "%s/%s" .kind .metadata.name))
+                           "*"))
+         (buf (or buffer (get-buffer-create buf-name)))
+         (obj (if (kele--resource-container-p object)
+                  (kele--resource-container-resource object)
+                object)))
+    (with-current-buffer buf
+      ;; TODO (#59): create a dedicated mode for kele displaying objects
+      ;;
+      ;; Some features:
+      ;;   - configurable option to, if out of focus for X amount of time, auto-cleanup
+      ;;   - keybinding to re-GET and refresh the contents
+      ;;   - Have a header up top to explain to users what's possible in this
+      ;;   buffer, e.g. keybindings -- similar to what Magit does w/ the commit
+      ;;   message authorship buffer (`magit-create-buffer-hook'?)
+      (erase-buffer)
+      (insert (yaml-encode obj))
+      (whitespace-cleanup)
+      (goto-char (point-min))
+      (if (featurep 'yaml-mode) (yaml-mode)
+        (message "[kele] For syntax highlighting, install `yaml-mode'."))
+      (read-only-mode))
+    (select-window (display-buffer buf))))
+
+;; (kele--render-object (kele--get-namespaced-resource "apps" "v1" "deployments" "workflow-controller"))
 
 (defvar kele--context-keymap nil
   "Keymap for actions on Kubernetes contexts.
