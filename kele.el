@@ -143,7 +143,7 @@ If WAIT is non-nil, `kele--proxy-process' will wait for the proxy
          (proc (make-process
                 :name proc-name
                 :command cmd
-                :buffer (generate-new-buffer (format "*%s*" proc-name))
+                :buffer (generate-new-buffer (format " *%s*" proc-name))
                 :noquery t
                 :sentinel
                 (lambda (proc _status)
