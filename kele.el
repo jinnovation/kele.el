@@ -662,7 +662,7 @@ not namespaced."
          :namespace namespace)
       (error (signal 'kele-request-error (error-message-string err))))))
 
-;; TODO: add an option to filter out managed fields, similar to `kubectl get
+;; TODO (#58): add an option to filter out managed fields, similar to `kubectl get
 ;; --show-managed-fields false' (the default behavior)
 ;;
 ;; This could even be a custom, e.g. `kele-filtered-object-fields'
