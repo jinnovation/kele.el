@@ -622,6 +622,11 @@ The cache has a TTL as defined by
 (cl-defstruct (kele--resource-container
                (:constructor kele--resource-container-create)
                (:copier nil))
+  "Container assocaiting a Kubernetes RESOURCE with its CONTEXT and NAMESPACE.
+
+RESOURCE is expected to be an alist representing the Kubernetes
+object.
+"
   resource context namespace)
 
 ;; TODO: Make `group' and `version' optional. If ambiguous which one user wants
