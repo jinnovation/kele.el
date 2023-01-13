@@ -70,8 +70,8 @@
         (condition-case err
             (kele--get-namespaced-resource "ambiguousthings" "fake-name")
           (kele-ambiguous-groupversion-error
-           (expect (cadr err) :to-have-same-items-as '("fake-group/v1"
-                                                       "fake-other-group/v1")))
+           (expect (cdr err) :to-have-same-items-as '("fake-group/v1"
+                                                      "fake-other-group/v1")))
           (:success (buttercup-fail "Received unexpected success")))))))
 
 (describe "kele--proxy-process"

@@ -633,7 +633,8 @@ The cache has a TTL as defined by
    context))
 
 (define-error 'kele-request-error "Kele failed in querying the Kubernetes API")
-(define-error 'kele-ambiguous-groupversion-error "TODO")
+(define-error 'kele-ambiguous-groupversion-error
+  "Found multiple group-versions associated with the given resource")
 
 (cl-defstruct (kele--resource-container
                (:constructor kele--resource-container-create)
@@ -675,7 +676,7 @@ not namespaced."
                                                 kind
                                                 :context context)))))
     (if (> (length group-versions) 1)
-        (signal 'kele-ambiguous-groupversion-error '())
+        (signal 'kele-ambiguous-groupversion-error group-versions)
       (-let* ((gv (car group-versions))
               (url-gv (if (s-contains-p "/" gv)
                           (format "apis/%s" gv)
