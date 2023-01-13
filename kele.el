@@ -219,12 +219,11 @@ with the filesystem.")
 
 (defun kele--get-host-for-context (&optional context)
   "Get host for CONTEXT."
-  (let-alist (kele--context-cluster (or context (kele-current-context-name)))
-    (s-concat
-     (url-host (url-generic-parse-url .cluster.server))
-     (if (url-port (url-generic-parse-url .cluster.server))
-         (format ":%s" (url-port (url-generic-parse-url .cluster.server)))
-       ""))))
+  (let* ((server (let-alist (kele--context-cluster (or context (kele-current-context-name)))
+                   .cluster.server))
+         (host (url-host (url-generic-parse-url server)))
+         (port (url-port (url-generic-parse-url server))))
+    (s-concat host (if port (format ":%s" port) ""))))
 
 (cl-defmethod kele--get-resource-lists-for-context ((cache kele--discovery-cache)
                                                     &optional context)
