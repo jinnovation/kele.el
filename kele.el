@@ -227,6 +227,7 @@ with the filesystem.")
 
 (cl-defmethod kele--get-resource-lists-for-context ((cache kele--discovery-cache)
                                                     &optional context)
+  "Get all resource lists for CONTEXT from CACHE."
   (alist-get
    (s-replace ":" "_" (kele--get-host-for-context (or context (kele-current-context-name))))
    (oref cache contents)
