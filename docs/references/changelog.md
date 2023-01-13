@@ -22,6 +22,8 @@ versioning][semver].
 
 - Fixed an issue where disabling `kele-mode` resulted in an error reporting
   unbound slot `filewatch-id` on `kele--discovery-cache`
+- Fixed an issue where cluster servers with ports,
+  e.g. `https://127.0.0.1:51134`, were not recognized properly
 
 ### Changed
 
