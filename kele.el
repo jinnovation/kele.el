@@ -624,6 +624,8 @@ The cache has a TTL as defined by
                (:copier nil))
   resource context namespace)
 
+;; TODO: Make `group' and `version' optional. If ambiguous which one user wants
+;; (i.e. same kind name exists in multiple group-versions), error
 (cl-defun kele--get-namespaced-resource (group version kind name &key context namespace)
   "Get resource according to GROUP, VERSION, KIND, and NAME.
 
@@ -657,6 +659,8 @@ not namespaced."
 
 ;; TODO: add an option to filter out managed fields, similar to `kubectl get
 ;; --show-managed-fields false' (the default behavior)
+;;
+;; This could even be a custom, e.g. `kele-filtered-object-fields'
 (cl-defun kele--render-object (object &optional buffer)
   "Render OBJECT in a buffer as YAML.
 
@@ -666,6 +670,8 @@ will be created.
 OBJECT is either an alist representing a Kubernetes object, or a
 `kele--resource-container'.  If the latter, buffer will have
 context and namespace in its name."
+  (cl-assert (and object (when (kele--resource-container-p object)
+                           (kele--resource-container-resource object))))
   (let* ((buf-name (concat " *kele: "
                            (if (kele--resource-container-p object)
                                  (format "%s(%s): "
@@ -677,11 +683,21 @@ context and namespace in its name."
                                           (kele--resource-container-resource object)
                                         object)
                              (format "%s/%s" .kind .metadata.name))))
-         (buf (or buffer (get-buffer-create buf-name t))))
+         (buf (or buffer (get-buffer-create buf-name t)))
+         (obj (if (kele--resource-container-p object)
+                  (kele--resource-container-resource object)
+                object)))
     (with-current-buffer buf
       ;; TODO: create a dedicated mode for kele displaying objects
+      ;;
+      ;; Some features:
+      ;;   - configurable option to, if out of focus for X amount of time, auto-cleanup
+      ;;   - keybinding to re-GET and refresh the contents
+      ;;   - Have a header up top to explain to users what's possible in this
+      ;;   buffer, e.g. keybindings -- similar to what Magit does w/ the commit
+      ;;   message authorship buffer (`magit-create-buffer-hook'?)
       (erase-buffer)
-      (insert (yaml-encode object))
+      (insert (yaml-encode obj))
       (whitespace-cleanup)
       (goto-char (point-min))
       (if (featurep 'yaml-mode) (yaml-mode)
