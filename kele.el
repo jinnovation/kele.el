@@ -670,8 +670,9 @@ will be created.
 OBJECT is either an alist representing a Kubernetes object, or a
 `kele--resource-container'.  If the latter, buffer will have
 context and namespace in its name."
-  (cl-assert (and object (when (kele--resource-container-p object)
-                           (kele--resource-container-resource object))))
+  (cl-assert (and object (if (kele--resource-container-p object)
+                             (kele--resource-container-resource object)
+                           t)))
   (let* ((buf-name (concat " *kele: "
                            (if (kele--resource-container-p object)
                                  (format "%s(%s): "
@@ -682,7 +683,8 @@ context and namespace in its name."
                            (let-alist (if (kele--resource-container-p object)
                                           (kele--resource-container-resource object)
                                         object)
-                             (format "%s/%s" .kind .metadata.name))))
+                             (format "%s/%s" .kind .metadata.name))
+                           "*"))
          (buf (or buffer (get-buffer-create buf-name t)))
          (obj (if (kele--resource-container-p object)
                   (kele--resource-container-resource object)
