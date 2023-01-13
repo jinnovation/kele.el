@@ -28,6 +28,8 @@ versioning][semver].
 ### Changed
 
 - Buffer for contexts' proxy processes are now hidden
+- Default value for `kele-cache-dir` is now `~/.kube/cache`; before it was
+  relative to the value of `kele-kubeconfig-path` (and unreliably so)
 
 ## 0.1.1
 

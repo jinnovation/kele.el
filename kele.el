@@ -49,7 +49,7 @@
   :group 'kele)
 
 (defcustom kele-cache-dir
-  (f-join (f-dirname kele-kubeconfig-path) "cache")
+  (f-expand "~/.kube/cache/")
   "Path to the kubectl cache."
   :group 'kele
   :type 'directory)
