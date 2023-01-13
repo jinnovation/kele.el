@@ -30,7 +30,9 @@
                                                 :context "kind-kele-test-cluster0"
                                                 :namespace "kube-system"))
 
-    (expect (let-alist retval .metadata.name) :to-equal "coredns"))
+    (expect (kele--resource-container-p retval) :to-be-truthy)
+    (expect (let-alist (kele--resource-container-resource retval) .metadata.name) :to-equal "coredns"))
+
   (it "returns an error if the resource is nonsense or does not exist"
     (expect (kele--get-namespaced-resource "hello" "v1" "salaries" "mine"
                                            :context "kind-kele-test-cluster0"
