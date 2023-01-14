@@ -758,7 +758,7 @@ throws an error."
                                     kind
                                     :context ctx))
                               nil
-                            (completing-read (format "Namespace to get `%s/%s'from: "
+                            (completing-read (format "Namespace to get `%s/%s' from: "
                                                      gv
                                                      kind)
                                              (kele--get-namespaces ctx)))))
