@@ -376,8 +376,6 @@ The values at each are as follows:
 
   - `port' is the port that the proxy was opened on.")
 
-;; TODO: At some point it might become necessary to return select metadata about
-;; the resources, e.g. group and version
 (defun kele--get-resource-types-for-context (context-name)
   "Retrieve the names of all resource types for CONTEXT-NAME."
   (->> (kele--get-resource-lists-for-context kele--global-discovery-cache
