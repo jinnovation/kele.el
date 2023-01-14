@@ -359,11 +359,11 @@ metadata:
     (async-wait (kele--cache-update kele--global-kubeconfig-cache)))
 
   (describe "when resource is not namespaced"
-    (xit "errors when namespace is provided anyway"
+    (it "errors when namespace is provided anyway"
       (expect (kele--get-namespaced-resource "nodes" "my-node"
                                              :namespace "foobar")
               :to-throw 'user-error))
-    (xit "calls the right endpoint"
+    (it "calls the right endpoint"
       (expect (kele--get-namespaced-resource
                "nodes" "my-node"
                :context "development")
@@ -376,10 +376,10 @@ metadata:
   (describe "when GROUP and VERSION not specified"
     (describe "when only one group-version exists for the argument resource type"
       (it "auto-selects group-version"
-        (kele--get-namespaced-resource "configmaps" "my-configmap" :namespace "foobar")
+        (kele--get-namespaced-resource "deployments" "my-deployment" :namespace "foobar")
         (expect 'plz :to-have-been-called-with
                 'get
-                "http://localhost:9999/api/v1/namespaces/foobar/configmaps/my-configmap"
+                "http://localhost:9999/api/v1/namespaces/foobar/deployments/my-deployment"
                 :as #'json-read)))
 
     (describe "when multiple group-versions exist for the same resource type"

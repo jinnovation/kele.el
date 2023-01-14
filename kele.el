@@ -667,6 +667,10 @@ CONTEXT.
 
 Note that this function does *not* handle resource kinds that are
 not namespaced."
+  (when (and namespace (kele--resource-namespaced-p
+                        kele--global-discovery-cache kind name
+                        :context context))
+    (user-error "Namespace `%s' for un-namespaced resource `%s'; remove namespace and try again" namespace kind))
   (let* ((context (or context (kele-current-context-name)))
          (namespace (or namespace (kele--default-namespace-for-context context)))
          (group-versions
