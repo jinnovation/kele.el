@@ -341,4 +341,37 @@ metadata:
       (it "buffer name only has kind and name"
         (kele--render-object fake-obj)
         (expect (-map #'buffer-name (buffer-list)) :to-contain " *kele: FakeKind/fake-name*")))))
+
+(describe "kele--get-namespaced-resource"
+  (before-each
+    (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
+    (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
+    (async-wait (kele--cache-update kele--global-discovery-cache))
+    (async-wait (kele--cache-update kele--global-kubeconfig-cache)))
+
+  (describe "when GROUP and VERSION not specified"
+    (describe "when only one group-version exists for the argument resource type"
+      (it "auto-selects group-version"
+        (spy-on 'plz)
+        (spy-on 'kele--ensure-proxy :and-return-value '((port . 9999)))
+
+        (kele--get-namespaced-resource "configmaps" "my-configmap" :namespace "foobar")
+        (expect 'plz :to-have-been-called-with
+                'get
+                "http://localhost:9999/api/v1/namespaces/foobar/configmaps/my-configmap"
+                :as #'json-read)))
+
+    (describe "when multiple group-versions exist for the same resource type"
+      ;; This would allow consumers of this API to decide if they'd like to
+      ;; disambiguate on users' behalf, present a completion buffer to users to
+      ;; select, etc.
+      (it "errors with the group-version options attached to the error"
+        (expect (kele--get-namespaced-resource "ambiguousthings" "fake-name")
+                :to-throw 'kele-ambiguous-groupversion-error)
+        (condition-case err
+            (kele--get-namespaced-resource "ambiguousthings" "fake-name")
+          (kele-ambiguous-groupversion-error
+           (expect (cdr err) :to-have-same-items-as '("fake-group/v1"
+                                                      "fake-other-group/v1")))
+          (:success (buttercup-fail "Received unexpected success")))))))
 ;;; test-kele.el ends here
