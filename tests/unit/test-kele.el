@@ -351,17 +351,31 @@ metadata:
 
 (describe "kele--get-namespaced-resource"
   (before-each
+    (spy-on 'plz)
+    (spy-on 'kele--ensure-proxy :and-return-value '((port . 9999)))
     (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
     (async-wait (kele--cache-update kele--global-discovery-cache))
     (async-wait (kele--cache-update kele--global-kubeconfig-cache)))
 
+  (describe "when resource is not namespaced"
+    (xit "errors when namespace is provided anyway"
+      (expect (kele--get-namespaced-resource "nodes" "my-node"
+                                             :namespace "foobar")
+              :to-throw 'user-error))
+    (xit "calls the right endpoint"
+      (expect (kele--get-namespaced-resource
+               "nodes" "my-node"
+               :context "development")
+              :not :to-throw)
+      (expect 'plz :to-have-been-called-with
+              'get
+              "http://localhost:9999/api/v1/nodes/my-node"
+              :as #'json-read)))
+
   (describe "when GROUP and VERSION not specified"
     (describe "when only one group-version exists for the argument resource type"
       (it "auto-selects group-version"
-        (spy-on 'plz)
-        (spy-on 'kele--ensure-proxy :and-return-value '((port . 9999)))
-
         (kele--get-namespaced-resource "configmaps" "my-configmap" :namespace "foobar")
         (expect 'plz :to-have-been-called-with
                 'get
@@ -380,5 +394,6 @@ metadata:
           (kele-ambiguous-groupversion-error
            (expect (cdr err) :to-have-same-items-as '("fake-group/v1"
                                                       "fake-other-group/v1")))
-          (:success (buttercup-fail "Received unexpected success")))))))
+          (:success (buttercup-fail "Received unexpected success")))
+        (expect 'kele--ensure-proxy :not :to-have-been-called)))))
 ;;; test-kele.el ends here
