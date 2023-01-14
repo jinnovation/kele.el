@@ -54,6 +54,12 @@ jobs:
           config: tests/test-cluster.yaml
           cluster_name: kele-test-cluster0
 
+      - name: Try populating discovery cache
+        id: discovery
+        if: steps.kind.outcome == 'success' && steps.kind.conclusion == 'success'
+        run: |
+          kubectl -v=10 cluster-info
+
       - name: Run integration tests
         if: steps.kind.outcome == 'success' && steps.kind.conclusion == 'success'
         uses: nick-fields/retry@v2
