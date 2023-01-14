@@ -307,6 +307,12 @@
       (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
       (async-wait (kele--cache-update kele--global-discovery-cache)))
 
+    (it "errors if resource not found"
+      (expect (kele--resource-namespaced-p kele--global-discovery-cache
+                                           "v1"
+                                           "foobar")
+              :to-throw 'kele-cache-lookup-error))
+
     (it "returns t if resource is namespaced"
       (expect (kele--resource-namespaced-p kele--global-discovery-cache
                                            "v1"

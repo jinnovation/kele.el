@@ -84,6 +84,12 @@ pods."
   :type '(alist :key-type symbol :value-type 'integer)
   :group 'kele)
 
+(define-error 'kele-cache-lookup-error
+  "Kele failed to find the requested resource in the cache.")
+(define-error 'kele-request-error "Kele failed in querying the Kubernetes API")
+(define-error 'kele-ambiguous-groupversion-error
+  "Found multiple group-versions associated with the given resource")
+
 (cl-defun kele--retry (fn &key (count 5) (wait 1) (timeout 100))
   "Retry FN COUNT times, waiting WAIT seconds between each.
 
@@ -256,13 +262,14 @@ If CONTEXT is nil, use the current context."
   "Look up the namespaced-ness of GROUP-VERSION TYPE in CACHE.
 
 If CONTEXT is not provided, the current context is used."
-  (->> (kele--get-resource-lists-for-context cache (or context (kele-current-context-name)))
-       (-first (lambda (resource-list) (equal (alist-get 'groupVersion resource-list) group-version)))
-       (alist-get 'resources)
-       (-first (lambda (resource) (equal (alist-get 'name resource) type)))
-       (alist-get 'namespaced)
-       (eq :false)
-       (not)))
+  (if-let ((namespaced-p
+            (->> (kele--get-resource-lists-for-context cache (or context (kele-current-context-name)))
+                 (-first (lambda (resource-list) (equal (alist-get 'groupVersion resource-list) group-version)))
+                 (alist-get 'resources)
+                 (-first (lambda (resource) (equal (alist-get 'name resource) type)))
+                 (alist-get 'namespaced))))
+      (not (eq :false namespaced-p))
+    (signal 'kele-cache-lookup-error `(,context ,group-version ,type))))
 
 (cl-defmethod kele--cache-update ((cache kele--discovery-cache) &optional _)
   "Update CACHE with the values from `kele-cache-dir'.
@@ -629,10 +636,6 @@ The cache has a TTL as defined by
    nil
    #'kele--clear-namespaces-for-context
    context))
-
-(define-error 'kele-request-error "Kele failed in querying the Kubernetes API")
-(define-error 'kele-ambiguous-groupversion-error
-  "Found multiple group-versions associated with the given resource")
 
 (cl-defstruct (kele--resource-container
                (:constructor kele--resource-container-create)
