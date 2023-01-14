@@ -683,7 +683,7 @@ throws an error."
                                (car group-versions)
                                kind
                                :context context)))
-      (user-error "Namespace `%s' for un-namespaced resource `%s'; remove namespace and try again" namespace kind))
+      (user-error "Namespace `%s' specified for un-namespaced resource `%s'; remove namespace and try again" namespace kind))
 
     (-let* ((gv (car group-versions))
             (namespace (and (kele--resource-namespaced-p
