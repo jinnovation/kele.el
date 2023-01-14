@@ -46,7 +46,7 @@
                                            :version "v1"
                                            :context "kind-kele-test-cluster0"
                                            :namespace "kube-system")
-            :to-throw 'kele-request-error)))
+            :to-throw 'kele-cache-lookup-error)))
 
 (describe "kele--proxy-process"
   (it "successfully creates a proxy process"
