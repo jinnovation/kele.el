@@ -25,6 +25,11 @@
 
 (describe "kele--get-resource"
   :var (retval)
+
+  (before-each
+    (async-wait (kele--cache-update kele--global-discovery-cache))
+    (async-wait (kele--cache-update kele--global-kubeconfig-cache)))
+
   (it "retrieves the resource as an alist"
     (setq retval (kele--get-resource "deployments" "coredns"
                                                 :group "apps"
