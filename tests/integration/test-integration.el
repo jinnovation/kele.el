@@ -64,4 +64,4 @@
       (call-interactively #'kele-get))
     (expect (-map #'buffer-name (buffer-list))
             :to-contain
-            " *kele: kind-kele-test-cluster0(kube-system): Deployment/coredns")))
+            " *kele: kind-kele-test-cluster0(kube-system): Deployment/coredns*")))
