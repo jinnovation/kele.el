@@ -376,10 +376,10 @@ metadata:
   (describe "when GROUP and VERSION not specified"
     (describe "when only one group-version exists for the argument resource type"
       (it "auto-selects group-version"
-        (kele--get-namespaced-resource "deployments" "my-deployment" :namespace "foobar")
+        (kele--get-namespaced-resource "resourcequotas" "my-rq" :namespace "foobar")
         (expect 'plz :to-have-been-called-with
                 'get
-                "http://localhost:9999/api/v1/namespaces/foobar/deployments/my-deployment"
+                "http://localhost:9999/api/v1/namespaces/foobar/resourcequotas/my-rq"
                 :as #'json-read)))
 
     (describe "when multiple group-versions exist for the same resource type"

@@ -647,32 +647,27 @@ object.
 "
   resource context namespace)
 
-;; TODO (#57): Make `group' and `version' optional. If ambiguous which one user wants
-;; (i.e. same kind name exists in multiple group-versions), error
-(cl-defun kele--get-namespaced-resource (kind name &key group version context namespace)
+(cl-defun kele--get-resource (kind name &key group version context namespace)
   "Get resource KIND by NAME.
 
-KIND should be the plural form of the kind's name, e.g. \"pods\" instead of \"pod.\"
+KIND should be the plural form of the kind's name, e.g. \"pods\"
+instead of \"pod.\"
 
-If GROUP and VERSION are nil, the function will look up the possible
-group-versions for the resource KIND. If there is more than one group-version
-associated with the resource KIND, the function will signal an error.
+If GROUP and VERSION are nil, the function will look up the
+possible group-versions for the resource KIND. If there is more
+than one group-version associated with the resource KIND, the
+function will signal an error.
 
 If GROUP is nil, look up KIND in the core API group.
 
 If CONTEXT is nil, use the current namespace.
 
-If NAMESPACE is nil, use the default namespace of the given
-CONTEXT.
+If NAMESPACE is nil and the resource KIND is namespaced, use the
+default namespace of the given CONTEXT.
 
-Note that this function does *not* handle resource kinds that are
-not namespaced."
-  (when (and namespace (kele--resource-namespaced-p
-                        kele--global-discovery-cache kind name
-                        :context context))
-    (user-error "Namespace `%s' for un-namespaced resource `%s'; remove namespace and try again" namespace kind))
+If NAMESPACE is provided for a non-namespaced resource KIND,
+throws an error."
   (let* ((context (or context (kele-current-context-name)))
-         (namespace (or namespace (kele--default-namespace-for-context context)))
          (group-versions
           (cond
            ((and group version) (list (format "%s/%s" group version)))
@@ -680,23 +675,38 @@ not namespaced."
            (t (kele--get-groupversions-for-type kele--global-discovery-cache
                                                 kind
                                                 :context context)))))
-    (if (> (length group-versions) 1)
-        (signal 'kele-ambiguous-groupversion-error group-versions)
-      (-let* ((gv (car group-versions))
-              (url-gv (if (s-contains-p "/" gv)
-                          (format "apis/%s" gv)
-                        (format "api/%s" gv)))
-              (url-ns (format "namespaces/%s" namespace))
-              (url-res (format "%s/%s" kind name))
-              (url-all (s-join "/" `(,url-gv ,url-ns ,url-res)))
-              ((&alist 'port port) (kele--ensure-proxy context))
-              (url (format "http://localhost:%s/%s" port url-all)))
-        (condition-case err
-            (kele--resource-container-create
-             :resource (plz 'get url :as #'json-read)
-             :context context
-             :namespace namespace)
-          (error (signal 'kele-request-error (error-message-string err))))))))
+
+    (when (> (length group-versions) 1)
+      (signal 'kele-ambiguous-groupversion-error group-versions))
+    (when (and namespace (not (kele--resource-namespaced-p
+                               kele--global-discovery-cache
+                               (car group-versions)
+                               kind
+                               :context context)))
+      (user-error "Namespace `%s' for un-namespaced resource `%s'; remove namespace and try again" namespace kind))
+
+    (-let* ((gv (car group-versions))
+            (namespace (and (kele--resource-namespaced-p
+                             kele--global-discovery-cache
+                             gv
+                             kind
+                             :context context)
+                            (or namespace (kele--default-namespace-for-context context))))
+            (url-gv (if (s-contains-p "/" gv)
+                        (format "apis/%s" gv)
+                      (format "api/%s" gv)))
+            (url-res (format "%s/%s" kind name))
+            (url-all (concat url-gv "/"
+                             (if namespace (format "namespaces/%s/" namespace) "")
+                             url-res))
+            ((&alist 'port port) (kele--ensure-proxy context))
+            (url (format "http://localhost:%s/%s" port url-all)))
+      (condition-case err
+          (kele--resource-container-create
+           :resource (plz 'get url :as #'json-read)
+           :context context
+           :namespace namespace)
+        (error (signal 'kele-request-error (error-message-string err)))))))
 
 ;; TODO (#58): add an option to filter out managed fields, similar to `kubectl get
 ;; --show-managed-fields false' (the default behavior)
