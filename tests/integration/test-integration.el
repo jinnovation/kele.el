@@ -4,6 +4,7 @@
 (require 'f)
 (require 'kele)
 (require 'plz)
+(require 'with-simulated-input)
 
 (describe "config interactions"
   (describe "kele-namespace-switch-for-context"
