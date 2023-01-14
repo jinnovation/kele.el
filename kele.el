@@ -636,13 +636,16 @@ If not cached, will fetch and cache the namespaces."
 
 The cache has a TTL as defined by
 `kele-resource-refresh-overrides' and
-`kele-resource-default-refresh-interval'."
+`kele-resource-default-refresh-interval'.
+
+Returns the passed-in list of namespaces."
   (add-to-list 'kele--context-namespaces `(,(intern context) . ,namespace-names))
   (run-with-timer
    (kele--get-cache-ttl-for-resource 'namespace)
    nil
    #'kele--clear-namespaces-for-context
-   context))
+   context)
+  namespace-names)
 
 (cl-defstruct (kele--resource-container
                (:constructor kele--resource-container-create)

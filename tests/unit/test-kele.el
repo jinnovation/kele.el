@@ -166,7 +166,10 @@
     (expect (alist-get 'foobar kele--context-namespaces)
             :to-equal
             '("n0" "n1" "n2"))
-    (expect 'run-with-timer :to-have-been-called)))
+    (expect 'run-with-timer :to-have-been-called))
+  (it "returns the namespaces list"
+    (expect (kele--cache-namespaces "foobar" "n0" "n1" "n2")
+            :to-equal '("n0" "n1" "n2"))))
 
 (describe "resource caching"
   (before-each

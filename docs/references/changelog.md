@@ -24,6 +24,8 @@ versioning][semver].
   unbound slot `filewatch-id` on `kele--discovery-cache`
 - Fixed an issue where cluster servers with ports,
   e.g. `https://127.0.0.1:51134`, were not recognized properly
+- Fixed an issue where namespace completion candidates failed to populate on
+  initial fetch of said namespaces from the Kubernetes API
 
 ### Changed
 
