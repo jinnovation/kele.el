@@ -561,6 +561,7 @@ Returns the proxy process."
            (proc (kele--proxy-process context :port selected-port))
            (cleanup (when ephemeral
                       (run-with-timer kele-proxy-ttl nil #'kele-proxy-stop context)))
+           ;; TODO: Define a struct for this
            (entry `((proc . ,proc)
                     (timer . ,cleanup)
                     (port . ,selected-port))))
@@ -609,6 +610,12 @@ If not cached, will fetch and cache the namespaces."
       namespaces
     (apply #'kele--cache-namespaces context (kele--fetch-namespaces context))))
 
+;; TODO: Allow for injecting the proxy dependency.
+;; This would allow for consumers to create their own proxy, e.g. to start it
+;; async while accepting user input, and defer its use to here.
+;;
+;; :proxy value should be assumed to be either a proxy container struct or a
+;; future that's expected to return one.
 (defun kele--fetch-namespaces (context)
   "Fetch namespaces for CONTEXT."
   (-if-let* (((&alist 'port port) (kele--ensure-proxy context))
