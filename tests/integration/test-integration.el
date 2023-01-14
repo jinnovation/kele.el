@@ -23,10 +23,13 @@
               "kube-system"
               "local-path-storage"))))
 
-(describe "kele--get-namespaced-resource"
+(describe "kele--get-resource"
   :var (retval)
+
   (it "retrieves the resource as an alist"
-    (setq retval (kele--get-namespaced-resource "deployments" "coredns"
+    (async-wait (kele--cache-update kele--global-discovery-cache))
+    (async-wait (kele--cache-update kele--global-kubeconfig-cache))
+    (setq retval (kele--get-resource "deployments" "coredns"
                                                 :group "apps"
                                                 :version "v1"
                                                 :context "kind-kele-test-cluster0"
@@ -36,12 +39,14 @@
     (expect (let-alist (kele--resource-container-resource retval) .metadata.name) :to-equal "coredns"))
 
   (it "returns an error if the resource is nonsense or does not exist"
-    (expect (kele--get-namespaced-resource "salaries" "mine"
+    (async-wait (kele--cache-update kele--global-discovery-cache))
+    (async-wait (kele--cache-update kele--global-kubeconfig-cache))
+    (expect (kele--get-resource "salaries" "mine"
                                            :group "hello"
                                            :version "v1"
                                            :context "kind-kele-test-cluster0"
                                            :namespace "kube-system")
-            :to-throw 'kele-request-error)))
+            :to-throw 'kele-cache-lookup-error)))
 
 (describe "kele--proxy-process"
   (it "successfully creates a proxy process"

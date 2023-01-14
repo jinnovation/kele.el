@@ -349,23 +349,37 @@ metadata:
         (kele--render-object fake-obj)
         (expect (-map #'buffer-name (buffer-list)) :to-contain " *kele: FakeKind/fake-name*")))))
 
-(describe "kele--get-namespaced-resource"
+(describe "kele--get-resource"
   (before-each
+    (spy-on 'plz)
+    (spy-on 'kele--ensure-proxy :and-return-value '((port . 9999)))
     (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
     (async-wait (kele--cache-update kele--global-discovery-cache))
     (async-wait (kele--cache-update kele--global-kubeconfig-cache)))
 
+  (describe "when resource is not namespaced"
+    (it "errors when namespace is provided anyway"
+      (expect (kele--get-resource "nodes" "my-node"
+                                             :namespace "foobar")
+              :to-throw 'user-error))
+    (it "calls the right endpoint"
+      (expect (kele--get-resource
+               "nodes" "my-node"
+               :context "development")
+              :not :to-throw)
+      (expect 'plz :to-have-been-called-with
+              'get
+              "http://localhost:9999/api/v1/nodes/my-node"
+              :as #'json-read)))
+
   (describe "when GROUP and VERSION not specified"
     (describe "when only one group-version exists for the argument resource type"
       (it "auto-selects group-version"
-        (spy-on 'plz)
-        (spy-on 'kele--ensure-proxy :and-return-value '((port . 9999)))
-
-        (kele--get-namespaced-resource "configmaps" "my-configmap" :namespace "foobar")
+        (kele--get-resource "resourcequotas" "my-rq" :namespace "foobar")
         (expect 'plz :to-have-been-called-with
                 'get
-                "http://localhost:9999/api/v1/namespaces/foobar/configmaps/my-configmap"
+                "http://localhost:9999/api/v1/namespaces/foobar/resourcequotas/my-rq"
                 :as #'json-read)))
 
     (describe "when multiple group-versions exist for the same resource type"
@@ -373,12 +387,13 @@ metadata:
       ;; disambiguate on users' behalf, present a completion buffer to users to
       ;; select, etc.
       (it "errors with the group-version options attached to the error"
-        (expect (kele--get-namespaced-resource "ambiguousthings" "fake-name")
+        (expect (kele--get-resource "ambiguousthings" "fake-name")
                 :to-throw 'kele-ambiguous-groupversion-error)
         (condition-case err
-            (kele--get-namespaced-resource "ambiguousthings" "fake-name")
+            (kele--get-resource "ambiguousthings" "fake-name")
           (kele-ambiguous-groupversion-error
            (expect (cdr err) :to-have-same-items-as '("fake-group/v1"
                                                       "fake-other-group/v1")))
-          (:success (buttercup-fail "Received unexpected success")))))))
+          (:success (buttercup-fail "Received unexpected success")))
+        (expect 'kele--ensure-proxy :not :to-have-been-called)))))
 ;;; test-kele.el ends here
