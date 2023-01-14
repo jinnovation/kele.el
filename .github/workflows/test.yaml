@@ -54,6 +54,7 @@ jobs:
           config: tests/test-cluster.yaml
           cluster_name: kele-test-cluster0
 
+      # See #69
       - name: Try populating discovery cache
         id: discovery
         if: steps.kind.outcome == 'success' && steps.kind.conclusion == 'success'
