@@ -222,7 +222,7 @@ with the filesystem.")
   (let* ((server (let-alist (kele--context-cluster (or context (kele-current-context-name)))
                    .cluster.server))
          (host (url-host (url-generic-parse-url server)))
-         (port (url-port (url-generic-parse-url server))))
+         (port (url-portspec (url-generic-parse-url server))))
     (s-concat host (if port (format ":%s" port) ""))))
 
 (cl-defmethod kele--get-resource-lists-for-context ((cache kele--discovery-cache)

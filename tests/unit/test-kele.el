@@ -83,7 +83,8 @@
   (it "returns the correct value"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
     (async-wait (kele--cache-update kele--global-kubeconfig-cache))
-    (expect (kele--get-host-for-context "development") :to-equal "123.456.789.0:9999")))
+    (expect (kele--get-host-for-context "development") :to-equal "123.456.789.0:9999")
+    (expect (kele--get-host-for-context "no-namespace") :to-equal "111.111.111.111")))
 
 (describe "kele--context-cluster-name"
   (it "returns the correct cluster"
