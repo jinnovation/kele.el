@@ -1,0 +1,16 @@
+{
+    "resources": [
+        {
+            "kind": "AmbiguousThingFoo",
+            "name": "ambiguousthings",
+            "namespaced": true,
+            "singularName": "",
+            "verbs": [
+                "get"
+            ]
+        }
+    ],
+    "groupVersion": "fake-group/v1",
+    "apiVersion": "v1",
+    "kind": "APIResourceList"
+}
