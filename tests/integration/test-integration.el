@@ -52,3 +52,15 @@
   (it "successfully creates a proxy process"
     (kele--proxy-process "kind-kele-test-cluster0" :port 9999 :wait t :read-only t)
     (expect (plz-response-status (kele--retry (lambda () (plz 'get "http://127.0.0.1:9999/readyz" :as 'response)))) :to-equal 200)))
+
+(describe "kele-get"
+  (it "fetches the resource"
+
+    (async-wait (kele--cache-update kele--global-discovery-cache))
+    (async-wait (kele--cache-update kele--global-kubeconfig-cache))
+    (with-simulated-input
+        "deployments RET kube-system RET coredns"
+      (call-interactively #'kele-get))
+    (expect (-map #'buffer-name (buffer-list))
+            :to-contain
+            " *kele: kind-kele-test-cluster0(kube-system): Deployment/coredns")))
