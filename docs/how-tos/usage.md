@@ -34,7 +34,9 @@ with completion candidates for:
 M-x kele-context-switch
 ```
 
-![](./img/context-switch.gif)
+??? example "Demo"
+
+    ![](./img/context-switch.gif)
 
 This can also be done via [Embark] on any selection candidate in any other
 context-related Kele command, e.g. [`kele-context-rename`](#renaming-a-context).
@@ -45,7 +47,9 @@ context-related Kele command, e.g. [`kele-context-rename`](#renaming-a-context).
 M-x kele-context-rename
 ```
 
-![](./img/context-rename.gif)
+??? example "Demo"
+
+    ![](./img/context-rename.gif)
 
 This can also be done via [Embark] on any selection candidate in any other
 context-related Kele command, e.g. [`kele-context-switch`](#switching-contexts).
@@ -57,7 +61,9 @@ proxies](https://kubernetes.io/docs/tasks/extend-kubernetes/http-proxy-access-ap
 for each context. The status of each context's proxy is displayed in the
 annotations for each cluster completion candidate.
 
-![](./img/proxy-status-completion.png)
+??? example "Demo"
+
+    ![](./img/proxy-status-completion.png)
 
 !!! note
 
