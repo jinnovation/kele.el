@@ -719,6 +719,9 @@ throws an error."
            :retrieval-time time)
         (error (signal 'kele-request-error (error-message-string err)))))))
 
+(defvar kele--resource-context)
+(defvar kele--resource-retrieval-time)
+
 (define-derived-mode kele-get-mode yaml-mode "Kele Get"
   "Major mode for viewing and refreshing Kele resource buffers.
 
