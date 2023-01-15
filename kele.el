@@ -8,7 +8,7 @@
 ;; Homepage: https://github.com/jinnovation/kele.el
 ;; Keywords: kubernetes tools
 ;; SPDX-License-Identifier: Apache-2.0
-;; Package-Requires: ((emacs "27.1") (async "1.9.7") (dash "2.19.1") (f  "0.20.0") (ht "2.3") (plz "0.3") (request "0.3.2") (yaml "0.5.1") (yaml-mode "0.0.15"))
+;; Package-Requires: ((emacs "27.1") (async "1.9.7") (dash "2.19.1") (f "0.20.0") (ht "2.3") (plz "0.3") (request "0.3.2") (yaml "0.5.1") (yaml-mode "0.0.15"))
 
 ;;; Commentary:
 
