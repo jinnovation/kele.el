@@ -1,4 +1,4 @@
-;;; kele.el --- Interface with Kubernetes -*- lexical-binding: t; -*-
+;;; kele.el --- Spritzy Kubernetes cluster management -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2022-2023 Jonathan Jin
 
