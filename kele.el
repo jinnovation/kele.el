@@ -620,7 +620,7 @@ If not cached, will fetch and cache the namespaces."
   "Fetch namespaces for CONTEXT."
   (-if-let* (((&alist 'port port) (kele--ensure-proxy context))
              (url (format "http://localhost:%s/api/v1/namespaces" port))
-             (data (plz 'get url :as #'json-read))
+             (data (kele--retry (lambda () (plz 'get url :as #'json-read))))
              ((&alist 'items items) data))
       (-map (-lambda ((&alist 'metadata (&alist 'name name))) name)
             (append items '()))
