@@ -34,6 +34,8 @@
 
 (require 'kele-fnr)
 
+(declare-function yaml-mode "yaml-mode")
+
 (defgroup kele nil
   "Integration constructs for Kubernetes."
   :group 'external
