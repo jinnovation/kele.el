@@ -13,7 +13,7 @@ versioning][semver].
 
 ### Added
 
-- `kele-get` buffers now have a dedicated major mode, `kele-get-mode`.
+- `kele-get` buffers now have a dedicated minor mode, `kele-get-mode`.
 - `kele-get` buffers now print a header detailing, for the resource under
   display: the **context** it was fetched from; and the **time of retrieval**
 

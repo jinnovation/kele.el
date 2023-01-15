@@ -31,7 +31,6 @@
 (require 'subr-x)
 (require 'url-parse)
 (require 'yaml)
-(require 'yaml-mode)
 
 (require 'kele-fnr)
 
