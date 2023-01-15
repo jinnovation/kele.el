@@ -11,8 +11,15 @@ versioning][semver].
 
 ## Upcoming
 
+This release introduces `kele-get` -- `kubectl get`, the Emacs way :rocket:. See
+[How-Tos > Usage > Working with
+Resources](../how-tos/usage.md#working-with-resources) for details and a demo
+GIF.
+
 ### Added
 
+- Implemented `kele-get` for interactively getting and displaying a given
+  resource
 - Context annotations now display whether a proxy server is currently active for
   the given context
 - Implemented interactive functions for per-context proxy server management:

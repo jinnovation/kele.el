@@ -5,6 +5,18 @@
     You'll notice this page is pretty sparse. Kele is an early-stage package
     with lots of room to grow. Stay tuned for more!
 
+## Working with Resources
+
+### Displaying a single resource
+
+```
+M-x kele-get
+```
+
+??? example "Demo"
+
+    ![](./img/kele-get.gif)
+
 ## Contexts
 
 ### Switching contexts

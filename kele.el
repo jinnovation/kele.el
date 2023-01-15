@@ -561,6 +561,7 @@ Returns the proxy process."
            (proc (kele--proxy-process context :port selected-port))
            (cleanup (when ephemeral
                       (run-with-timer kele-proxy-ttl nil #'kele-proxy-stop context)))
+           ;; TODO: Define a struct for this
            (entry `((proc . ,proc)
                     (timer . ,cleanup)
                     (port . ,selected-port))))
@@ -609,6 +610,12 @@ If not cached, will fetch and cache the namespaces."
       namespaces
     (apply #'kele--cache-namespaces context (kele--fetch-namespaces context))))
 
+;; TODO (#72): Allow for injecting the proxy dependency.
+;; This would allow for consumers to create their own proxy, e.g. to start it
+;; async while accepting user input, and defer its use to here.
+;;
+;; :proxy value should be assumed to be either a proxy container struct or a
+;; future that's expected to return one.
 (defun kele--fetch-namespaces (context)
   "Fetch namespaces for CONTEXT."
   (-if-let* (((&alist 'port port) (kele--ensure-proxy context))
@@ -706,10 +713,66 @@ throws an error."
             (url (format "http://localhost:%s/%s" port url-all)))
       (condition-case err
           (kele--resource-container-create
-           :resource (plz 'get url :as #'json-read)
+           :resource (kele--retry (lambda () (plz 'get url :as #'json-read)))
            :context context
            :namespace namespace)
         (error (signal 'kele-request-error (error-message-string err)))))))
+
+(cl-defun kele-get (kind name &key group version context namespace)
+  "Get resource KIND by NAME and display it in a buffer.
+
+KIND should be the plural form of the kind's name, e.g. \"pods\"
+instead of \"pod.\"
+
+If GROUP and VERSION are nil, the function will look up the
+possible group-versions for the resource KIND. If there is more
+than one group-version associated with the resource KIND, the
+function will signal an error.
+
+If GROUP is nil, look up KIND in the core API group.
+
+If CONTEXT is nil, use the current context.
+
+If NAMESPACE is nil and the resource KIND is namespaced, use the
+default namespace of the given CONTEXT.
+
+If NAMESPACE is provided for a non-namespaced resource KIND,
+throws an error."
+  ;; TODO (#72): Start proxy server asynchronously here; await on it right when it's
+  ;; needed
+  (interactive (let* ((ctx (kele-current-context-name))
+                      (kind (completing-read
+                             "Kind: "
+                             (kele--get-resource-types-for-context ctx)))
+                      (gvs (kele--get-groupversions-for-type kele--global-discovery-cache
+                                                             kind
+                                                             :context ctx))
+                      (gv (if (= (length gvs) 1)
+                              (car gvs)
+                            (completing-read (format "Desired group-version of `%s': "
+                                                     kind)
+                                             gvs)))
+                      (ns (if (not (kele--resource-namespaced-p
+                                    kele--global-discovery-cache
+                                    gv
+                                    kind
+                                    :context ctx))
+                              nil
+                            (completing-read (format "Namespace to get `%s/%s' from: "
+                                                     gv
+                                                     kind)
+                                             (kele--get-namespaces ctx)))))
+                 (list kind
+                       (read-string "Name: ")
+                       :group (car (s-split "/" gv))
+                       :version (cadr (s-split "/" gv))
+                       :context ctx
+                       :namespace ns)))
+  (kele--render-object (kele--get-resource kind name
+                                           :group group
+                                           :version version
+                                           :namespace namespace
+                                           :context context)))
 
 ;; TODO (#58): add an option to filter out managed fields, similar to `kubectl get
 ;; --show-managed-fields false' (the default behavior)
