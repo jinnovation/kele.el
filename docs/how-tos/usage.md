@@ -13,9 +13,9 @@
 M-x kele-get
 ```
 
-Kele allows for interactively retrieving the manifest for a given Kubernetes
-object and displaying it in a separate buffer. `kele-get` will present you
-with completion candidates for:
+`kele-get` allows you to retrieve the manifest for a given Kubernetes object and
+displaying it in a separate buffer. `kele-get` will present you with completion
+candidates for:
 
 - The resource kind;
 - The group-version (if the same resource kind exists in multiple groups);
