@@ -655,7 +655,7 @@ Returns the passed-in list of namespaces."
 RESOURCE is expected to be an alist representing the Kubernetes
 object.
 "
-  resource context namespace)
+  resource context namespace retrieval-time)
 
 (cl-defun kele--get-resource (kind name &key group version context namespace)
   "Get resource KIND by NAME.
@@ -678,6 +678,7 @@ default namespace of the given CONTEXT.
 If NAMESPACE is provided for a non-namespaced resource KIND,
 throws an error."
   (let* ((context (or context (kele-current-context-name)))
+         (time (current-time-string))
          (group-versions
           (cond
            ((and group version) (list (format "%s/%s" group version)))
@@ -715,7 +716,8 @@ throws an error."
           (kele--resource-container-create
            :resource (kele--retry (lambda () (plz 'get url :as #'json-read)))
            :context context
-           :namespace namespace)
+           :namespace namespace
+           :retrieval-time time)
         (error (signal 'kele-request-error (error-message-string err)))))))
 
 (define-derived-mode kele-get-mode yaml-mode "Kele Get"
@@ -731,15 +733,16 @@ requested Kubernetes object manifest.
 
 (defun kele--get-insert-header ()
   "Insert header into a `kele-get-mode' buffer."
-  ;; TODO: Insert context, namespace, time of fetch, etc. as YAML front matter
   (let ((inhibit-read-only t))
     (save-excursion
       (goto-char (point-min))
       (when (boundp 'kele--resource-context)
         (insert (propertize (format "# context: %s\n" kele--resource-context)
-                            'face 'font-lock-comment-face)))
-      (when (boundp 'kele--resource-namespace)
-        (insert (format "# namespace: %s\n" kele--resource-namespace))))))
+                            'font-lock-face 'font-lock-comment-face)))
+      (when (boundp 'kele--resource-retrieval-time)
+        (insert (propertize (format "# retrieval time: %s\n"
+                                    kele--resource-retrieval-time)
+                            'font-lock-face 'font-lock-comment-face))))))
 
 (add-hook 'kele-get-mode-hook #'kele--get-insert-header t)
 
@@ -844,17 +847,17 @@ context and namespace in its name."
       (insert (yaml-encode obj))
       (whitespace-cleanup)
       (goto-char (point-min))
-      (setq-local
-       kele--resource-context (when (kele--resource-container-p object)
-                                (kele--resource-container-context object))
-       kele--resource-namespace (when (kele--resource-container-p object)
-                                  (kele--resource-container-namespace object)))
-      (put 'kele--resource-context 'permanent-local t)
-      (put 'kele--resource-namespace 'permanent-local t)
+
+      (when (kele--resource-container-p object)
+        (setq-local kele--resource-context
+                    (kele--resource-container-context object))
+        (put 'kele--resource-context 'permanent-local t)
+        (setq-local kele--resource-retrieval-time
+                    (kele--resource-container-retrieval-time object))
+        (put 'kele--resource-retrieval-time 'permanent-local t))
+
       (kele-get-mode))
     (select-window (display-buffer buf))))
-
-;; (kele--render-object (kele--get-namespaced-resource "apps" "v1" "deployments" "workflow-controller"))
 
 (defvar kele--context-keymap nil
   "Keymap for actions on Kubernetes contexts.
