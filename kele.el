@@ -8,7 +8,7 @@
 ;; Homepage: https://github.com/jinnovation/kele.el
 ;; Keywords: kubernetes tools
 ;; SPDX-License-Identifier: Apache-2.0
-;; Package-Requires: ((emacs "27.1") (async "1.9.7") (dash "2.19.1") (f "0.20.0") (ht "2.3") (plz "0.3") (request "0.3.2") (yaml "0.5.1"))
+;; Package-Requires: ((emacs "27.1") (async "1.9.7") (dash "2.19.1") (f  "0.20.0") (ht "2.3") (plz "0.3") (request "0.3.2") (yaml "0.5.1") (yaml-mode "0.0.15"))
 
 ;;; Commentary:
 
@@ -718,13 +718,30 @@ throws an error."
            :namespace namespace)
         (error (signal 'kele-request-error (error-message-string err)))))))
 
-(define-derived-mode kele-get-mode special-mode "Kele Get"
+(define-derived-mode kele-get-mode yaml-mode "Kele Get"
   "Major mode for viewing and refreshing Kele resource buffers.
 
 Kele resource buffers are created when you run `kele-get'.  They show the
-requested Kubernetes object manifest."
+requested Kubernetes object manifest.
+
+\\{kele-get-mode-map}"
   :group 'kele
+  :interactive nil
   (read-only-mode 1))
+
+(defun kele--get-insert-header ()
+  "Insert header into a `kele-get-mode' buffer."
+  ;; TODO: Insert context, namespace, time of fetch, etc. as YAML front matter
+  (let ((inhibit-read-only t))
+    (save-excursion
+      (goto-char (point-min))
+      (when (boundp 'kele--resource-context)
+        (insert (propertize (format "# context: %s\n" kele--resource-context)
+                            'face 'font-lock-comment-face)))
+      (when (boundp 'kele--resource-namespace)
+        (insert (format "# namespace: %s\n" kele--resource-namespace))))))
+
+(add-hook 'kele-get-mode-hook #'kele--get-insert-header t)
 
 (cl-defun kele-get (kind name &key group version context namespace)
   "Get resource KIND by NAME and display it in a buffer.
@@ -827,9 +844,14 @@ context and namespace in its name."
       (insert (yaml-encode obj))
       (whitespace-cleanup)
       (goto-char (point-min))
-      (if (featurep 'yaml-mode) (yaml-mode)
-        (message "[kele] For syntax highlighting, install `yaml-mode'."))
-      (read-only-mode))
+      (setq-local
+       kele--resource-context (when (kele--resource-container-p object)
+                                (kele--resource-container-context object))
+       kele--resource-namespace (when (kele--resource-container-p object)
+                                  (kele--resource-container-namespace object)))
+      (put 'kele--resource-context 'permanent-local t)
+      (put 'kele--resource-namespace 'permanent-local t)
+      (kele-get-mode))
     (select-window (display-buffer buf))))
 
 ;; (kele--render-object (kele--get-namespaced-resource "apps" "v1" "deployments" "workflow-controller"))

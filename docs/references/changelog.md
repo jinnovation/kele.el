@@ -11,6 +11,10 @@ versioning][semver].
 
 ## Upcoming
 
+### Changed
+
+- Made `yaml-mode` a non-optional dependency
+
 ## 0.2.0
 
 This release introduces `kele-get` -- `kubectl get`, the Emacs way
