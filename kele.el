@@ -650,10 +650,12 @@ Returns the passed-in list of namespaces."
 (cl-defstruct (kele--resource-container
                (:constructor kele--resource-container-create)
                (:copier nil))
-  "Container assocaiting a Kubernetes RESOURCE with its CONTEXT and NAMESPACE.
+  "Container associating a Kubernetes RESOURCE with its CONTEXT and NAMESPACE.
 
 RESOURCE is expected to be an alist representing the Kubernetes
 object.
+
+RETRIEVAL-TIME denotes the time at which RESOURCE was retrieved.
 "
   resource context namespace retrieval-time)
 
