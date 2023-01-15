@@ -718,9 +718,6 @@ throws an error."
            :namespace namespace)
         (error (signal 'kele-request-error (error-message-string err)))))))
 
-;; TODO: Use with-simulated-input to test this
-;;
-;; https://github.com/DarwinAwardWinner/with-simulated-input
 (cl-defun kele-get (kind name &key group version context namespace)
   "Get resource KIND by NAME and display it in a buffer.
 
