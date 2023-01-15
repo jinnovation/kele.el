@@ -31,10 +31,9 @@
 (require 'subr-x)
 (require 'url-parse)
 (require 'yaml)
+(require 'yaml-mode)
 
 (require 'kele-fnr)
-
-(declare-function yaml-mode "yaml-mode")
 
 (defgroup kele nil
   "Integration constructs for Kubernetes."
