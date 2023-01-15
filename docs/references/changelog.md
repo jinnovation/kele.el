@@ -11,6 +11,8 @@ versioning][semver].
 
 ## Upcoming
 
+## 0.2.0
+
 This release introduces `kele-get` -- `kubectl get`, the Emacs way
 :rocket:. With `kele-get` you can interactively specify the kind and name of the
 resource that you'd like to `get` and display its manifest in a separate
