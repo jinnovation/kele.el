@@ -8,7 +8,7 @@
 ;; Homepage: https://github.com/jinnovation/kele.el
 ;; Keywords: kubernetes tools
 ;; SPDX-License-Identifier: Apache-2.0
-;; Package-Requires: ((emacs "27.1") (async "1.9.7") (dash "2.19.1") (f "0.20.0") (ht "2.3") (plz "0.3") (request "0.3.2") (yaml "0.5.1") (yaml-mode "0.0.15"))
+;; Package-Requires: ((emacs "27.1") (async "1.9.7") (dash "2.19.1") (f "0.20.0") (ht "2.3") (plz "0.3") (request "0.3.2") (yaml "0.5.1"))
 
 ;;; Commentary:
 
@@ -722,11 +722,11 @@ throws an error."
 (defvar kele--resource-context)
 (defvar kele--resource-retrieval-time)
 
-(define-derived-mode kele-get-mode yaml-mode "Kele Get"
-  "Major mode for viewing and refreshing Kele resource buffers.
+(define-minor-mode kele-get-mode
+  "Enable some Kele features in resource-viewing buffers.
 
-Kele resource buffers are created when you run `kele-get'.  They show the
-requested Kubernetes object manifest.
+Kele resource buffers are created when you run `kele-get'.  They
+show the requested Kubernetes object manifest.
 
 \\{kele-get-mode-map}"
   :group 'kele
@@ -842,6 +842,9 @@ context and namespace in its name."
       (whitespace-cleanup)
       (goto-char (point-min))
 
+      (if (featurep 'yaml-mode) (yaml-mode)
+        (message "[kele] For syntax highlighting, install `yaml-mode'."))
+
       (when (kele--resource-container-p object)
         (setq-local kele--resource-context
                     (kele--resource-container-context object))
@@ -850,7 +853,7 @@ context and namespace in its name."
                     (kele--resource-container-retrieval-time object))
         (put 'kele--resource-retrieval-time 'permanent-local t))
 
-      (kele-get-mode))
+      (kele-get-mode 1))
     (select-window (display-buffer buf))))
 
 (defvar kele--context-keymap nil

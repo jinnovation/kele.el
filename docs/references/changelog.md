@@ -17,10 +17,6 @@ versioning][semver].
 - `kele-get` buffers now print a header detailing, for the resource under
   display: the **context** it was fetched from; and the **time of retrieval**
 
-### Changed
-
-- Made `yaml-mode` a non-optional dependency
-
 ## 0.2.0
 
 This release introduces `kele-get` -- `kubectl get`, the Emacs way
