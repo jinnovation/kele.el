@@ -718,6 +718,14 @@ throws an error."
            :namespace namespace)
         (error (signal 'kele-request-error (error-message-string err)))))))
 
+(define-derived-mode kele-get-mode special-mode "Kele Get"
+  "Major mode for viewing and refreshing Kele resource buffers.
+
+Kele resource buffers are created when you run `kele-get'.  They show the
+requested Kubernetes object manifest."
+  :group 'kele
+  (read-only-mode 1))
+
 (cl-defun kele-get (kind name &key group version context namespace)
   "Get resource KIND by NAME and display it in a buffer.
 
