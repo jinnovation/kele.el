@@ -610,7 +610,7 @@ If not cached, will fetch and cache the namespaces."
       namespaces
     (apply #'kele--cache-namespaces context (kele--fetch-namespaces context))))
 
-;; TODO: Allow for injecting the proxy dependency.
+;; TODO (#72): Allow for injecting the proxy dependency.
 ;; This would allow for consumers to create their own proxy, e.g. to start it
 ;; async while accepting user input, and defer its use to here.
 ;;
@@ -738,7 +738,7 @@ default namespace of the given CONTEXT.
 
 If NAMESPACE is provided for a non-namespaced resource KIND,
 throws an error."
-  ;; TODO: Start proxy server asynchronously here; await on it right when it's
+  ;; TODO (#72): Start proxy server asynchronously here; await on it right when it's
   ;; needed
   (interactive (let* ((ctx (kele-current-context-name))
                       (kind (completing-read
