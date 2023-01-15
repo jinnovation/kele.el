@@ -835,14 +835,6 @@ context and namespace in its name."
                   (kele--resource-container-resource object)
                 object)))
     (with-current-buffer buf
-      ;; TODO (#59): create a dedicated mode for kele displaying objects
-      ;;
-      ;; Some features:
-      ;;   - configurable option to, if out of focus for X amount of time, auto-cleanup
-      ;;   - keybinding to re-GET and refresh the contents
-      ;;   - Have a header up top to explain to users what's possible in this
-      ;;   buffer, e.g. keybindings -- similar to what Magit does w/ the commit
-      ;;   message authorship buffer (`magit-create-buffer-hook'?)
       (erase-buffer)
       (insert (yaml-encode obj))
       (whitespace-cleanup)
