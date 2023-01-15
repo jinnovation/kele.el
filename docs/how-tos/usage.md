@@ -22,6 +22,10 @@ candidates for:
 - The namespace (if the resource kind is namespaced), and finally;
 - The name of the resource itself.
 
+!!! tip ""
+
+    `kele-get` supports [custom resources] too!
+
 ??? example "Demo"
 
     ![](./img/kele-get.gif)
@@ -100,3 +104,4 @@ M-x kele-namespace-switch-for-current-context
 ```
 
 [Embark]: https://github.com/oantolin/embark
+[custom resources]: https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/

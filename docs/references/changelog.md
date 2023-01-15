@@ -11,10 +11,16 @@ versioning][semver].
 
 ## Upcoming
 
-This release introduces `kele-get` -- `kubectl get`, the Emacs way :rocket:. See
-[How-Tos > Usage > Working with
+This release introduces `kele-get` -- `kubectl get`, the Emacs way
+:rocket:. With `kele-get` you can interactively specify the kind and name of the
+resource that you'd like to `get` and display its manifest in a separate
+buffer. What's more, it supports custom resources right out the gate -- a
+[long-standing functionality gap in `kubernetes-el`][k8s-el-69].
+
+See [How-Tos > Usage > Working with
 Resources](../how-tos/usage.md#working-with-resources) for details and a demo
-GIF.
+GIF. It's very much an MVP so there are some rough edges. Please open an [issue]
+for any peculiar behavior that you notice.
 
 ### Added
 
@@ -84,3 +90,5 @@ future enhancements.
 
 [1]: https://github.com/ahmetb/kubectx
 [progress report]: https://www.gnu.org/software/emacs/manual/html_node/elisp/Progress.html
+[k8s-el-69]: https://github.com/kubernetes-el/kubernetes-el/issues/69
+[issue]: https://github.com/kubernetes-el/kubernetes-el/issues
