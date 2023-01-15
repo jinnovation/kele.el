@@ -650,12 +650,14 @@ Returns the passed-in list of namespaces."
 (cl-defstruct (kele--resource-container
                (:constructor kele--resource-container-create)
                (:copier nil))
-  "Container assocaiting a Kubernetes RESOURCE with its CONTEXT and NAMESPACE.
+  "Container associating a Kubernetes RESOURCE with its CONTEXT and NAMESPACE.
 
 RESOURCE is expected to be an alist representing the Kubernetes
 object.
+
+RETRIEVAL-TIME denotes the time at which RESOURCE was retrieved.
 "
-  resource context namespace)
+  resource context namespace retrieval-time)
 
 (cl-defun kele--get-resource (kind name &key group version context namespace)
   "Get resource KIND by NAME.
@@ -678,6 +680,7 @@ default namespace of the given CONTEXT.
 If NAMESPACE is provided for a non-namespaced resource KIND,
 throws an error."
   (let* ((context (or context (kele-current-context-name)))
+         (time (current-time-string))
          (group-versions
           (cond
            ((and group version) (list (format "%s/%s" group version)))
@@ -715,8 +718,38 @@ throws an error."
           (kele--resource-container-create
            :resource (kele--retry (lambda () (plz 'get url :as #'json-read)))
            :context context
-           :namespace namespace)
+           :namespace namespace
+           :retrieval-time time)
         (error (signal 'kele-request-error (error-message-string err)))))))
+
+(defvar kele--resource-context)
+(defvar kele--resource-retrieval-time)
+
+(define-minor-mode kele-get-mode
+  "Enable some Kele features in resource-viewing buffers.
+
+Kele resource buffers are created when you run `kele-get'.  They
+show the requested Kubernetes object manifest.
+
+\\{kele-get-mode-map}"
+  :group 'kele
+  :interactive nil
+  (read-only-mode 1))
+
+(defun kele--get-insert-header ()
+  "Insert header into a `kele-get-mode' buffer."
+  (let ((inhibit-read-only t))
+    (save-excursion
+      (goto-char (point-min))
+      (when (boundp 'kele--resource-context)
+        (insert (propertize (format "# context: %s\n" kele--resource-context)
+                            'font-lock-face 'font-lock-comment-face)))
+      (when (boundp 'kele--resource-retrieval-time)
+        (insert (propertize (format "# retrieval time: %s\n"
+                                    kele--resource-retrieval-time)
+                            'font-lock-face 'font-lock-comment-face))))))
+
+(add-hook 'kele-get-mode-hook #'kele--get-insert-header t)
 
 (cl-defun kele-get (kind name &key group version context namespace)
   "Get resource KIND by NAME and display it in a buffer.
@@ -807,24 +840,24 @@ context and namespace in its name."
                   (kele--resource-container-resource object)
                 object)))
     (with-current-buffer buf
-      ;; TODO (#59): create a dedicated mode for kele displaying objects
-      ;;
-      ;; Some features:
-      ;;   - configurable option to, if out of focus for X amount of time, auto-cleanup
-      ;;   - keybinding to re-GET and refresh the contents
-      ;;   - Have a header up top to explain to users what's possible in this
-      ;;   buffer, e.g. keybindings -- similar to what Magit does w/ the commit
-      ;;   message authorship buffer (`magit-create-buffer-hook'?)
       (erase-buffer)
       (insert (yaml-encode obj))
       (whitespace-cleanup)
       (goto-char (point-min))
+
       (if (featurep 'yaml-mode) (yaml-mode)
         (message "[kele] For syntax highlighting, install `yaml-mode'."))
-      (read-only-mode))
-    (select-window (display-buffer buf))))
 
-;; (kele--render-object (kele--get-namespaced-resource "apps" "v1" "deployments" "workflow-controller"))
+      (when (kele--resource-container-p object)
+        (setq-local kele--resource-context
+                    (kele--resource-container-context object))
+        (put 'kele--resource-context 'permanent-local t)
+        (setq-local kele--resource-retrieval-time
+                    (kele--resource-container-retrieval-time object))
+        (put 'kele--resource-retrieval-time 'permanent-local t))
+
+      (kele-get-mode 1))
+    (select-window (display-buffer buf))))
 
 (defvar kele--context-keymap nil
   "Keymap for actions on Kubernetes contexts.

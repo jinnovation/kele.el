@@ -11,6 +11,12 @@ versioning][semver].
 
 ## Upcoming
 
+### Added
+
+- `kele-get` buffers now have a dedicated minor mode, `kele-get-mode`.
+- `kele-get` buffers now print a header detailing, for the resource under
+  display: the **context** it was fetched from; and the **time of retrieval**
+
 ## 0.2.0
 
 This release introduces `kele-get` -- `kubectl get`, the Emacs way
