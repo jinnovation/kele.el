@@ -19,6 +19,11 @@ versioning][semver].
 - Added a custom variable `kele-filtered-fields` with which you can routinely
   filter out resource fields from display in `kele-get`
 
+### Changed
+
+- `kele-get` completion for the resource type now only returns resources that
+  support the `get` verb
+
 ## 0.2.0
 
 This release introduces `kele-get` -- `kubectl get`, the Emacs way

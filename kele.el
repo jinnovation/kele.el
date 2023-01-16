@@ -404,13 +404,21 @@ The values at each are as follows:
 
   - `port' is the port that the proxy was opened on.")
 
-(defun kele--get-resource-types-for-context (context-name)
-  "Retrieve the names of all resource types for CONTEXT-NAME."
+(cl-defun kele--get-resource-types-for-context (context-name &key verb)
+  "Retrieve the names of all resource types for CONTEXT-NAME.
+
+If VERB provided, returned resource types will be restricted to
+those that support the given verb."
   (->> (kele--get-resource-lists-for-context kele--global-discovery-cache
                                              (or context-name (kele-current-context-name)))
        (-filter (lambda (resource-list) (equal (alist-get 'kind resource-list) "APIResourceList")))
        (-map (lambda (list) (alist-get 'resources list)))
        (-flatten-n 1)
+       (-filter (lambda (resource)
+                  (if verb
+                      (-contains-p (alist-get 'verbs resource)
+                                   (if (stringp verb) verb (symbol-name verb)))
+                    t)))
        (-map (lambda (resource) (alist-get 'name resource)))
        (-uniq)))
 
@@ -804,7 +812,7 @@ throws an error."
   (interactive (let* ((ctx (kele-current-context-name))
                       (kind (completing-read
                              "Kind: "
-                             (kele--get-resource-types-for-context ctx)))
+                             (kele--get-resource-types-for-context ctx :verb 'get)))
                       (gvs (kele--get-groupversions-for-type kele--global-discovery-cache
                                                              kind
                                                              :context ctx))
