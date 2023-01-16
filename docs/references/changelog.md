@@ -11,6 +11,11 @@ versioning][semver].
 
 ## Upcoming
 
+## 0.2.1
+
+This release focuses on refining the `kele-get` experience -- usability
+improvements and general bugfixes.
+
 ### Added
 
 - `kele-get` buffers now have a dedicated minor mode, `kele-get-mode`.
