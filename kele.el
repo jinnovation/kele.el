@@ -846,7 +846,7 @@ context and namespace in its name."
                   (kele--resource-container-resource object)
                 object))
          (filtered-obj (-reduce-from (lambda (o keys)
-                                       (apply #'kele--assq-delete-all-chain o keys))
+                                       (apply #'kele--prune o keys))
                                      obj
                                      kele-filtered-fields)))
     (with-current-buffer buf
@@ -869,7 +869,7 @@ context and namespace in its name."
       (kele-get-mode 1))
     (select-window (display-buffer buf))))
 
-(defun kele--assq-delete-all-chain (alist &rest keys)
+(defun kele--prune (alist &rest keys)
   "Delete the sub-tree of ALIST corresponding to KEYS."
   (let ((prev)
         (curr alist))
