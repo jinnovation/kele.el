@@ -310,6 +310,21 @@ retval into `async-wait'."
                                    `(,key . ,api-lists))))))
                  func-complete)))
 
+(cl-defmethod kele--resource-has-verb-p ((cache kele--discovery-cache)
+                                         group-version kind verb &key context)
+  (-contains-p (->> (kele--get-resource-lists-for-context
+                     cache
+                     (or context (kele-current-context-name)))
+                    (-first (lambda (resource-list)
+                              (equal (alist-get 'groupVersion resource-list)
+                                     group-version)))
+                    (alist-get 'resources)
+                    (-first (lambda (resource)
+                              (equal (alist-get 'name resource)
+                                     kind)))
+                    (alist-get 'verbs))
+               (if (stringp verb) verb (symbol-name verb))))
+
 (cl-defmethod kele--cache-start ((cache kele--discovery-cache) &key bootstrap)
   "Start file-watch for CACHE.
 

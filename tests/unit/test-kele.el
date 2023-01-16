@@ -315,27 +315,41 @@
       (expect (kele--get-groupversions-for-type kele--global-discovery-cache
                                                 "componentstatuses")
               :to-have-same-items-as '("v1"))))
+
   (describe "kele--resource-namespaced-p"
     (before-each
+      (setq cache (kele--discovery-cache))
       (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
-      (async-wait (kele--cache-update kele--global-discovery-cache)))
+      (async-wait (kele--cache-update cache)))
 
     (it "errors if resource not found"
-      (expect (kele--resource-namespaced-p kele--global-discovery-cache
+      (expect (kele--resource-namespaced-p cache
                                            "v1"
                                            "foobar")
               :to-throw 'kele-cache-lookup-error))
 
     (it "returns t if resource is namespaced"
-      (expect (kele--resource-namespaced-p kele--global-discovery-cache
+      (expect (kele--resource-namespaced-p cache
                                            "v1"
                                            "pods")
               :to-be-truthy))
     (it "returns non-truthy if resource is not namespaced"
-      (expect (kele--resource-namespaced-p kele--global-discovery-cache
+      (expect (kele--resource-namespaced-p cache
                                            "v1"
                                            "componentstatuses")
-              :not :to-be-truthy))))
+              :not :to-be-truthy)))
+
+  (describe "kele--resource-has-verb-p"
+    (describe "when resource has the argument verb"
+      (it "returns truthy"
+        (expect (kele--resource-has-verb-p
+                 cache "v1" "componentstatuses" 'get)
+                :to-be-truthy)))
+    (describe "when resource does not have the argument verb"
+      (it "returns nil"
+        (expect (kele--resource-has-verb-p
+                 cache "v1" "componentstatuses" 'delete)
+                :not :to-be-truthy)))))
 
 (describe "kele--render-object"
   :var (fake-obj)
