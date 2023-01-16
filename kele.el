@@ -84,7 +84,9 @@ pods."
   :type '(alist :key-type symbol :value-type 'integer)
   :group 'kele)
 
-(defcustom kele-filtered-fields '((metadata managedFields))
+;; TODO: Display in the `kele-get-mode' header what fields were filtered out
+(defcustom kele-filtered-fields '((metadata managedFields)
+                                  (metadata annotations kubectl.kubernetes.io/last-applied-configuration))
   "Top-level resource fields to never display, e.g. in `kele-get'."
   :type '(repeat (repeat symbol)))
 
