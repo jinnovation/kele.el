@@ -13,6 +13,14 @@
 M-x kele-get
 ```
 
+??? example "Demo"
+
+    ![](./img/kele-get.gif)
+
+!!! tip inline ""
+
+    `kele-get` supports [custom resources] too!
+
 `kele-get` allows you to retrieve the manifest for a given Kubernetes object and
 displaying it in a separate buffer. `kele-get` will present you with completion
 candidates for:
@@ -24,11 +32,8 @@ candidates for:
 
 !!! tip ""
 
-    `kele-get` supports [custom resources] too!
-
-??? example "Demo"
-
-    ![](./img/kele-get.gif)
+    `kele-get` only shows you resource types that support `get`ting in the first
+    place.
 
 ### Customizing resource display
 

@@ -244,10 +244,24 @@
                 )))))
 
 (describe "kele--get-resource-types-for-context"
-  (it "contains the expected resources"
+  (before-each
     (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
-    (async-wait (kele--cache-update kele--global-discovery-cache))
+    (async-wait (kele--cache-update kele--global-discovery-cache)))
 
+  (it "optionally filters for resources that support a given verb"
+    (expect (kele--get-resource-types-for-context
+             "development"
+             :verb 'deletecollection)
+            :to-have-same-items-as
+            '("configmaps"
+              "nodes"
+              "pods"
+              "replicationcontrollers"
+              "resourcequotas"
+              "secrets"
+              "serviceaccounts")))
+
+  (it "contains the expected resources"
     (let ((res (kele--get-resource-types-for-context "development")))
       (expect res
               :to-have-same-items-as
