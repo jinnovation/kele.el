@@ -16,6 +16,8 @@ versioning][semver].
 - `kele-get` buffers now have a dedicated minor mode, `kele-get-mode`.
 - `kele-get` buffers now print a header detailing, for the resource under
   display: the **context** it was fetched from; and the **time of retrieval**
+- Added a custom variable `kele-filtered-fields` with which you can routinely
+  filter out resource fields from display in `kele-get`
 
 ## 0.2.0
 
