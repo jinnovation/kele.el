@@ -843,10 +843,6 @@ throws an error."
                                            :namespace namespace
                                            :context context)))
 
-;; TODO (#58): add an option to filter out managed fields, similar to `kubectl get
-;; --show-managed-fields false' (the default behavior)
-;;
-;; This could even be a custom, e.g. `kele-filtered-object-fields'
 (cl-defun kele--render-object (object &optional buffer)
   "Render OBJECT in a buffer as YAML.
 
