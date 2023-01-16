@@ -14,15 +14,19 @@
       (async-wait (kele--cache-update kele--global-kubeconfig-cache))
       (expect (kele-current-namespace) :to-equal "kube-public"))))
 
-(describe "kele--fetch-namespaces"
-  (it "fetches namespace names"
-    (expect (kele--fetch-namespaces "kind-kele-test-cluster0")
+(describe "kele--fetch-resource-names"
+  (it "fetches core API names"
+    (expect (kele--fetch-resource-names nil "v1" "namespaces" :context "kind-kele-test-cluster0")
             :to-have-same-items-as
             '("default"
               "kube-node-lease"
               "kube-public"
               "kube-system"
-              "local-path-storage"))))
+              "local-path-storage")))
+  (it "fetches group API names"
+    (expect (kele--fetch-resource-names "apps" "v1" "deployments" :context "kind-kele-test-cluster0")
+            :to-have-same-items-as
+            '("coredns" "local-path-provisioner"))))
 
 (describe "kele--get-resource"
   :var (retval)
