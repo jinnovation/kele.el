@@ -23,6 +23,8 @@ versioning][semver].
 
 - Fixed an issue where `kele-get` results buffer incorrectly prints namespace
   for un-namespaced resources as `nil`
+- Fixed an issue where `kele-get` refused to display the retrieved resource, if
+  a buffer corresponding to that resource already exists
 
 ### Changed
 

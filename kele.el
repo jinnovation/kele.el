@@ -883,10 +883,11 @@ context and namespace in its name."
                                      obj
                                      kele-filtered-fields)))
     (with-current-buffer buf
-      (erase-buffer)
-      (insert (yaml-encode filtered-obj))
-      (whitespace-cleanup)
-      (goto-char (point-min))
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (insert (yaml-encode filtered-obj))
+        (whitespace-cleanup)
+        (goto-char (point-min)))
 
       (if (featurep 'yaml-mode) (yaml-mode)
         (message "[kele] For syntax highlighting, install `yaml-mode'."))
