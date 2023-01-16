@@ -728,6 +728,8 @@ throws an error."
            :retrieval-time time)
         (error (signal 'kele-request-error (error-message-string err)))))))
 
+;; TODO (#80): Let's define a struct for these "`kele-get-mode' metadata" so that we
+;; don't have to do a new `defvar' every time we want to add a new field
 (defvar kele--resource-context)
 (defvar kele--resource-retrieval-time)
 
