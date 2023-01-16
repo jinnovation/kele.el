@@ -11,6 +11,10 @@ versioning][semver].
 
 ## Upcoming
 
+### Added
+
+- `kele-get` resource name input now supports completion! :fire:
+
 ## 0.2.1
 
 This release focuses on refining the `kele-get` experience -- usability

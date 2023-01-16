@@ -23,6 +23,7 @@
               "kube-public"
               "kube-system"
               "local-path-storage")))
+  ;; TODO: Test namespace filtering
   (it "fetches group API names"
     (expect (kele--fetch-resource-names "apps" "v1" "deployments" :context "kind-kele-test-cluster0")
             :to-have-same-items-as
