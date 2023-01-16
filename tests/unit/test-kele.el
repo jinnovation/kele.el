@@ -10,6 +10,16 @@
 
 (require 'kele)
 
+(describe "kele--prune"
+  (describe "when traversal path does not exist"
+    (it "no-ops"
+      (expect (kele--prune '((foo . 1)
+                             (bar . ((baz . 2))))
+                           'foo 'baz)
+              :to-equal
+              '((foo . 1)
+                (bar . ((baz . 2))))))))
+
 (describe "kele--with-progress"
   (it "returns the retval of the last evaluated sexp"
     (expect (kele--with-progress "foobar" (= 1 1)) :to-equal t)))
