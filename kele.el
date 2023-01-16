@@ -84,6 +84,10 @@ pods."
   :type '(alist :key-type symbol :value-type 'integer)
   :group 'kele)
 
+(defcustom kele-filtered-fields '((metadata managedFields))
+  "Top-level resource fields to never display, e.g. in `kele-get'."
+  :type '(repeat (repeat symbol)))
+
 (define-error 'kele-cache-lookup-error
   "Kele failed to find the requested resource in the cache.")
 (define-error 'kele-request-error "Kele failed in querying the Kubernetes API")
@@ -814,6 +818,8 @@ throws an error."
 (cl-defun kele--render-object (object &optional buffer)
   "Render OBJECT in a buffer as YAML.
 
+Filters out fields according to `kele-filtered-fields'.
+
 If BUFFER is provided, renders into it.  Otherwise, a new buffer
 will be created.
 
@@ -838,10 +844,14 @@ context and namespace in its name."
          (buf (or buffer (get-buffer-create buf-name)))
          (obj (if (kele--resource-container-p object)
                   (kele--resource-container-resource object)
-                object)))
+                object))
+         (filtered-obj (-reduce-from (lambda (o keys)
+                                       (apply #'kele--assq-delete-all-chain o keys))
+                                     obj
+                                     kele-filtered-fields)))
     (with-current-buffer buf
       (erase-buffer)
-      (insert (yaml-encode obj))
+      (insert (yaml-encode filtered-obj))
       (whitespace-cleanup)
       (goto-char (point-min))
 
@@ -858,6 +868,19 @@ context and namespace in its name."
 
       (kele-get-mode 1))
     (select-window (display-buffer buf))))
+
+(defun kele--assq-delete-all-chain (alist &rest keys)
+  "Delete the sub-tree of ALIST corresponding to KEYS."
+  (let ((prev)
+        (curr alist))
+    (dolist (key keys)
+      (setq prev curr)
+      (setq curr (if-let ((res (assq key curr)))
+                     (cdr res)
+                   nil)))
+    (when curr
+      (assq-delete-all (car (last keys)) prev))
+    alist))
 
 (defvar kele--context-keymap nil
   "Keymap for actions on Kubernetes contexts.
