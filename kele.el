@@ -686,7 +686,10 @@ object.
 
 RETRIEVAL-TIME denotes the time at which RESOURCE was retrieved.
 "
-  resource context namespace retrieval-time)
+  resource
+  context
+  namespace
+  retrieval-time)
 
 (cl-defun kele--get-resource (kind name &key group version context namespace)
   "Get resource KIND by NAME.
@@ -859,11 +862,13 @@ context and namespace in its name."
                            t)))
   (let* ((buf-name (concat " *kele: "
                            (if (kele--resource-container-p object)
-                                 (format "%s(%s): "
-                                         (kele--resource-container-context
-                                          object)
-                                         (kele--resource-container-namespace
-                                          object)))
+                               (concat
+                                (kele--resource-container-context object)
+                                (and (kele--resource-container-namespace object)
+                                     (format "(%s)"
+                                             (kele--resource-container-namespace
+                                              object)))
+                                ": "))
                            (let-alist (if (kele--resource-container-p object)
                                           (kele--resource-container-resource object)
                                         object)
