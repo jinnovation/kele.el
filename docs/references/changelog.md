@@ -19,6 +19,11 @@ versioning][semver].
 - Added a custom variable `kele-filtered-fields` with which you can routinely
   filter out resource fields from display in `kele-get`
 
+### Fixed
+
+- Fixed an issue where `kele-get` results buffer incorrectly prints namespace
+  for un-namespaced resources as `nil`
+
 ### Changed
 
 - `kele-get` completion for the resource type now only returns resources that
