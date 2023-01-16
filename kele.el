@@ -728,10 +728,13 @@ throws an error."
            :retrieval-time time)
         (error (signal 'kele-request-error (error-message-string err)))))))
 
-;; TODO (#80): Let's define a struct for these "`kele-get-mode' metadata" so that we
-;; don't have to do a new `defvar' every time we want to add a new field
-(defvar kele--resource-context)
-(defvar kele--resource-retrieval-time)
+(cl-defstruct (kele--resource-buffer-context
+               (:constructor kele--resource-buffer-context-create)
+               (:copier nil))
+  "Contextual metadata for a `kele-get-mode' buffer."
+  context retrieval-time filtered-paths)
+
+(defvar kele--current-resource-buffer-context)
 
 (define-minor-mode kele-get-mode
   "Enable some Kele features in resource-viewing buffers.
@@ -749,12 +752,14 @@ show the requested Kubernetes object manifest.
   (let ((inhibit-read-only t))
     (save-excursion
       (goto-char (point-min))
-      (when (boundp 'kele--resource-context)
-        (insert (propertize (format "# context: %s\n" kele--resource-context)
-                            'font-lock-face 'font-lock-comment-face)))
-      (when (boundp 'kele--resource-retrieval-time)
+      (when (boundp 'kele--current-resource-buffer-context)
+        (insert (propertize (format "# context: %s\n"
+                                    (kele--resource-buffer-context-context
+                                     kele--current-resource-buffer-context))
+                            'font-lock-face 'font-lock-comment-face))
         (insert (propertize (format "# retrieval time: %s\n"
-                                    kele--resource-retrieval-time)
+                                    (kele--resource-buffer-context-retrieval-time
+                                     kele--current-resource-buffer-context))
                             'font-lock-face 'font-lock-comment-face))))))
 
 (add-hook 'kele-get-mode-hook #'kele--get-insert-header t)
@@ -863,12 +868,11 @@ context and namespace in its name."
         (message "[kele] For syntax highlighting, install `yaml-mode'."))
 
       (when (kele--resource-container-p object)
-        (setq-local kele--resource-context
-                    (kele--resource-container-context object))
-        (put 'kele--resource-context 'permanent-local t)
-        (setq-local kele--resource-retrieval-time
-                    (kele--resource-container-retrieval-time object))
-        (put 'kele--resource-retrieval-time 'permanent-local t))
+        (setq-local kele--current-resource-buffer-context
+                    (kele--resource-buffer-context-create
+                     :context (kele--resource-container-context object)
+                     :retrieval-time (kele--resource-container-retrieval-time object)))
+        (put 'kele--current-resource-buffer-context 'permanent-local t))
 
       (kele-get-mode 1))
     (select-window (display-buffer buf))))
