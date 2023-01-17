@@ -785,8 +785,6 @@ show the requested Kubernetes object manifest.
 ;;
 ;; :proxy value should be assumed to be either a proxy container struct or a
 ;; future that's expected to return one.
-;;
-;; TODO: Error if kind is not namespaced but NAMESPACE is provided
 (cl-defun kele--fetch-resource-names (group version kind &key namespace context)
   "Fetch names of resources belonging to GROUP, VERSION, and KIND.
 
