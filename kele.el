@@ -637,23 +637,9 @@ If value is nil, the namespaces need to be fetched directly.")
 If not cached, will fetch and cache the namespaces."
   (if-let ((namespaces (alist-get (intern context) kele--context-namespaces)))
       namespaces
-    (apply #'kele--cache-namespaces context (kele--fetch-namespaces context))))
+    (apply #'kele--cache-namespaces context
+           (kele--fetch-resource-names nil "v1" "namespaces" :context context))))
 
-;; TODO (#72): Allow for injecting the proxy dependency.
-;; This would allow for consumers to create their own proxy, e.g. to start it
-;; async while accepting user input, and defer its use to here.
-;;
-;; :proxy value should be assumed to be either a proxy container struct or a
-;; future that's expected to return one.
-(defun kele--fetch-namespaces (context)
-  "Fetch namespaces for CONTEXT."
-  (-if-let* (((&alist 'port port) (kele--ensure-proxy context))
-             (url (format "http://localhost:%s/api/v1/namespaces" port))
-             (data (kele--retry (lambda () (plz 'get url :as #'json-read))))
-             ((&alist 'items items) data))
-      (-map (-lambda ((&alist 'metadata (&alist 'name name))) name)
-            (append items '()))
-    (signal 'error "Failed to fetch namespaces")))
 
 (defun kele--get-cache-ttl-for-resource (resource)
   "Get the cache TTL for RESOURCE."
@@ -790,6 +776,49 @@ show the requested Kubernetes object manifest.
 
 (add-hook 'kele-get-mode-hook #'kele--get-insert-header t)
 
+(defun kele--groupversion-string (group version)
+  (if group (concat group "/" version) version))
+
+;; TODO (#72): Allow for injecting the proxy dependency.
+;; This would allow for consumers to create their own proxy, e.g. to start it
+;; async while accepting user input, and defer its use to here.
+;;
+;; :proxy value should be assumed to be either a proxy container struct or a
+;; future that's expected to return one.
+(cl-defun kele--fetch-resource-names (group version kind &key namespace context)
+  "Fetch names of resources belonging to GROUP, VERSION, and KIND.
+
+If NAMESPACE is provided, return only resources belonging to that namespace.  If
+NAMESPACE is provided for non-namespaced KIND, throws an error.
+
+If CONTEXT is not provided, use the current context."
+  (when (and namespace
+             (not (kele--resource-namespaced-p
+                   kele--global-discovery-cache
+                   (kele--groupversion-string group version)
+                   kind)))
+    (signal 'user-error '()))
+
+  (-if-let* (((&alist 'port port) (kele--ensure-proxy
+                                   (or context (kele-current-context-name))))
+             (url (format "http://localhost:%s/%s/%s"
+                          port
+                          (if group
+                              (format "apis/%s/%s" group version)
+                            (format "api/%s" version))
+                          kind))
+             (data (kele--retry (lambda () (plz 'get url :as #'json-read))))
+             ((&alist 'items items) data))
+      (->> (append items '())
+           (-filter (lambda (item)
+                      (if (not namespace) t
+                        (let-alist item
+                          (equal .metadata.namespace namespace)))))
+           (-map (lambda (item)
+                   (let-alist item
+                     .metadata.name))))
+    (signal 'error (format "Failed to fetch %s/%s/%s" group version kind))))
+
 (cl-defun kele-get (kind name &key group version context namespace)
   "Get resource KIND by NAME and display it in a buffer.
 
@@ -816,14 +845,19 @@ throws an error."
                       (kind (completing-read
                              "Kind: "
                              (kele--get-resource-types-for-context ctx :verb 'get)))
-                      (gvs (kele--get-groupversions-for-type kele--global-discovery-cache
-                                                             kind
-                                                             :context ctx))
+                      (gvs (kele--get-groupversions-for-type
+                            kele--global-discovery-cache
+                            kind
+                            :context ctx))
                       (gv (if (= (length gvs) 1)
                               (car gvs)
                             (completing-read (format "Desired group-version of `%s': "
                                                      kind)
                                              gvs)))
+                      (group (when (s-contains-p "/" gv) (car (s-split "/"
+                                                                       gv))))
+                      (version (if (s-contains-p "/" gv) (cadr (s-split "/" gv))
+                                 gv))
                       (ns (if (not (kele--resource-namespaced-p
                                     kele--global-discovery-cache
                                     gv
@@ -835,9 +869,11 @@ throws an error."
                                                      kind)
                                              (kele--get-namespaces ctx)))))
                  (list kind
-                       (read-string "Name: ")
-                       :group (car (s-split "/" gv))
-                       :version (cadr (s-split "/" gv))
+                       (completing-read
+                        "Name: "
+                        (kele--fetch-resource-names group version kind :namespace ns :context ctx))
+                       :group group
+                       :version version
                        :context ctx
                        :namespace ns)))
   (kele--render-object (kele--get-resource kind name
