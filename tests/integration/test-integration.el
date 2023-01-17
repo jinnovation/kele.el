@@ -15,6 +15,8 @@
       (expect (kele-current-namespace) :to-equal "kube-public"))))
 
 (describe "kele--fetch-resource-names"
+  (before-each
+    (async-wait (kele--cache-update kele--global-discovery-cache)))
   (it "errors if namespace filtering requested for non-namespaced resource"
     (expect (kele--fetch-resource-names nil "v1" "namespaces"
                                         :context "kind-kele-test-cluster0"
