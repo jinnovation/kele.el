@@ -788,7 +788,8 @@ show the requested Kubernetes object manifest.
 (cl-defun kele--fetch-resource-names (group version kind &key namespace context)
   "Fetch names of resources belonging to GROUP, VERSION, and KIND.
 
-If NAMESPACE is provided, return only resources belonging to that namespace.
+If NAMESPACE is provided, return only resources belonging to that namespace.  If
+NAMESPACE is provided for non-namespaced KIND, throws an error.
 
 If CONTEXT is not provided, use the current context."
   (when (and namespace
