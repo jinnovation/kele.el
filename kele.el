@@ -776,6 +776,9 @@ show the requested Kubernetes object manifest.
 
 (add-hook 'kele-get-mode-hook #'kele--get-insert-header t)
 
+(defun kele--groupversion-string (group version)
+  (if group (concat group "/" version) version))
+
 ;; TODO (#72): Allow for injecting the proxy dependency.
 ;; This would allow for consumers to create their own proxy, e.g. to start it
 ;; async while accepting user input, and defer its use to here.
@@ -790,6 +793,13 @@ show the requested Kubernetes object manifest.
 If NAMESPACE is provided, return only resources belonging to that namespace.
 
 If CONTEXT is not provided, use the current context."
+  (when (and namespace
+             (not (kele--resource-namespaced-p
+                   kele--global-discovery-cache
+                   (kele--groupversion-string group version)
+                   kind)))
+    (signal 'user-error '()))
+
   (-if-let* (((&alist 'port port) (kele--ensure-proxy
                                    (or context (kele-current-context-name))))
              (url (format "http://localhost:%s/%s/%s"
