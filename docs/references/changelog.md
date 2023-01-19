@@ -14,6 +14,8 @@ versioning][semver].
 ### Added
 
 - `kele-get` resource name input now supports completion! :fire:
+- `kele-get` buffers now have keybindings for quitting and killing the resource
+  display buffer
 
 ## 0.2.1
 
