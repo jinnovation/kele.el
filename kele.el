@@ -753,6 +753,10 @@ throws an error."
   (interactive)
   (quit-window t window))
 
+(defvar kele--get-mode-command-descriptions
+  '((quit-window . "quit window")
+    (kele--quit-and-kill . "quit window, killing buffer")))
+
 (define-minor-mode kele-get-mode
   "Enable some Kele features in resource-viewing buffers.
 
@@ -773,14 +777,23 @@ show the requested Kubernetes object manifest.
     (save-excursion
       (goto-char (point-min))
       (when (boundp 'kele--current-resource-buffer-context)
-        (insert (propertize (format "# context: %s\n"
+        (insert (propertize (format "# Context: %s\n"
                                     (kele--resource-buffer-context-context
                                      kele--current-resource-buffer-context))
                             'font-lock-face 'font-lock-comment-face))
-        (insert (propertize (format "# retrieval time: %s\n"
+        (insert (propertize (format "# Retrieval time: %s\n"
                                     (kele--resource-buffer-context-retrieval-time
                                      kele--current-resource-buffer-context))
-                            'font-lock-face 'font-lock-comment-face))))))
+                            'font-lock-face 'font-lock-comment-face)))
+
+
+      (insert "#\n")
+      (insert "# Keybindings:\n")
+      (pcase-dolist (`(,cmd . ,desc) kele--get-mode-command-descriptions)
+        (insert (format (propertize "# %s %s\n"
+                                    'font-lock-face 'font-lock-comment-face)
+                        (string-pad (substitute-command-keys (format "\\[%s]" cmd)) 10)
+                        desc))))))
 
 (add-hook 'kele-get-mode-hook #'kele--get-insert-header t)
 
