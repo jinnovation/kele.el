@@ -748,6 +748,11 @@ throws an error."
 
 (defvar kele--current-resource-buffer-context)
 
+(defun kele--quit-and-kill (&optional window)
+  "Quit WINDOW and kill its buffer."
+  (interactive)
+  (quit-window t window))
+
 (define-minor-mode kele-get-mode
   "Enable some Kele features in resource-viewing buffers.
 
@@ -757,6 +762,9 @@ show the requested Kubernetes object manifest.
 \\{kele-get-mode-map}"
   :group 'kele
   :interactive nil
+  :lighter "Kele Get"
+  :keymap `((,(kbd "q") . quit-window)
+            (,(kbd "Q") . kele--quit-and-kill))
   (read-only-mode 1))
 
 (defun kele--get-insert-header ()
