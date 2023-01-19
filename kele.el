@@ -8,7 +8,16 @@
 ;; Homepage: https://github.com/jinnovation/kele.el
 ;; Keywords: kubernetes tools
 ;; SPDX-License-Identifier: Apache-2.0
-;; Package-Requires: ((emacs "27.1") (async "1.9.7") (dash "2.19.1") (f "0.20.0") (ht "2.3") (plz "0.3") (request "0.3.2") (yaml "0.5.1"))
+;; Package-Requires: (
+;;   (emacs "27.1")
+;;   (async "1.9.7")
+;;   (dash "2.19.1")
+;;   (f "0.20.0")
+;;   (ht "2.3")
+;;   (plz "0.3")
+;;   (request "0.3.2")
+;;   (s "1.13.0")
+;;   (yaml "0.5.1"))
 
 ;;; Commentary:
 
@@ -28,6 +37,7 @@
 (require 'ht)
 (require 'json)
 (require 'plz)
+(require 's)
 (require 'subr-x)
 (require 'url-parse)
 (require 'yaml)
@@ -792,7 +802,10 @@ show the requested Kubernetes object manifest.
       (pcase-dolist (`(,cmd . ,desc) kele--get-mode-command-descriptions)
         (insert (format (propertize "# %s %s\n"
                                     'font-lock-face 'font-lock-comment-face)
-                        (string-pad (substitute-command-keys (format "\\[%s]" cmd)) 10)
+                        (s-pad-right
+                         (substitute-command-keys (format "\\[%s]" cmd))
+                         " "
+                         10)
                         desc))))))
 
 (add-hook 'kele-get-mode-hook #'kele--get-insert-header t)

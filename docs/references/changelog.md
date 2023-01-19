@@ -18,6 +18,10 @@ versioning][semver].
   display buffer
 - `kele-get` buffers' front matter now outlines the available keybindings
 
+### Changed
+
+- Added dependency: [`s`](https://github.com/magnars/s.el)
+
 ## 0.2.1
 
 This release focuses on refining the `kele-get` experience -- usability
