@@ -8,7 +8,7 @@
 ;; Homepage: https://github.com/jinnovation/kele.el
 ;; Keywords: kubernetes tools
 ;; SPDX-License-Identifier: Apache-2.0
-;; Package-Requires: ((emacs "27.1") (async "1.9.7") (dash "2.19.1") (f "0.20.0") (ht "2.3") (plz "0.3") (request "0.3.2") (yaml "0.5.1"))
+;; Package-Requires: ((emacs "27.1") (async "1.9.7") (dash "2.19.1") (f "0.20.0") (ht "2.3") (plz "0.3") (request "0.3.2") (s "1.13.0") (yaml "0.5.1"))
 
 ;;; Commentary:
 
@@ -28,6 +28,7 @@
 (require 'ht)
 (require 'json)
 (require 'plz)
+(require 's)
 (require 'subr-x)
 (require 'url-parse)
 (require 'yaml)
@@ -63,6 +64,11 @@
   "The default time-to-live for ephemeral kubectl proxy processes."
   :type 'integer
   :group 'kele)
+
+(defcustom kele-get-show-instructions t
+  "Whether to show usage instructions inside the `kele-get' buffer."
+  :group 'kele
+  :type 'boolean)
 
 (defcustom kele-resource-default-refresh-interval 60
   "The time-to-live for cached resources.
@@ -753,6 +759,10 @@ throws an error."
   (interactive)
   (quit-window t window))
 
+(defvar kele--get-mode-command-descriptions
+  '((quit-window . "quit window")
+    (kele--quit-and-kill . "quit window, killing buffer")))
+
 (define-minor-mode kele-get-mode
   "Enable some Kele features in resource-viewing buffers.
 
@@ -773,14 +783,25 @@ show the requested Kubernetes object manifest.
     (save-excursion
       (goto-char (point-min))
       (when (boundp 'kele--current-resource-buffer-context)
-        (insert (propertize (format "# context: %s\n"
+        (insert (propertize (format "# Context: %s\n"
                                     (kele--resource-buffer-context-context
                                      kele--current-resource-buffer-context))
                             'font-lock-face 'font-lock-comment-face))
-        (insert (propertize (format "# retrieval time: %s\n"
+        (insert (propertize (format "# Retrieval time: %s\n"
                                     (kele--resource-buffer-context-retrieval-time
                                      kele--current-resource-buffer-context))
-                            'font-lock-face 'font-lock-comment-face))))))
+                            'font-lock-face 'font-lock-comment-face)))
+      (when kele-get-show-instructions
+        (insert "#\n")
+        (insert "# Keybindings:\n")
+        (pcase-dolist (`(,cmd . ,desc) kele--get-mode-command-descriptions)
+          (insert (format (propertize "# %s %s\n"
+                                      'font-lock-face 'font-lock-comment-face)
+                          (s-pad-right
+                           10
+                           " "
+                           (substitute-command-keys (format "\\[%s]" cmd)))
+                          desc)))))))
 
 (add-hook 'kele-get-mode-hook #'kele--get-insert-header t)
 

@@ -16,6 +16,11 @@ versioning][semver].
 - `kele-get` resource name input now supports completion! :fire:
 - `kele-get` buffers now have keybindings for quitting and killing the resource
   display buffer
+- `kele-get` buffers' front matter now outlines the available keybindings
+
+### Changed
+
+- Added dependency: [`s`](https://github.com/magnars/s.el)
 
 ## 0.2.1
 
