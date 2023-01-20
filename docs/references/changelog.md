@@ -23,6 +23,7 @@ versioning][semver].
 ### Changed
 
 - Added dependency: [`s`](https://github.com/magnars/s.el)
+- Removed dependency: [`requests`](https://github.com/tkf/emacs-request)
 
 ## 0.2.1
 
@@ -110,7 +111,6 @@ for any peculiar behavior that you notice.
 
 ### Changed
 
-- Removed dependency: [`requests`](https://github.com/tkf/emacs-request)
 - Added dependency: [`plz`](https://github.com/alphapapa/plz.el)
 - Added dependency: [`async`](https://github.com/jwiegley/emacs-async/)
 
