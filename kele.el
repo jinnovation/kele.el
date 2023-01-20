@@ -759,8 +759,10 @@ throws an error."
 
 (defun kele--refetch ()
   "Refetches the currently displayed resource."
-  ;; TODO: Assert in `kele-get-mode' buffer
   (interactive)
+  (cl-assert kele-get-mode
+             nil
+             "`kele--refetch' is only meaningful in a `kele-get-mode' buffer; refusing to invoke")
   (-let* ((ctx kele--current-resource-buffer-context)
           ((&alist 'kind kind
                    'apiVersion apiVersion
