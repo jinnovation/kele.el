@@ -35,22 +35,6 @@ candidates for:
     `kele-get` only shows you resource types that support `get`ting in the first
     place.
 
-### Customizing resource display
-
-`kele-get` retrieves the **full** manifest for the requested resource. This may
-include "noisy" sub-fields like [`.metadata.managedFields`][managed-fields] or
-the [`kubectl.kubernetes.io/last-applied-configuration`
-annotation][last-applied-config] that distract from the "important" bits.
-
-You can routinely filter out such fields using the `kele-filtered-fields` custom
-variable. For example, to filter out both of the above:
-
-```emacs-lisp
-(setq kele-filtered-fields
-  '((metadata managedFields)
-    (metadata annotations kubectl.kubernetes.io/last-applied-configuration)))
-```
-
 ## Contexts
 
 ### Switching contexts
@@ -126,6 +110,3 @@ M-x kele-namespace-switch-for-current-context
 
 [Embark]: https://github.com/oantolin/embark
 [custom resources]: https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/
-
-[managed-fields]: https://kubernetes.io/docs/reference/using-api/server-side-apply/#field-management
-[last-applied-config]: https://kubernetes.io/docs/tasks/manage-kubernetes-objects/declarative-config/#how-to-create-objects
