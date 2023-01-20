@@ -368,6 +368,7 @@
 (describe "kele--render-object"
   :var (fake-obj)
   (before-each
+    (setq kele-get-show-instructions nil)
     (setq fake-obj '((kind . "FakeKind")
                      (metadata .((name . "fake-name"))))))
   (it "renders the value as YAML"

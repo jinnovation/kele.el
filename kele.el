@@ -65,6 +65,11 @@
   :type 'integer
   :group 'kele)
 
+(defcustom kele-get-show-instructions t
+  "Whether to show usage instructions inside the `kele-get' buffer."
+  :group 'kele
+  :type 'boolean)
+
 (defcustom kele-resource-default-refresh-interval 60
   "The time-to-live for cached resources.
 
@@ -786,18 +791,17 @@ show the requested Kubernetes object manifest.
                                     (kele--resource-buffer-context-retrieval-time
                                      kele--current-resource-buffer-context))
                             'font-lock-face 'font-lock-comment-face)))
-
-
-      (insert "#\n")
-      (insert "# Keybindings:\n")
-      (pcase-dolist (`(,cmd . ,desc) kele--get-mode-command-descriptions)
-        (insert (format (propertize "# %s %s\n"
-                                    'font-lock-face 'font-lock-comment-face)
-                        (s-pad-right
-                         10
-                         " "
-                         (substitute-command-keys (format "\\[%s]" cmd)))
-                        desc))))))
+      (when kele-get-show-instructions
+        (insert "#\n")
+        (insert "# Keybindings:\n")
+        (pcase-dolist (`(,cmd . ,desc) kele--get-mode-command-descriptions)
+          (insert (format (propertize "# %s %s\n"
+                                      'font-lock-face 'font-lock-comment-face)
+                          (s-pad-right
+                           10
+                           " "
+                           (substitute-command-keys (format "\\[%s]" cmd)))
+                          desc)))))))
 
 (add-hook 'kele-get-mode-hook #'kele--get-insert-header t)
 
