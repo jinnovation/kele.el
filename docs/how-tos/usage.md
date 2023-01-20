@@ -35,6 +35,10 @@ candidates for:
     `kele-get` only shows you resource types that support `get`ting in the first
     place.
 
+### Refreshing a resource
+
+You can press `U` in a `kele-get` buffer to re-fetch and refresh the current resource.
+
 ## Contexts
 
 ### Switching contexts
