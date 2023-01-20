@@ -681,6 +681,7 @@ RETRIEVAL-TIME denotes the time at which RESOURCE was retrieved.
   resource
   context
   namespace
+  kind
   retrieval-time)
 
 (cl-defun kele--get-resource (kind name &key group version context namespace)
@@ -742,15 +743,17 @@ throws an error."
           (kele--resource-container-create
            :resource (kele--retry (lambda () (plz 'get url :as #'json-read)))
            :context context
+           :kind kind
            :namespace namespace
            :retrieval-time time)
         (error (signal 'kele-request-error (error-message-string err)))))))
 
 (cl-defstruct (kele--resource-buffer-context
                (:constructor kele--resource-buffer-context-create)
-               (:copier nil))
+               (:copier nil)
+               (:include kele--resource-container))
   "Contextual metadata for a `kele-get-mode' buffer."
-  context retrieval-time filtered-paths)
+  filtered-paths)
 
 (defvar kele--current-resource-buffer-context)
 
@@ -761,7 +764,8 @@ throws an error."
 
 (defvar kele--get-mode-command-descriptions
   '((quit-window . "quit window")
-    (kele--quit-and-kill . "quit window, killing buffer")))
+    (kele--quit-and-kill . "quit window, killing buffer")
+    (kele--refetch . "re-fetch the resource")))
 
 (define-minor-mode kele-get-mode
   "Enable some Kele features in resource-viewing buffers.
@@ -774,8 +778,40 @@ show the requested Kubernetes object manifest.
   :interactive nil
   :lighter "Kele Get"
   :keymap `((,(kbd "q") . quit-window)
-            (,(kbd "Q") . kele--quit-and-kill))
+            (,(kbd "Q") . kele--quit-and-kill)
+            (,(kbd "U") . kele--refetch))
   (read-only-mode 1))
+
+(defun kele--refetch ()
+  "Refetches the currently displayed resource."
+  (interactive)
+  (cl-assert kele-get-mode
+             nil
+             "`kele--refetch' is only meaningful in a `kele-get-mode' buffer; refusing to invoke")
+  (-let* ((ctx kele--current-resource-buffer-context)
+          ((&alist 'kind kind
+                   'apiVersion apiVersion
+                   'metadata (&alist 'name name
+                                     'namespace namespace))
+           (kele--resource-buffer-context-resource ctx))
+          (context (kele--resource-buffer-context-context ctx)))
+    (kele--with-progress (format "Re-fetching resource `%s/%s' (namespace: %s, context: %s)..."
+                                 kind
+                                 name
+                                 namespace
+                                 context)
+      (kele--render-object
+       (kele--get-resource (kele--resource-buffer-context-kind ctx)
+                           name
+                           :group (if (s-contains-p "/" apiVersion)
+                                      (car (s-split "/" apiVersion))
+                                    nil)
+                           :version (if (s-contains-p "/" apiVersion)
+                                        (cadr (s-split "/" apiVersion))
+                                      apiVersion)
+                           :namespace namespace
+                           :context context)
+       (current-buffer)))))
 
 (defun kele--get-insert-header ()
   "Insert header into a `kele-get-mode' buffer."
@@ -961,7 +997,10 @@ context and namespace in its name."
         (setq-local kele--current-resource-buffer-context
                     (kele--resource-buffer-context-create
                      :context (kele--resource-container-context object)
-                     :retrieval-time (kele--resource-container-retrieval-time object)))
+                     :kind (kele--resource-container-kind object)
+                     :retrieval-time (kele--resource-container-retrieval-time object)
+                     :resource (kele--resource-container-resource object)
+                     :namespace (kele--resource-container-namespace object)))
         (put 'kele--current-resource-buffer-context 'permanent-local t))
 
       (kele-get-mode 1))

@@ -16,6 +16,8 @@ versioning][semver].
 - `kele-get` resource name input now supports completion! :fire:
 - `kele-get` buffers now have keybindings for quitting and killing the resource
   display buffer
+- You can now press `U` in `kele-get` buffers to re-fetch and refresh the
+  current resource
 - `kele-get` buffers' front matter now outlines the available keybindings
 
 ### Changed

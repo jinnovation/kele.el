@@ -456,4 +456,5 @@ metadata:
                                                       "fake-other-group/v1")))
           (:success (buttercup-fail "Received unexpected success")))
         (expect 'kele--ensure-proxy :not :to-have-been-called)))))
+
 ;;; test-kele.el ends here
