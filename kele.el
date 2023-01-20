@@ -788,7 +788,6 @@ throws an error."
                            :context context)
        (current-buffer)))))
 
-
 (defun kele--quit-and-kill (&optional window)
   "Quit WINDOW and kill its buffer."
   (interactive)
