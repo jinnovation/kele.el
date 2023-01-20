@@ -794,9 +794,9 @@ show the requested Kubernetes object manifest.
         (insert (format (propertize "# %s %s\n"
                                     'font-lock-face 'font-lock-comment-face)
                         (s-pad-right
-                         (substitute-command-keys (format "\\[%s]" cmd))
+                         10
                          " "
-                         10)
+                         (substitute-command-keys (format "\\[%s]" cmd)))
                         desc))))))
 
 (add-hook 'kele-get-mode-hook #'kele--get-insert-header t)
