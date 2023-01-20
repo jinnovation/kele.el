@@ -757,6 +757,31 @@ throws an error."
 
 (defvar kele--current-resource-buffer-context)
 
+(defun kele--quit-and-kill (&optional window)
+  "Quit WINDOW and kill its buffer."
+  (interactive)
+  (quit-window t window))
+
+(defvar kele--get-mode-command-descriptions
+  '((quit-window . "quit window")
+    (kele--quit-and-kill . "quit window, killing buffer")
+    (kele--refetch . "re-fetch the resource")))
+
+(define-minor-mode kele-get-mode
+  "Enable some Kele features in resource-viewing buffers.
+
+Kele resource buffers are created when you run `kele-get'.  They
+show the requested Kubernetes object manifest.
+
+\\{kele-get-mode-map}"
+  :group 'kele
+  :interactive nil
+  :lighter "Kele Get"
+  :keymap `((,(kbd "q") . quit-window)
+            (,(kbd "Q") . kele--quit-and-kill)
+            (,(kbd "U") . kele--refetch))
+  (read-only-mode 1))
+
 (defun kele--refetch ()
   "Refetches the currently displayed resource."
   (interactive)
@@ -787,31 +812,6 @@ throws an error."
                            :namespace namespace
                            :context context)
        (current-buffer)))))
-
-(defun kele--quit-and-kill (&optional window)
-  "Quit WINDOW and kill its buffer."
-  (interactive)
-  (quit-window t window))
-
-(defvar kele--get-mode-command-descriptions
-  '((quit-window . "quit window")
-    (kele--quit-and-kill . "quit window, killing buffer")
-    (kele--refetch . "re-fetch the resource")))
-
-(define-minor-mode kele-get-mode
-  "Enable some Kele features in resource-viewing buffers.
-
-Kele resource buffers are created when you run `kele-get'.  They
-show the requested Kubernetes object manifest.
-
-\\{kele-get-mode-map}"
-  :group 'kele
-  :interactive nil
-  :lighter "Kele Get"
-  :keymap `((,(kbd "q") . quit-window)
-            (,(kbd "Q") . kele--quit-and-kill)
-            (,(kbd "U") . kele--refetch))
-  (read-only-mode 1))
 
 (defun kele--get-insert-header ()
   "Insert header into a `kele-get-mode' buffer."
