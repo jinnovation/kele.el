@@ -502,35 +502,40 @@ configuration, e.g. via `kubectl config'."
             proxy-status
             (propertize ")" 'face 'completions-annotations))))
 
-(defun kele--namespaces-complete (str pred action &optional context)
-  "Complete input for selection of namespaces.
+(cl-defun kele--resources-complete (str pred action &key cands category)
+  "Complete input for selection of resources.
 
 STR, PRED, and ACTION are as defined in completion functions.
 
-If CONTEXT is nil, the current context will be used."
+CANDS is the collection of completion candidates.
+
+CATEGORY is the category the candidates should be categorized
+as."
   (if (eq action 'metadata)
-      '(metadata (annotation-function . kele--namespace-annotate)
-                 (category . kele-namespace))
-    (complete-with-action
-     action
-     (kele--get-namespaces (or context (kele-current-context-name)))
-     str
-     pred)))
+      `(metadata (category . ,(or category 'kele-resource)))
+    (complete-with-action action cands str pred)))
 
 (defun kele-namespace-switch-for-context (context namespace)
   "Switch to NAMESPACE for CONTEXT."
   (interactive (let ((context (completing-read "Context: " #'kele--contexts-complete)))
                  (list context
                        (completing-read (format "Namespace (%s): " context)
-                                        (lambda (str pred action)
-                                          (kele--namespaces-complete str pred
-                                                                     action context))))))
+                                        (-cut kele--resources-complete <> <> <>
+                                              :cands (kele--get-namespaces
+                                                      context)
+                                              :category 'kele-namespace)))))
   (kele-kubectl-do "config" "set-context" context "--namespace" namespace))
 
 (defun kele-namespace-switch-for-current-context (namespace)
   "Switch to NAMESPACE for the current context."
-  (interactive (list (completing-read (format "Namespace (%s): " (kele-current-context-name)) #'kele--namespaces-complete)))
-  (kele-kubectl-do "config" "set-context" (kele-current-context-name) "--namespace" namespace))
+  (interactive
+   (list
+    (completing-read
+     (format "Namespace (%s): " (kele-current-context-name))
+     (-cut kele--resources-complete <> <> <>
+           :cands (kele--get-namespaces (kele-current-context-name))
+           :category 'kele-namespace))))
+  (kele-namespace-switch-for-context (kele-current-context-name) namespace))
 
 ;; TODO
 (defun kele--namespace-annotate (_namespace-name)
@@ -645,7 +650,6 @@ If not cached, will fetch and cache the namespaces."
       namespaces
     (apply #'kele--cache-namespaces context
            (kele--fetch-resource-names nil "v1" "namespaces" :context context))))
-
 
 (defun kele--get-cache-ttl-for-resource (resource)
   "Get the cache TTL for RESOURCE."
@@ -936,7 +940,8 @@ throws an error."
                  (list kind
                        (completing-read
                         "Name: "
-                        (kele--fetch-resource-names group version kind :namespace ns :context ctx))
+                        (-cut kele--resources-complete <> <> <>
+                              :cands (kele--fetch-resource-names group version kind :namespace ns :context ctx)))
                        :group group
                        :version version
                        :context ctx
