@@ -1085,10 +1085,21 @@ Only populated if Embark is installed.")
       (with-suppressed-warnings ((free-vars awesome-tray-module-alist))
         (delete kele--awesome-tray-module awesome-tray-module-alist))))
 
+(defvar kele-mode-map (make-sparse-keymap)
+  "Keymap for Kele mode.")
+
+(defvar kele-command-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "c") #'kele-context)
+    (define-key map (kbd "?") #'kele-dispatch)
+    map)
+  "Keymap for Kele commands.")
+
 ;;;###autoload
 (define-minor-mode kele-mode
   "Minor mode to enable listening on Kubernetes configs."
   :global t
+  :keymap kele-mode-map
   :group 'kele
   :lighter nil
   (if (not kele-mode)
@@ -1115,6 +1126,9 @@ Only populated if Embark is installed.")
                                                 'face 'warning))))]
   (interactive (list (kele-current-context-name)))
   (transient-setup 'kele-context nil nil :scope context))
+
+;; TODO: Define a `kele-mode-map' and a `kele-command-map', w/ instructions for
+;; how to bind, say, `s-k' w/i former to latter
 
 (provide 'kele)
 
