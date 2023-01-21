@@ -1095,6 +1095,11 @@ Only populated if Embark is installed.")
       (kele--disable)
     (kele--enable)))
 
+(transient-define-prefix kele-dispatch ()
+  "Work with Kubernetes clusters and configs."
+  ["Configurations"
+   ("c" "Contexts" kele-context)])
+
 (transient-define-prefix kele-context (context)
   "Work with a Kubernetes CONTEXT."
   [:description
