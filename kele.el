@@ -1098,10 +1098,12 @@ Only populated if Embark is installed.")
 (transient-define-prefix kele-context (context)
   "Work with a Kubernetes CONTEXT."
   [:description
-   (lambda () (format "Contexts (current: %s)"
-                      (propertize (oref transient--prefix scope) 'face 'warning)))
-   ("s" "Switch to..." kele-context-switch)
-   ("r" "Rename" kele-context-rename)
+   "Contexts"
+   ("s" kele-context-switch
+    :description (lambda ()
+                   (format "Switch from %s to..."
+                           (propertize (oref transient--prefix scope) 'face 'warning))))
+   ("r" kele-context-rename :description "Rename")
    ("n" kele-namespace-switch-for-current-context
     :description (lambda () (format "Change default namespace of %s to..."
                                     (propertize (oref transient--prefix scope)
