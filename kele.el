@@ -8,7 +8,7 @@
 ;; Homepage: https://github.com/jinnovation/kele.el
 ;; Keywords: kubernetes tools
 ;; SPDX-License-Identifier: Apache-2.0
-;; Package-Requires: ((emacs "27.1") (async "1.9.7") (dash "2.19.1") (f "0.20.0") (ht "2.3") (plz "0.3") (s "1.13.0") (yaml "0.5.1"))
+;; Package-Requires: ((emacs "28.1") (async "1.9.7") (dash "2.19.1") (f "0.20.0") (ht "2.3") (plz "0.3") (s "1.13.0") (yaml "0.5.1"))
 
 ;;; Commentary:
 
@@ -569,7 +569,9 @@ Returns the last evaluated value of BODY."
 
 (defun kele-context-rename (old-name new-name)
   "Rename context named OLD-NAME to NEW-NAME."
-  (interactive (list (completing-read "Context to rename: " #'kele--contexts-complete)
+  (interactive (list (completing-read "Context to rename: "
+                                      #'kele--contexts-complete
+                                      nil t nil nil (kele-current-context-name))
                      (read-from-minibuffer "Rename to: ")))
   ;; TODO: This needs to update `kele--context-proxy-ledger' as well.
   (kele-kubectl-do "config" "rename-context" old-name new-name))
@@ -1091,6 +1093,20 @@ Only populated if Embark is installed.")
   (if (not kele-mode)
       (kele--disable)
     (kele--enable)))
+
+(transient-define-prefix kele-context (context)
+  "Work with a Kubernetes CONTEXT."
+  [:description
+   (lambda () (format "Contexts (current: %s)"
+                      (propertize (oref transient--prefix scope) 'face 'warning)))
+   ("s" "Switch to..." kele-context-switch)
+   ("r" "Rename" kele-context-rename)
+   ("n" kele-namespace-switch-for-current-context
+    :description (lambda () (format "Change default namespace of %s to..."
+                                    (propertize (oref transient--prefix scope)
+                                                'face 'warning))))]
+  (interactive (list (kele-current-context-name)))
+  (transient-setup 'kele-context nil nil :scope context))
 
 (provide 'kele)
 
