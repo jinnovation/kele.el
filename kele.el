@@ -30,6 +30,7 @@
 (require 'plz)
 (require 's)
 (require 'subr-x)
+(require 'transient)
 (require 'url-parse)
 (require 'yaml)
 
