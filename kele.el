@@ -512,7 +512,7 @@ CANDS is the collection of completion candidates.
 CATEGORY is the category the candidates should be categorized
 as."
   (if (eq action 'metadata)
-      `(metadata (category . ,(or category kele-resource)))
+      `(metadata (category . ,(or category 'kele-resource)))
     (complete-with-action action cands str pred)))
 
 (defun kele-namespace-switch-for-context (context namespace)
@@ -650,7 +650,6 @@ If not cached, will fetch and cache the namespaces."
       namespaces
     (apply #'kele--cache-namespaces context
            (kele--fetch-resource-names nil "v1" "namespaces" :context context))))
-
 
 (defun kele--get-cache-ttl-for-resource (resource)
   "Get the cache TTL for RESOURCE."
@@ -941,7 +940,8 @@ throws an error."
                  (list kind
                        (completing-read
                         "Name: "
-                        (kele--fetch-resource-names group version kind :namespace ns :context ctx))
+                        (-cut kele--resources-complete <> <> <>
+                              :cands (kele--fetch-resource-names group version kind :namespace ns :context ctx)))
                        :group group
                        :version version
                        :context ctx
