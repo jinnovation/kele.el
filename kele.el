@@ -1116,22 +1116,54 @@ Only populated if Embark is installed.")
       (kele--disable)
     (kele--enable)))
 
+(defun kele--namespace-read (prompt initial-input history)
+  "Read a namespace value using PROMPT, INITIAL-INPUT, and HISTORY.
+
+Assumes that the current Transient prefix's :scope is an alist w/ `context' key."
+  (completing-read
+   prompt
+   (-cut kele--resources-complete <> <> <>
+         :cands (kele--get-namespaces
+                 (alist-get 'context (oref transient--prefix scope)))
+         :category 'kele-namespace)
+   nil t initial-input history))
+
+(transient-define-infix kele--namespace-infix
+  "A namespace to work within."
+  :prompt "Namespace: "
+  :description "namespace"
+  :key "=n"
+  :argument "--namespace="
+  :class 'transient-option
+  :reader 'kele--namespace-read
+  :always-read t
+  :if
+  (lambda ()
+    (-let (((&alist 'group-version gv 'kind kind)
+            (oref transient--prefix scope)))
+      (kele--resource-namespaced-p kele--global-discovery-cache gv kind)))
+  :init-value (lambda (obj)
+                (oset obj value
+                      (kele--default-namespace-for-context
+                       (alist-get 'context (oref transient--prefix scope))))
+                (message "%s" (oref obj value))))
+
 (transient-define-prefix kele-resource (group-version kind)
   ["Arguments"
-   ("=n" "namespace" "--namespace="
-    :if
-    (lambda ()
-      (-let (((gv kind)
-              (oref transient--prefix scope)))
-        (kele--resource-namespaced-p kele--global-discovery-cache gv kind))))]
+   (kele--namespace-infix)]
+
    ["Actions"
     ("g"
      :command
-     (lambda () (interactive) (message "get"))
+     (lambda ()
+       (interactive)
+       (message "namespace: %s"
+                (->> (transient-args transient-current-command)
+                     (transient-arg-value "--namespace="))))
      :description
      (lambda ()
        (format "Get a single %s"
-               (propertize (cadr (oref transient--prefix scope)) 'face 'warning))))]
+               (propertize (alist-get 'kind (oref transient--prefix scope)) 'face 'warning))))]
    (interactive (let* ((context (kele-current-context-name))
                        (kind (completing-read
                               "Choose a kind to work with: "
@@ -1147,7 +1179,10 @@ Only populated if Embark is installed.")
                                                       kind)
                                               gvs))))
                   (list gv kind)))
-   (transient-setup 'kele-resource nil nil :scope (list group-version kind)))
+   ;; (transient-setup 'kele-resource nil nil :scope (list group-version kind)))
+   (transient-setup 'kele-resource nil nil :scope `((group-version . ,group-version)
+                                                   (kind . ,kind)
+                                                   (context . ,(kele-current-context-name)))))
 
 (transient-define-prefix kele-dispatch ()
   "Work with Kubernetes clusters and configs."
