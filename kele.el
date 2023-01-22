@@ -1131,7 +1131,6 @@ Assumes that the current Transient prefix's :scope is an alist w/ `context' key.
   ;; FIXME: Make this resilient to the prefix's scope not having a context
   ;; value.  If not present (or the scope is not an alist or the scope is not
   ;; defined), default to current context.
-  (message "%s" (oref transient--prefix scope))
   (if-let ((context (alist-get 'context (oref transient--prefix scope))))
       (completing-read
        prompt
@@ -1140,16 +1139,18 @@ Assumes that the current Transient prefix's :scope is an alist w/ `context' key.
                      (alist-get 'context (oref transient--prefix scope)))
              :category 'kele-namespace)
        nil t initial-input history)
-    (error "Unexpected nil context")))
+    (error "Unexpected nil context in `%s'" (oref transient--prefix command))))
 
 (defclass kele--transient-scope-modifier (transient-option)
   ((scope-key
     :initarg :scope-key
     :initform nil
-    :type 'symbol
+    :type symbol
     :documentation
     "The key in the prefix's scope alist that we want to modify the
-value of.")))
+value of."))
+  "A Transient infix that also modifies the associated prefix's
+context.")
 
 (cl-defmethod transient-infix-set ((obj kele--transient-scope-modifier) value)
   "Set the infix VALUE while modifyiing the current prefix's scope.
