@@ -1148,12 +1148,17 @@ Assumes that the current Transient prefix's :scope is an alist w/ `context' key.
     :initform nil
     :type 'symbol
     :documentation
-    "The key in the prefix's scope alist that we want to modify the value of.
-
-Assumes that the prefix's scope is an alist.  Assumes that the key is already
-present in the alist.")))
+    "The key in the prefix's scope alist that we want to modify the
+value of.")))
 
 (cl-defmethod transient-infix-set ((obj kele--transient-scope-modifier) value)
+  "Set the infix VALUE while modifyiing the current prefix's scope.
+
+Uses OBJ's `scope-key' field as the key for the current prefix's
+scope.
+
+Assumes that the prefix's scope is an alist.  Assumes that the
+key is already present in the alist."
   (oset obj value value)
   (message "current scope key val: %s" (alist-get (oref obj scope-key)
                                                   (oref transient--prefix scope)))
