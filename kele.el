@@ -553,6 +553,10 @@ STR, PRED, and ACTION are as defined in completion functions."
     (complete-with-action action (kele-context-names) str pred)))
 
 (defun kele--contexts-read (prompt initial-input history)
+  "Reader function for contexts.
+
+PROMPT, INITIAL-INPUT, and HISTORY are all as defined in Info
+node `(elisp)Programmed Completion'."
   (completing-read prompt #'kele--contexts-complete nil t initial-input history))
 
 (defmacro kele--with-progress (msg &rest body)
@@ -1124,6 +1128,9 @@ Only populated if Embark is installed.")
   "Read a namespace value using PROMPT, INITIAL-INPUT, and HISTORY.
 
 Assumes that the current Transient prefix's :scope is an alist w/ `context' key."
+  ;; FIXME: Make this resilient to the prefix's scope not having a context
+  ;; value.  If not present (or the scope is not an alist or the scope is not
+  ;; defined), default to current context.
   (message "%s" (oref transient--prefix scope))
   (if-let ((context (alist-get 'context (oref transient--prefix scope))))
       (completing-read
@@ -1136,12 +1143,23 @@ Assumes that the current Transient prefix's :scope is an alist w/ `context' key.
     (error "Unexpected nil context")))
 
 (defclass kele--transient-scope-modifier (transient-option)
-  ((scope-key :initform scope-key :initform nil)))
+  ((scope-key
+    :initarg :scope-key
+    :initform nil
+    :type 'symbol
+    :documentation
+    "The key in the prefix's scope alist that we want to modify the value of.
+
+Assumes that the prefix's scope is an alist.  Assumes that the key is already
+present in the alist.")))
 
 (cl-defmethod transient-infix-set ((obj kele--transient-scope-modifier) value)
-  (message "setting")
   (oset obj value value)
-  (setf (cdr (assoc (oref obj scope-key) (oref transient--prefix scope))) value))
+  (message "current scope key val: %s" (alist-get (oref obj scope-key)
+                                                  (oref transient--prefix scope)))
+  (setf (cdr (assoc (oref obj scope-key) (oref transient--prefix scope))) value)
+  (message "new scope key val: %s" (alist-get (oref obj scope-key)
+                                                  (oref transient--prefix scope))))
 
 (transient-define-infix kele--namespace-infix
   "A namespace to work within."
@@ -1164,12 +1182,12 @@ Assumes that the current Transient prefix's :scope is an alist w/ `context' key.
 
 (transient-define-infix kele--context-infix
   "A context to work within."
-  :class kele--transient-scope-modifier
+  :class 'kele--transient-scope-modifier
+  :scope-key 'context
   :prompt "Context: "
   :description "context"
   :key "=c"
   :argument "--context="
-  :class 'transient-option
   :always-read t
   :reader 'kele--contexts-read
   :init-value (lambda (obj)
@@ -1221,6 +1239,11 @@ Assumes that the current Transient prefix's :scope is an alist w/ `context' key.
                  (list gv kind)))
   (transient-setup 'kele-resource nil nil :scope `((group-version . ,group-version)
                                                    (kind . ,kind)
+                                                   ;; FIXME: refine
+                                                   ;; `kele--transient-scope-modifier'
+                                                   ;; to not require the key to
+                                                   ;; be present in the scope
+                                                   ;; alist in the first place
                                                    (context . ,(kele-current-context-name)))))
 
 (transient-define-prefix kele-dispatch ()
