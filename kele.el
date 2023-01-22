@@ -1127,9 +1127,6 @@ Only populated if Embark is installed.")
   (interactive (list (kele-current-context-name)))
   (transient-setup 'kele-context nil nil :scope context))
 
-;; TODO: Define a `kele-mode-map' and a `kele-command-map', w/ instructions for
-;; how to bind, say, `s-k' w/i former to latter
-
 (provide 'kele)
 
 ;;; kele.el ends here

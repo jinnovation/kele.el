@@ -29,38 +29,12 @@ e.g. [Embark], that you can take advantage of in your own configs.
 
 ## Getting Started
 
-=== "Use-package + Straight"
-
-    ```emacs-lisp
-    (use-package kele
-      :straight t
-      :config
-      (kele-mode 1))
-    ```
-
-=== "Use-package"
-
-    ```emacs-lisp
-    (use-package kele
-      :config
-      (kele-mode 1))
-    ```
-
-=== "Straight"
-
-    ```emacs-lisp
-    (straight-use-package kele)
-    (kele-mode 1)
-    ```
-
-=== "The Hard Way"
-
-    Clone this repository and all dependencies and put them in your load-path.
-
-    ```emacs-lisp
-    (require 'kele)
-    (kele-mode 1)
-    ```
+```emacs-lisp
+(use-package kele
+  :config
+  (kele-mode 1)
+  (bind-key (kbd "s-k") kele-command-map kele-mode-map))
+```
 
 ## Design Ethos
 
