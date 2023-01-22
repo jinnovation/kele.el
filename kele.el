@@ -849,7 +849,17 @@ show the requested Kubernetes object manifest.
 (add-hook 'kele-get-mode-hook #'kele--get-insert-header t)
 
 (defun kele--groupversion-string (group version)
+  "Concatenate GROUP and VERSION into single group-version string."
   (if group (concat group "/" version) version))
+
+(defun kele--groupversion-split (group-version)
+  "Split a single GROUP-VERSION string.
+
+Returns a list where the car is the group and the cadr is the version.
+
+Nil value for group denotes the core API."
+  (let ((split (s-split "/" group-version)))
+    (if (length= split 1) (list nil (car split)) split)))
 
 ;; TODO (#72): Allow for injecting the proxy dependency.
 ;; This would allow for consumers to create their own proxy, e.g. to start it
@@ -1106,10 +1116,44 @@ Only populated if Embark is installed.")
       (kele--disable)
     (kele--enable)))
 
+(transient-define-prefix kele-resource (group-version kind)
+  ["Arguments"
+   ("=n" "namespace" "--namespace="
+    :if
+    (lambda ()
+      (-let (((gv kind)
+              (oref transient--prefix scope)))
+        (kele--resource-namespaced-p kele--global-discovery-cache gv kind))))]
+   ["Actions"
+    ("g"
+     :command
+     (lambda () (interactive) (message "get"))
+     :description
+     (lambda ()
+       (format "Get a single %s"
+               (propertize (cadr (oref transient--prefix scope)) 'face 'warning))))]
+   (interactive (let* ((context (kele-current-context-name))
+                       (kind (completing-read
+                              "Choose a kind to work with: "
+                              (kele--get-resource-types-for-context
+                               context)))
+                       (gvs (kele--get-groupversions-for-type
+                             kele--global-discovery-cache
+                             kind
+                             :context context))
+                       (gv (if (= (length gvs) 1)
+                               (car gvs)
+                             (completing-read (format "Desired group-version of `%s': "
+                                                      kind)
+                                              gvs))))
+                  (list gv kind)))
+   (transient-setup 'kele-resource nil nil :scope (list group-version kind)))
+
 (transient-define-prefix kele-dispatch ()
   "Work with Kubernetes clusters and configs."
-  ["Configurations"
-   ("c" "Contexts" kele-context)])
+  ["Work with..."
+   ("c" "Contexts" kele-context)
+   ("r" "Resources" kele-resource)])
 
 (transient-define-prefix kele-context (context)
   "Work with a Kubernetes CONTEXT."
