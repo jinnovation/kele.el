@@ -887,7 +887,6 @@ If CONTEXT is not provided, use the current context."
                    (kele--groupversion-string group version)
                    kind)))
     (signal 'user-error '()))
-  (message "foobar")
 
   (-if-let* (((&alist 'port port) (kele--ensure-proxy
                                    (or context (kele-current-context-name))))
