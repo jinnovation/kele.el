@@ -17,7 +17,6 @@ rule "ul-indent", indent: 4
 
 rule "ul-style", style: :dash
 rule "no-duplicate-header", allow_different_nesting: true
-rule "line-length", :line_length => 130
 
 exclude_rule 'MD024'            # Multiple headers with the same content
 exclude_rule 'MD026'            # Trailing punctuation in header

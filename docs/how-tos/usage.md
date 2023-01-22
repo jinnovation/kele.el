@@ -59,41 +59,18 @@ You can press `U` in a `kele-get` buffer to re-fetch and refresh the current res
 
 ## Contexts
 
-| Keybinding | Interactive function |
-|:-----------|:---------------------|
-| `s-k c`    | `kele-context`       |
+!!! tip
 
-### Switching contexts
+    Most context-related Kele functionality can also be done via [Embark] on any
+    completion candidate in any context-related Kele command.
 
-| Keybinding | Interactive function  |
-|:-----------|:----------------------|
-| `s-k c s`  | `kele-context-switch` |
+Kele commands involving Kubernetes [contexts] center around the `s-k c` prefix (`kele-context`).
 
-??? example "Demo"
-
-    ![](./img/context-switch.gif)
-
-This can also be done via [Embark] on any selection candidate in any other
-context-related Kele command, e.g. [`kele-context-rename`](#renaming-a-context).
-
-### Renaming a context
-
-| Keybinding | Interactive function  |
-|:-----------|:----------------------|
-| `s-k c r`  | `kele-context-rename` |
-
-??? example "Demo"
-
-    ![](./img/context-rename.gif)
-
-This can also be done via [Embark] on any selection candidate in any other
-context-related Kele command, e.g. [`kele-context-switch`](#switching-contexts).
-
-### Changing the default namespace
-
-| Keybinding | Interactive function                        |
-|:-----------|:--------------------------------------------|
-| `s-k c n`  | `kele-namespace-switch-for-current-context` |
+| Keybinding | Functionality                         | Interactive function                        | Demo                          |
+|:-----------|---------------------------------------|:--------------------------------------------|:------------------------------|
+| `s-k c s`  | Switching from one context to another | `kele-context-switch`                       | ![](./img/context-switch.gif) |
+| `s-k c r`  | Renaming a context                    | `kele-context-rename`                       | ![](./img/context-rename.gif) |
+| `s-k c n`  | Changing the default namespace        | `kele-namespace-switch-for-current-context` |                               |
 
 ### Managing proxy servers
 
@@ -128,3 +105,4 @@ annotations for each cluster completion candidate.
 
 [Embark]: https://github.com/oantolin/embark
 [custom resources]: https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/
+[contexts]: https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/
