@@ -28,6 +28,13 @@ versioning][semver].
 - Added dependency: [`s`](https://github.com/magnars/s.el)
 - Removed dependency: [`requests`](https://github.com/tkf/emacs-request)
 - Increased minimum required Emacs version to 28.1
+- `kele-namespace-switch-for-context` now uses the current context by default
+  and prompts for context selection if prefix argument provided
+- Renamed `kele-namespace-switch-for-context` to `kele-namespace-switch`
+
+### Removed
+
+- Removed `kele-namespace-switch-for-current-context`
 
 ## 0.2.1
 

@@ -66,11 +66,11 @@ You can press `U` in a `kele-get` buffer to re-fetch and refresh the current res
 
 Kele commands involving Kubernetes [contexts] center around the `s-k c` prefix (`kele-context`).
 
-| Keybinding | Functionality                         | Interactive function                        | Demo                          |
-|:-----------|---------------------------------------|:--------------------------------------------|:------------------------------|
-| `s-k c s`  | Switching from one context to another | `kele-context-switch`                       | ![](./img/context-switch.gif) |
-| `s-k c r`  | Renaming a context                    | `kele-context-rename`                       | ![](./img/context-rename.gif) |
-| `s-k c n`  | Changing the default namespace        | `kele-namespace-switch-for-current-context` |                               |
+| Keybinding | Functionality                         | Interactive function    | Demo                          |
+|:-----------|---------------------------------------|:------------------------|:------------------------------|
+| `s-k c s`  | Switching from one context to another | `kele-context-switch`   | ![](./img/context-switch.gif) |
+| `s-k c r`  | Renaming a context                    | `kele-context-rename`   | ![](./img/context-rename.gif) |
+| `s-k c n`  | Changing the default namespace        | `kele-namespace-switch` |                               |
 
 ### Managing proxy servers
 

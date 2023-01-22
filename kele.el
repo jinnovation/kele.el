@@ -516,27 +516,25 @@ as."
       `(metadata (category . ,(or category 'kele-resource)))
     (complete-with-action action cands str pred)))
 
-(defun kele-namespace-switch-for-context (context namespace)
-  "Switch to NAMESPACE for CONTEXT."
-  (interactive (let ((context (completing-read "Context: " #'kele--contexts-complete)))
-                 (list context
-                       (completing-read (format "Namespace (%s): " context)
+(defun kele-namespace-switch (namespace &optional context)
+  "Switch to NAMESPACE for CONTEXT.
+
+If CONTEXT is nil, use the current context.
+
+If prefix argument is provided, prompt user to select the context."
+  (interactive (let ((context (if (not current-prefix-arg)
+                                  (kele-current-context-name)
+                                (completing-read "Context: "
+                                                 #'kele--contexts-complete nil t nil nil (kele-current-context-name)))))
+                 (list (completing-read (format "Namespace (%s): " context)
                                         (-cut kele--resources-complete <> <> <>
                                               :cands (kele--get-namespaces
                                                       context)
-                                              :category 'kele-namespace)))))
-  (kele-kubectl-do "config" "set-context" context "--namespace" namespace))
-
-(defun kele-namespace-switch-for-current-context (namespace)
-  "Switch to NAMESPACE for the current context."
-  (interactive
-   (list
-    (completing-read
-     (format "Namespace (%s): " (kele-current-context-name))
-     (-cut kele--resources-complete <> <> <>
-           :cands (kele--get-namespaces (kele-current-context-name))
-           :category 'kele-namespace))))
-  (kele-namespace-switch-for-context (kele-current-context-name) namespace))
+                                              :category 'kele-namespace))
+                       context)))
+  (kele-kubectl-do "config" "set-context"
+                   (or context (kele-current-context-name))
+                   "--namespace" namespace))
 
 ;; TODO
 (defun kele--namespace-annotate (_namespace-name)
@@ -1049,10 +1047,10 @@ Only populated if Embark is installed.")
                                    (define-key map "s" #'kele-context-switch)
                                    (define-key map "r" #'kele-context-rename)
                                    (define-key map "p" #'kele-proxy-toggle)
-                                   (define-key map "n" #'kele-namespace-switch-for-context)
+                                   (define-key map "n" #'kele-namespace-switch)
                                    (make-composed-keymap map embark-general-map)))
       (setq kele--namespace-keymap (let ((map (make-sparse-keymap)))
-                                     (define-key map "s" #'kele-namespace-switch-for-current-context)
+                                     (define-key map "s" #'kele-namespace-switch)
                                      (make-composed-keymap map embark-general-map)))
       (dolist (entry kele--embark-keymap-entries)
         (add-to-list 'embark-keymap-alist entry)))))
@@ -1120,7 +1118,7 @@ Only populated if Embark is installed.")
                    (format "Switch from %s to..."
                            (propertize (oref transient--prefix scope) 'face 'warning))))
    ("r" kele-context-rename :description "Rename")
-   ("n" kele-namespace-switch-for-current-context
+   ("n" kele-namespace-switch
     :description (lambda () (format "Change default namespace of %s to..."
                                     (propertize (oref transient--prefix scope)
                                                 'face 'warning))))]
