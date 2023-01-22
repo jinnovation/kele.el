@@ -29,6 +29,10 @@ e.g. [Embark], that you can take advantage of in your own configs.
 
 ## Getting Started
 
+!!! note
+
+    Kele requires Emacs 28.1+.
+
 ```emacs-lisp
 (use-package kele
   :config
