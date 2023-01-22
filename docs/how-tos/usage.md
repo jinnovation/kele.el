@@ -5,6 +5,24 @@
     You'll notice this page is pretty sparse. Kele is an early-stage package
     with lots of room to grow. Stay tuned for more!
 
+!!! note
+
+    Kele doesn't have a default keybinding prefix for its commands. All examples
+    documented here assume that you've opted for `s-k`.
+
+    For instructions on how to set your own keybinding prefix, see: [How-Tos >
+    Customization](./customization.md).
+
+## Dispatch
+
+| Keybinding | Interactive function |
+|:-----------|:---------------------|
+| `s-k ?`    | `kele-dispatch`      |
+
+Kele provides `kele-dispatch` as a launchpad for all subsequent Kele
+functionality. If you ever forget what the keybinding is for what you're trying
+to accomplish, reach for `kele-dispatch`.
+
 ## Working with Resources
 
 ### Displaying a single resource
@@ -41,11 +59,15 @@ You can press `U` in a `kele-get` buffer to re-fetch and refresh the current res
 
 ## Contexts
 
+| Keybinding | Interactive function |
+|:-----------|:---------------------|
+| `s-k c`    | `kele-context`       |
+
 ### Switching contexts
 
-```
-M-x kele-context-switch
-```
+| Keybinding | Interactive function  |
+|:-----------|:----------------------|
+| `s-k c s`  | `kele-context-switch` |
 
 ??? example "Demo"
 
@@ -56,9 +78,9 @@ context-related Kele command, e.g. [`kele-context-rename`](#renaming-a-context).
 
 ### Renaming a context
 
-```
-M-x kele-context-rename
-```
+| Keybinding | Interactive function  |
+|:-----------|:----------------------|
+| `s-k c r`  | `kele-context-rename` |
 
 ??? example "Demo"
 
@@ -66,6 +88,12 @@ M-x kele-context-rename
 
 This can also be done via [Embark] on any selection candidate in any other
 context-related Kele command, e.g. [`kele-context-switch`](#switching-contexts).
+
+### Changing the default namespace
+
+| Keybinding | Interactive function                        |
+|:-----------|:--------------------------------------------|
+| `s-k c n`  | `kele-namespace-switch-for-current-context` |
 
 ### Managing proxy servers
 
@@ -97,20 +125,6 @@ annotations for each cluster completion candidate.
 
 `M-x kele-proxy-toggle`
 : Start or stop a proxy server process for a given context, depending on current status
-
-## Namespaces
-
-### Switching for any context
-
-```
-M-x kele-namespace-switch-for-context
-```
-
-### Switching for current context
-
-```
-M-x kele-namespace-switch-for-current-context
-```
 
 [Embark]: https://github.com/oantolin/embark
 [custom resources]: https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/

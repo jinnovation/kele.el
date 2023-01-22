@@ -2,6 +2,26 @@
 
 This page outlines the customization options available to you in Kele.
 
+## Keybindings
+
+### Defining a keybinding prefix
+
+Kele comes with a spread of recommended keybindings predefined as part of
+`kele-command-map`. `kele-command-map` is not assigned to a keybinding by
+default, so as to be minimally disruptive to your personal configurations.
+
+Using `kele-command-map`, you can choose your own keybinding to act as the
+keybinding **prefix** for all of Kele's keybindings.
+
+To bind, say, `s-k` as the keybinding prefix:
+
+```emacs-lisp
+(define-key kele-mode-map (kbd "s-k") 'kele-command-map)
+```
+
+Now you can use, for example, `s-k c` to access [context-related
+commands](./usage.md#contexts). Give it a try!
+
 ## Interface
 
 ### Resource display

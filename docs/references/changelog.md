@@ -19,6 +19,9 @@ versioning][semver].
 - You can now press `U` in `kele-get` buffers to re-fetch and refresh the
   current resource
 - `kele-get` buffers' front matter now outlines the available keybindings
+- Added a `kele-dispatch` command for when you forget the specific keybinding of
+  what you're trying to accomplish
+- Added a `kele-context` command prefix for context-related actions
 
 ### Changed
 
