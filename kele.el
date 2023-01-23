@@ -1160,11 +1160,7 @@ scope.
 Assumes that the prefix's scope is an alist.  Assumes that the
 key is already present in the alist."
   (oset obj value value)
-  (message "current scope key val: %s" (alist-get (oref obj scope-key)
-                                                  (oref transient--prefix scope)))
-  (setf (cdr (assoc (oref obj scope-key) (oref transient--prefix scope))) value)
-  (message "new scope key val: %s" (alist-get (oref obj scope-key)
-                                                  (oref transient--prefix scope))))
+  (setf (cdr (assoc (oref obj scope-key) (oref transient--prefix scope))) value))
 
 (transient-define-infix kele--namespace-infix
   "A namespace to work within."
