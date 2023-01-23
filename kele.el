@@ -1140,18 +1140,18 @@ Assumes that the current Transient prefix's :scope is an alist w/ `context' key.
        nil t initial-input history)
     (error "Unexpected nil context in `%s'" (oref transient--prefix command))))
 
-(defclass kele--transient-scope-modifier (transient-option)
-  ((scope-key
-    :initarg :scope-key
-    :initform nil
-    :type symbol
+(defclass kele--transient-scope-mutator (transient-option)
+  ((fn
+    :initarg :fn
+    :initform (lambda (_scope _val) nil)
+    :type function
     :documentation
-    "The key in the prefix's scope alist that we want to modify the
-value of."))
-  "A Transient infix that also modifies the associated prefix's
-context.")
+    "The logic for updating the prefix's scope on each new value
+assignment."))
+  "A Transient suffix that also modifies the associated prefix's
+scope.")
 
-(cl-defmethod transient-infix-set ((obj kele--transient-scope-modifier) value)
+(cl-defmethod transient-infix-set ((obj kele--transient-scope-mutator) value)
   "Set the infix VALUE while modifyiing the current prefix's scope.
 
 Uses OBJ's `scope-key' field as the key for the current prefix's
@@ -1160,7 +1160,7 @@ scope.
 Assumes that the prefix's scope is an alist.  Assumes that the
 key is already present in the alist."
   (oset obj value value)
-  (setf (cdr (assoc (oref obj scope-key) (oref transient--prefix scope))) value))
+  (funcall (oref obj fn) (oref transient--prefix scope) value))
 
 (transient-define-infix kele--namespace-infix ()
   "Select a namespace to work with.
@@ -1189,8 +1189,9 @@ context as set in `kele-kubeconfig-path'."
 
 Defaults to the currently active context as set in
 `kele-kubeconfig-path'."
-  :class 'kele--transient-scope-modifier
-  :scope-key 'context
+  :class 'kele--transient-scope-mutator
+  :fn (lambda (scope value)
+        (setf (cdr (assoc 'context scope)) value))
   :prompt "Context: "
   :description "context"
   :key "=c"
