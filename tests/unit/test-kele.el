@@ -20,6 +20,18 @@
               '((foo . 1)
                 (bar . ((baz . 2))))))))
 
+(describe "kele--groupversion-string"
+  (it "properly handles 'core API', i.e. nil group"
+    (expect (kele--groupversion-string nil "v1") :to-equal "v1"))
+  (it "properly forms the group-version string"
+    (expect (kele--groupversion-string "apps" "v1") :to-equal "apps/v1")))
+
+(describe "kele--groupversion-split"
+  (it "properly handles core API group-version strings"
+    (expect (kele--groupversion-split "v1") :to-equal '(nil "v1")))
+  (it "properly splits the group-version string"
+    (expect (kele--groupversion-split "apps/v1") :to-equal '("apps" "v1"))))
+
 (describe "kele--with-progress"
   (it "returns the retval of the last evaluated sexp"
     (expect (kele--with-progress "foobar" (= 1 1)) :to-equal t)))
