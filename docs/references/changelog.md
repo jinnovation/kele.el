@@ -22,6 +22,8 @@ versioning][semver].
 - Added a `kele-dispatch` command for when you forget the specific keybinding of
   what you're trying to accomplish
 - Added a `kele-context` command prefix for context-related actions
+- Added a `kele-resources` command prefix for acting on specific resource kinds,
+  e.g. `get`ting
 
 ### Changed
 
