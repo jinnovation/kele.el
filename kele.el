@@ -849,7 +849,17 @@ show the requested Kubernetes object manifest.
 (add-hook 'kele-get-mode-hook #'kele--get-insert-header t)
 
 (defun kele--groupversion-string (group version)
+  "Concatenate GROUP and VERSION into single group-version string."
   (if group (concat group "/" version) version))
+
+(defun kele--groupversion-split (group-version)
+  "Split a single GROUP-VERSION string.
+
+Returns a list where the car is the group and the cadr is the version.
+
+Nil value for group denotes the core API."
+  (let ((split (s-split "/" group-version)))
+    (if (length= split 1) (list nil (car split)) split)))
 
 ;; TODO (#72): Allow for injecting the proxy dependency.
 ;; This would allow for consumers to create their own proxy, e.g. to start it
