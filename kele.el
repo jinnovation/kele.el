@@ -1162,8 +1162,11 @@ key is already present in the alist."
   (oset obj value value)
   (setf (cdr (assoc (oref obj scope-key) (oref transient--prefix scope))) value))
 
-(transient-define-infix kele--namespace-infix
-  "A namespace to work within."
+(transient-define-infix kele--namespace-infix ()
+  "Select a namespace to work with.
+
+Defaults to the default namespace for the currently active
+context as set in `kele-kubeconfig-path'."
   :prompt "Namespace: "
   :description "namespace"
   :key "=n"
@@ -1181,8 +1184,11 @@ key is already present in the alist."
                       (kele--default-namespace-for-context
                        (alist-get 'context (oref transient--prefix scope))))))
 
-(transient-define-infix kele--context-infix
-  "A context to work within."
+(transient-define-infix kele--context-infix ()
+  "Select a Kubernetes context to execute a given command in.
+
+Defaults to the currently active context as set in
+`kele-kubeconfig-path'."
   :class 'kele--transient-scope-modifier
   :scope-key 'context
   :prompt "Context: "
