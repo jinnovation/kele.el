@@ -1147,7 +1147,9 @@ Assumes that the current Transient prefix's :scope is an alist w/ `context' key.
     :type function
     :documentation
     "The logic for updating the prefix's scope on each new value
-assignment."))
+assignment.
+
+Defaults to a no-op."))
   "A Transient suffix that also modifies the associated prefix's
 scope.")
 
