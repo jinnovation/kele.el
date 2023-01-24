@@ -21,7 +21,7 @@
 
     (it "sets the current context as default value"
       (with-current-buffer transient--buffer-name
-        (expect (buffer-string) :to-contain "--context=kind-kele-test-cluster0")))))
+        (expect (buffer-string) :to-match "--context=kind-kele-test-cluster0")))))
 
 ;;; test-ui.el ends here
 
