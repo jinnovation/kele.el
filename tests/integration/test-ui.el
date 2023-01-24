@@ -3,6 +3,7 @@
 ;;; Code:
 (load-file "./tests/integration/undercover-init.el")
 
+(require 'async)
 (require 'dash)
 (require 'with-simulated-input)
 
@@ -10,14 +11,17 @@
 
 (describe "Transient prefixes"
   (describe "kele-resource"
+
     (before-each
+      (async-wait (kele--cache-update kele--global-discovery-cache))
+      (async-wait (kele--cache-update kele--global-kubeconfig-cache))
       (with-simulated-input
        "deployments RET"
        (call-interactively #'kele-resource)))
-    (it "sets up fine lol"
-      (display-warning 'buttercup
-                       (format "buffers: %s" (-map #'buffer-name (buffer-list))))
-      (expect t :to-be-truthy))))
+
+    (it "sets the current context as default value"
+      (with-current-buffer transient--buffer-name
+        (expect (buffer-string) :to-contain "--context=kind-kele-test-cluster0")))))
 
 ;;; test-ui.el ends here
 
