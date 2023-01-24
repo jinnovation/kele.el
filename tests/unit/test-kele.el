@@ -469,4 +469,21 @@ metadata:
           (:success (buttercup-fail "Received unexpected success")))
         (expect 'kele--ensure-proxy :not :to-have-been-called)))))
 
+(defun kele-test--noop (&rest _)
+  "Do nothing."
+  nil)
+
+(describe "kele--transient-scope-mutator"
+  :var (infix)
+  (before-each
+    (setq transient--prefix (transient-prefix :incompatible nil :scope 'fake-scope))
+    (setq infix (kele--transient-scope-mutator :argument "--foo=" :fn 'kele-test--noop))
+    (spy-on 'kele-test--noop :and-call-through)
+    (transient-infix-set infix "foo"))
+
+  (it "calls the property function when setting a new value"
+    (expect 'kele-test--noop :to-have-been-called-with 'fake-scope "foo"))
+  (it "sets the value of the actual infix properly"
+    (expect (oref infix value) :to-equal "foo")))
+
 ;;; test-kele.el ends here
