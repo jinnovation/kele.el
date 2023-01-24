@@ -12,7 +12,7 @@
 (describe "Transient prefixes"
   (describe "kele-resource"
 
-    (before-each
+    (before-all
       (async-wait (kele--cache-update kele--global-discovery-cache))
       (async-wait (kele--cache-update kele--global-kubeconfig-cache)))
 
@@ -37,6 +37,8 @@
 
         (with-simulated-input
          "deployments RET g coredns RET"
+         (call-interactively #'kele-resource))
+
          (expect 'kele-get :to-have-been-called-with
                  "deployments" "coredns"
                  :group "apps"
