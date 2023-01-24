@@ -3,8 +3,10 @@
 ;;; Code:
 (load-file "./tests/integration/undercover-init.el")
 
-(require 'kele)
+(require 'dash)
 (require 'with-simulated-input)
+
+(require 'kele)
 
 (describe "Transient prefixes"
   (describe "kele-resource"
@@ -13,6 +15,8 @@
        "deployments RET"
        (call-interactively #'kele-resource)))
     (it "sets up fine lol"
+      (display-warning 'buttercup
+                       (format "buffers: %s" (-map #'buffer-name (buffer-list))))
       (expect t :to-be-truthy))))
 
 ;;; test-ui.el ends here
