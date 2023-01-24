@@ -21,6 +21,8 @@
         (with-simulated-input
          "deployments RET"
          (call-interactively #'kele-resource)))
+      (after-all
+        (with-simulated-input "C-g"))
 
       (it "sets the current context as default value"
         (with-current-buffer transient--buffer-name
