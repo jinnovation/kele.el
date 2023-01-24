@@ -22,7 +22,7 @@
          "deployments RET"
          (call-interactively #'kele-resource)))
       (after-all
-        (with-simulated-input "C-g"))
+        (transient-quit-all))
 
       (it "sets the current context as default value"
         (with-current-buffer transient--buffer-name
