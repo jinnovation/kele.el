@@ -31,7 +31,9 @@
         (with-current-buffer transient--buffer-name
           (expect (buffer-string) :to-match "--namespace=kube-public"))))
 
-    (describe "get"
+    ;; TODO: This is blocked on some odd behavior when calling Transient from
+    ;; batch mode. See: magit/transient#180
+    (xdescribe "get"
       (it "retrieves with the appropriate parameters"
         (spy-on 'kele-get)
 
