@@ -17,7 +17,7 @@
       (async-wait (kele--cache-update kele--global-kubeconfig-cache)))
 
     (describe "prefix buffer contents"
-      (before-each
+      (before-all
         (with-simulated-input
          "deployments RET"
          (call-interactively #'kele-resource)))
