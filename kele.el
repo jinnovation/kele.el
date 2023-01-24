@@ -260,13 +260,13 @@ with the filesystem.")
 TYPE is expected to be the plural name of the resource.
 
 If CONTEXT is nil, use the current context."
-    (->> (kele--get-resource-lists-for-context cache (or context (kele-current-context-name)))
-         (-filter (lambda (api-resource-list)
-                   (->> (alist-get 'resources api-resource-list)
-                        (-any (lambda (resource)
-                                (equal (alist-get 'name resource) type))))))
-         (-map (-partial #'alist-get 'groupVersion))
-         (-sort (lambda (a _) (equal a "v1")))))
+  (->> (kele--get-resource-lists-for-context cache (or context (kele-current-context-name)))
+       (-filter (lambda (api-resource-list)
+                  (->> (alist-get 'resources api-resource-list)
+                       (-any (lambda (resource)
+                               (equal (alist-get 'name resource) type))))))
+       (-map (-partial #'alist-get 'groupVersion))
+       (-sort (lambda (a _) (equal a "v1")))))
 
 (cl-defmethod kele--resource-namespaced-p ((cache kele--discovery-cache)
                                            group-version
@@ -566,8 +566,8 @@ Returns the last evaluated value of BODY."
   (declare (indent defun))
   `(let ((prog (make-progress-reporter ,msg))
          (res (progn ,@body)))
-    (progress-reporter-done prog)
-    res))
+     (progress-reporter-done prog)
+     res))
 
 (defun kele-context-switch (context)
   "Switch to CONTEXT."

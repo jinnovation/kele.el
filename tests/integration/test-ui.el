@@ -36,7 +36,7 @@
         (spy-on 'kele-get)
 
         (with-simulated-input
-         "deployments RET g coredns RET"
+         "deployments RET g SPC coredns RET"
          (call-interactively #'kele-resource))
 
          (expect 'kele-get :to-have-been-called-with
@@ -44,7 +44,7 @@
                  :group "apps"
                  :version "v1"
                  :namespace "kube-public"
-                 :context "kind-kele-test-cluster0"))))))
+                 :context "kind-kele-test-cluster0")))))
 
 ;;; test-ui.el ends here
 
