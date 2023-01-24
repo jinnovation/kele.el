@@ -1116,6 +1116,30 @@ Only populated if Embark is installed.")
       (kele--disable)
     (kele--enable)))
 
+(defclass kele--transient-scope-mutator (transient-option)
+  ((fn
+    :initarg :fn
+    :initform (lambda (_scope _val) nil)
+    :type function
+    :documentation
+    "The logic for updating the prefix's scope on each new value
+assignment.
+
+Defaults to a no-op."))
+  "A Transient suffix that also modifies the associated prefix's
+scope.")
+
+(cl-defmethod transient-infix-set ((obj kele--transient-scope-mutator) new-value)
+  "Set the infix VALUE while modifying the current prefix's scope.
+
+Uses OBJ's `scope-key' field as the key for the current prefix's
+scope.
+
+Assumes that the prefix's scope is an alist.  Assumes that the
+key is already present in the alist."
+  (oset obj value new-value)
+  (funcall (oref obj fn) (oref transient--prefix scope) new-value))
+
 (transient-define-prefix kele-dispatch ()
   "Work with Kubernetes clusters and configs."
   ["Configurations"
