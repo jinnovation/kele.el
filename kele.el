@@ -1153,16 +1153,16 @@ Defaults to a no-op."))
   "A Transient suffix that also modifies the associated prefix's
 scope.")
 
-(cl-defmethod transient-infix-set ((obj kele--transient-scope-mutator) value)
-  "Set the infix VALUE while modifyiing the current prefix's scope.
+(cl-defmethod transient-infix-set ((obj kele--transient-scope-mutator) new-value)
+  "Set the infix VALUE while modifying the current prefix's scope.
 
 Uses OBJ's `scope-key' field as the key for the current prefix's
 scope.
 
 Assumes that the prefix's scope is an alist.  Assumes that the
 key is already present in the alist."
-  (oset obj value value)
-  (funcall (oref obj fn) (oref transient--prefix scope) value))
+  (oset obj value new-value)
+  (funcall (oref obj fn) (oref transient--prefix scope) new-value))
 
 (transient-define-infix kele--namespace-infix ()
   "Select a namespace to work with.
