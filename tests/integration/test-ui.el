@@ -13,8 +13,6 @@
   (describe "kele-resource"
 
     (before-each
-      (spy-on 'kele-get)
-
       (async-wait (kele--cache-update kele--global-discovery-cache))
       (async-wait (kele--cache-update kele--global-kubeconfig-cache)))
 
@@ -28,10 +26,13 @@
         (with-current-buffer transient--buffer-name
           (expect (buffer-string) :to-match "--context=kind-kele-test-cluster0")))
       (it "sets the current context's default namespace as the default value"
-        (expect (buffer-string) :to-match "--namespace=kube-public")))
+        (with-current-buffer transient--buffer-name
+          (expect (buffer-string) :to-match "--namespace=kube-public"))))
 
     (describe "get"
       (it "retrieves with the appropriate parameters"
+        (spy-on 'kele-get)
+
         (with-simulated-input
          "deployments RET g coredns RET"
          (expect 'kele-get :to-have-been-called-with
