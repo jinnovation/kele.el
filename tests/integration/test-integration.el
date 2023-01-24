@@ -1,3 +1,7 @@
+;;; test-integration.el --- Integration tests. -*- lexical-binding: t; -*-
+;;; Commentary:
+;;; Code:
+
 (load-file "./tests/integration/undercover-init.el")
 
 (require 'async)
@@ -73,7 +77,6 @@
 
 (describe "kele-get"
   (it "fetches the resource"
-
     (async-wait (kele--cache-update kele--global-discovery-cache))
     (async-wait (kele--cache-update kele--global-kubeconfig-cache))
     (with-simulated-input
@@ -82,3 +85,5 @@
     (expect (-map #'buffer-name (buffer-list))
             :to-contain
             " *kele: kind-kele-test-cluster0(kube-system): Deployment/coredns*")))
+
+;;; test-integration.el ends here
