@@ -21,7 +21,10 @@
 
     (it "sets the current context as default value"
       (with-current-buffer transient--buffer-name
-        (expect (buffer-string) :to-match "--context=kind-kele-test-cluster0")))))
+        (expect (buffer-string) :to-match "--context=kind-kele-test-cluster0")))
+
+    (it "sets the current context's default namespace as the default value"
+      (expect (buffer-string) :to-match "--namespace=kube-public"))))
 
 ;;; test-ui.el ends here
 
