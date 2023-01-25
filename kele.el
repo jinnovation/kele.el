@@ -1249,11 +1249,6 @@ Defaults to the currently active context as set in
                  (list gv kind)))
   (transient-setup 'kele-resource nil nil :scope `((group-version . ,group-version)
                                                    (kind . ,kind)
-                                                   ;; FIXME: refine
-                                                   ;; `kele--transient-scope-modifier'
-                                                   ;; to not require the key to
-                                                   ;; be present in the scope
-                                                   ;; alist in the first place
                                                    (context . ,(kele-current-context-name)))))
 
 (transient-define-prefix kele-dispatch ()
