@@ -1153,7 +1153,7 @@ Defaults to a no-op."))
 scope.")
 
 (cl-defmethod transient-infix-set ((obj kele--transient-scope-mutator) new-value)
-  "Set the infix VALUE while modifying the current prefix's scope.
+  "Set the infix NEW-VALUE while modifying the current prefix's scope.
 
 Uses OBJ's `scope-key' field as the key for the current prefix's
 scope.
