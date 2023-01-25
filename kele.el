@@ -1108,6 +1108,7 @@ Only populated if Embark is installed.")
 (defvar kele-command-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "c") #'kele-context)
+    (define-key map (kbd "r") #'kele-resource)
     (define-key map (kbd "?") #'kele-dispatch)
     map)
   "Keymap for Kele commands.")
