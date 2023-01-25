@@ -1206,7 +1206,7 @@ Defaults to the currently active context as set in
 (transient-define-prefix kele-resource (group-version kind)
   ["Arguments"
    (kele--context-infix)
-   ;; FIXME: Reset namespace if context changes
+   ;; FIXME(#117): Reset namespace if context changes
    (kele--namespace-infix)]
 
   ["Actions"
