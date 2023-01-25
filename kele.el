@@ -1123,7 +1123,7 @@ Only populated if Embark is installed.")
       (kele--disable)
     (kele--enable)))
 
-(defun kele--namespace-read (prompt initial-input history)
+(defun kele--namespace-read-from-prefix (prompt initial-input history)
   "Read a namespace value using PROMPT, INITIAL-INPUT, and HISTORY.
 
 Assumes that the current Transient prefix's :scope is an alist w/ `context' key."
@@ -1134,8 +1134,7 @@ Assumes that the current Transient prefix's :scope is an alist w/ `context' key.
       (completing-read
        prompt
        (-cut kele--resources-complete <> <> <>
-             :cands (kele--get-namespaces
-                     (alist-get 'context (oref transient--prefix scope)))
+             :cands (kele--get-namespaces context)
              :category 'kele-namespace)
        nil t initial-input history)
     (error "Unexpected nil context in `%s'" (oref transient--prefix command))))
@@ -1174,7 +1173,7 @@ context as set in `kele-kubeconfig-path'."
   :key "=n"
   :argument "--namespace="
   :class 'transient-option
-  :reader 'kele--namespace-read
+  :reader 'kele--namespace-read-from-prefix
   :always-read t
   :if
   (lambda ()
