@@ -260,13 +260,13 @@ with the filesystem.")
 TYPE is expected to be the plural name of the resource.
 
 If CONTEXT is nil, use the current context."
-    (->> (kele--get-resource-lists-for-context cache (or context (kele-current-context-name)))
-         (-filter (lambda (api-resource-list)
-                   (->> (alist-get 'resources api-resource-list)
-                        (-any (lambda (resource)
-                                (equal (alist-get 'name resource) type))))))
-         (-map (-partial #'alist-get 'groupVersion))
-         (-sort (lambda (a _) (equal a "v1")))))
+  (->> (kele--get-resource-lists-for-context cache (or context (kele-current-context-name)))
+       (-filter (lambda (api-resource-list)
+                  (->> (alist-get 'resources api-resource-list)
+                       (-any (lambda (resource)
+                               (equal (alist-get 'name resource) type))))))
+       (-map (-partial #'alist-get 'groupVersion))
+       (-sort (lambda (a _) (equal a "v1")))))
 
 (cl-defmethod kele--resource-namespaced-p ((cache kele--discovery-cache)
                                            group-version
@@ -552,6 +552,13 @@ STR, PRED, and ACTION are as defined in completion functions."
                  (category . kele-context))
     (complete-with-action action (kele-context-names) str pred)))
 
+(defun kele--contexts-read (prompt initial-input history)
+  "Reader function for contexts.
+
+PROMPT, INITIAL-INPUT, and HISTORY are all as defined in Info
+node `(elisp)Programmed Completion'."
+  (completing-read prompt #'kele--contexts-complete nil t initial-input history))
+
 (defmacro kele--with-progress (msg &rest body)
   "Execute BODY with a progress reporter using MSG.
 
@@ -559,8 +566,8 @@ Returns the last evaluated value of BODY."
   (declare (indent defun))
   `(let ((prog (make-progress-reporter ,msg))
          (res (progn ,@body)))
-    (progress-reporter-done prog)
-    res))
+     (progress-reporter-done prog)
+     res))
 
 (defun kele-context-switch (context)
   "Switch to CONTEXT."
@@ -1101,6 +1108,7 @@ Only populated if Embark is installed.")
 (defvar kele-command-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "c") #'kele-context)
+    (define-key map (kbd "r") #'kele-resource)
     (define-key map (kbd "?") #'kele-dispatch)
     map)
   "Keymap for Kele commands.")
@@ -1116,6 +1124,22 @@ Only populated if Embark is installed.")
       (kele--disable)
     (kele--enable)))
 
+(defun kele--namespace-read-from-prefix (prompt initial-input history)
+  "Read a namespace value using PROMPT, INITIAL-INPUT, and HISTORY.
+
+Assumes that the current Transient prefix's :scope is an alist w/ `context' key."
+  ;; FIXME: Make this resilient to the prefix's scope not having a context
+  ;; value.  If not present (or the scope is not an alist or the scope is not
+  ;; defined), default to current context.
+  (if-let ((context (alist-get 'context (oref transient--prefix scope))))
+      (completing-read
+       prompt
+       (-cut kele--resources-complete <> <> <>
+             :cands (kele--get-namespaces context)
+             :category 'kele-namespace)
+       nil t initial-input history)
+    (error "Unexpected nil context in `%s'" (oref transient--prefix command))))
+
 (defclass kele--transient-scope-mutator (transient-option)
   ((fn
     :initarg :fn
@@ -1130,7 +1154,7 @@ Defaults to a no-op."))
 scope.")
 
 (cl-defmethod transient-infix-set ((obj kele--transient-scope-mutator) new-value)
-  "Set the infix VALUE while modifying the current prefix's scope.
+  "Set the infix NEW-VALUE while modifying the current prefix's scope.
 
 Uses OBJ's `scope-key' field as the key for the current prefix's
 scope.
@@ -1140,10 +1164,98 @@ key is already present in the alist."
   (oset obj value new-value)
   (funcall (oref obj fn) (oref transient--prefix scope) new-value))
 
+(transient-define-infix kele--namespace-infix ()
+  "Select a namespace to work with.
+
+Defaults to the default namespace for the currently active
+context as set in `kele-kubeconfig-path'."
+  :prompt "Namespace: "
+  :description "namespace"
+  :key "=n"
+  :argument "--namespace="
+  :class 'transient-option
+  :reader 'kele--namespace-read-from-prefix
+  :always-read t
+  :if
+  (lambda ()
+    (-let (((&alist 'group-version gv 'kind kind)
+            (oref transient--prefix scope)))
+      (kele--resource-namespaced-p kele--global-discovery-cache gv kind)))
+  :init-value (lambda (obj)
+                (oset obj value
+                      (kele--default-namespace-for-context
+                       (alist-get 'context (oref transient--prefix scope))))))
+
+(transient-define-infix kele--context-infix ()
+  "Select a Kubernetes context to execute a given command in.
+
+Defaults to the currently active context as set in
+`kele-kubeconfig-path'."
+  :class 'kele--transient-scope-mutator
+  :fn (lambda (scope value)
+        (setf (cdr (assoc 'context scope)) value))
+  :prompt "Context: "
+  :description "context"
+  :key "=c"
+  :argument "--context="
+  :always-read t
+  :reader 'kele--contexts-read
+  :init-value (lambda (obj)
+                (oset obj value (kele-current-context-name))))
+
+(transient-define-prefix kele-resource (group-version kind)
+  ["Arguments"
+   (kele--context-infix)
+   ;; FIXME(#117): Reset namespace if context changes
+   (kele--namespace-infix)]
+
+  ["Actions"
+   ("g"
+    :command
+    (lambda ()
+      (interactive)
+      (-let* (((&alist 'group-version gv 'kind kind) (oref transient-current-prefix scope))
+              ((group version) (kele--groupversion-split gv))
+              (args (transient-args transient-current-command))
+              (namespace (transient-arg-value "--namespace=" args))
+              (context (transient-arg-value "--context=" args))
+              (cands (kele--fetch-resource-names group version kind
+                                                 :namespace namespace
+                                                 :context context))
+              (name (completing-read "Name: " (-cut kele--resources-complete <> <> <> :cands cands))))
+        (kele-get kind name
+                  :group group
+                  :version version
+                  :namespace namespace
+                  :context context)))
+    :description
+    (lambda ()
+      (format "Get a single %s"
+              (propertize (alist-get 'kind (oref transient--prefix scope)) 'face 'warning))))]
+  (interactive (let* ((context (kele-current-context-name))
+                      (kind (completing-read
+                             "Choose a kind to work with: "
+                             (kele--get-resource-types-for-context
+                              context)))
+                      (gvs (kele--get-groupversions-for-type
+                            kele--global-discovery-cache
+                            kind
+                            :context context))
+                      (gv (if (= (length gvs) 1)
+                              (car gvs)
+                            (completing-read (format "Desired group-version of `%s': "
+                                                     kind)
+                                             gvs))))
+                 (list gv kind)))
+  (transient-setup 'kele-resource nil nil :scope `((group-version . ,group-version)
+                                                   (kind . ,kind)
+                                                   (context . ,(kele-current-context-name)))))
+
 (transient-define-prefix kele-dispatch ()
   "Work with Kubernetes clusters and configs."
-  ["Configurations"
-   ("c" "Contexts" kele-context)])
+  ["Work with..."
+   ("c" "Contexts" kele-context)
+   ("r" "Resources" kele-resource)])
 
 (transient-define-prefix kele-context (context)
   "Work with a Kubernetes CONTEXT."

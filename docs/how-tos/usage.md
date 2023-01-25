@@ -27,26 +27,26 @@ to accomplish, reach for `kele-dispatch`.
 
 ### Displaying a single resource
 
-```
-M-x kele-get
-```
+| Keybinding | Interactive function |
+|:-----------|:---------------------|
+| `s-k r`    | `kele-resource`      |
 
 ??? example "Demo"
 
-    ![](./img/kele-get.gif)
+    ![](./img/kele-resource.gif)
 
 !!! tip inline ""
 
-    `kele-get` supports [custom resources] too!
+    `kele-resource` supports [custom resources] too!
 
-`kele-get` allows you to retrieve the manifest for a given Kubernetes object and
-displaying it in a separate buffer. `kele-get` will present you with completion
-candidates for:
+`kele-resource` allows you to act on specific resource kinds. With
+`kele-resource`, you can retrieve the manifest for a given Kubernetes object and
+display it in a separate buffer.
 
-- The resource kind;
-- The group-version (if the same resource kind exists in multiple groups);
-- The namespace (if the resource kind is namespaced), and finally;
-- The name of the resource itself.
+`kele-resource` will first prompt you to select the **kind** that you'd like to
+work with, after which you can choose to **get** a specific object of that kind
+by name. If the resource is namespaced, you will also be presented with the
+option to choose the namespace to select from.
 
 !!! tip ""
 
