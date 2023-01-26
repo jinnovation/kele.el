@@ -1188,6 +1188,70 @@ Also resets any specified peer arguments on the same prefix that
                                  kele--transient-scope-mutator)
   ())
 
+(defclass kele--transient-switches (transient-infix)
+  ;; NB(@jinnovation): At some point we might need to expand this class to
+  ;; include the "no value is a value" case, but that's not today. :D
+  ((options
+   :initarg :options
+   :initform (lambda () nil)
+   :type function
+   :documentation
+   "Function that returns the options for this infix to cycle through.
+
+The car will be the default value.")))
+
+(cl-defmethod transient-infix-read ((obj kele--transient-switches))
+  "Read the new selected value for OBJ.
+
+This does not prompt for user input.  Instead, it cycles through
+  the CHOICES on invocation by the user."
+  (let ((choices (oref obj choices))
+        (value (oref obj value)))
+    (or (cadr (member value choices))
+        (car choices))))
+
+(cl-defmethod transient-init-value ((obj kele--transient-switches))
+  "Initialize the selected value for OBJ.
+
+This is the car of the OPTIONS function's retval."
+  (oset obj choices (funcall (oref obj options)))
+  (oset obj value (car (oref obj choices))))
+
+(cl-defmethod transient-format-value ((obj kele--transient-switches))
+  "Formats the selection options for OBJ.
+
+This draws heavy inspiration from `transient-switches', with the
+following differences:
+
+1. The ARGUMENT slot is not a part of the formatted value;
+
+2. We do not allow non-selection as an option."
+  (with-slots (value choices) obj
+    (mapconcat
+     (lambda (choice)
+       (propertize choice 'face
+                   (if (equal choice value)
+                       'transient-value
+                     'transient-inactive-value)))
+     choices
+     (propertize "|" 'face 'transient-inactive-value))))
+
+;; FIXME: This is kind of contrived; could we find a way not to need to set
+;; --argument here when we literally don't use it other than as a glorified
+;; index?
+(cl-defmethod transient-infix-value ((obj kele--transient-switches))
+  "Return the value of OBJ.
+
+This concatenates the `argument' slot with the `value' slot so
+  that the value can be retrieved via `transient-arg-value'."
+  (concat (oref obj argument) (oref obj value)))
+
+(cl-defmethod transient-prompt ((_ kele--transient-switches))
+  "Return a nil prompt.
+
+`kele--transient-switches' does not prompt for user input."
+  nil)
+
 (transient-define-infix kele--namespace-infix ()
   "Select a namespace to work with.
 
@@ -1202,9 +1266,9 @@ context as set in `kele-kubeconfig-path'."
   :always-read t
   :if
   (lambda ()
-    (-let (((&alist 'group-version gv 'kind kind)
+    (-let (((&alist 'group-versions gvs 'kind kind)
             (oref transient--prefix scope)))
-      (kele--resource-namespaced-p kele--global-discovery-cache gv kind)))
+      (kele--resource-namespaced-p kele--global-discovery-cache (car gvs) kind)))
   :init-value (lambda (obj)
                 (oset obj value
                       (kele--default-namespace-for-context
@@ -1228,9 +1292,18 @@ Defaults to the currently active context as set in
   :init-value (lambda (obj)
                 (oset obj value (kele-current-context-name))))
 
-(transient-define-prefix kele-resource (group-version kind)
+(transient-define-infix kele--groupversions-infix ()
+  :class 'kele--transient-switches
+  :key "v"
+  :description "group-version"
+  :argument "--groupversion="
+  :options (lambda ()
+             (alist-get 'group-versions (oref transient--prefix scope))))
+
+(transient-define-prefix kele-resource (group-versions kind)
   ["Arguments"
    (kele--context-infix)
+   (kele--groupversions-infix)
    (kele--namespace-infix)]
 
   ["Actions"
@@ -1238,9 +1311,9 @@ Defaults to the currently active context as set in
     :command
     (lambda ()
       (interactive)
-      (-let* (((&alist 'group-version gv 'kind kind) (oref transient-current-prefix scope))
-              ((group version) (kele--groupversion-split gv))
+      (-let* (((&alist 'kind kind) (oref transient-current-prefix scope))
               (args (transient-args transient-current-command))
+              ((group version) (kele--groupversion-split (transient-arg-value "--groupversion=" args)))
               (namespace (transient-arg-value "--namespace=" args))
               (context (transient-arg-value "--context=" args))
               (cands (kele--fetch-resource-names group version kind
@@ -1252,15 +1325,6 @@ Defaults to the currently active context as set in
                   :version version
                   :namespace namespace
                   :context context)))
-    :if (lambda ()
-          (-let (((&alist 'group-version gv
-                         'kind kind
-                         'context context)
-                 (oref transient--prefix scope)))
-            (kele--resource-has-verb-p
-             kele--global-discovery-cache
-             gv kind "get"
-             :context context)))
     :description
     (lambda ()
       (format "Get a single %s"
@@ -1274,15 +1338,10 @@ Defaults to the currently active context as set in
                       (gvs (kele--get-groupversions-for-type
                             kele--global-discovery-cache
                             kind
-                            :context context))
-                      (gv (if (= (length gvs) 1)
-                              (car gvs)
-                            (completing-read (format "Desired group-version of `%s': "
-                                                     kind)
-                                             gvs))))
-                 (list gv kind)))
+                            :context context)))
+                 (list gvs kind)))
 
-  (transient-setup 'kele-resource nil nil :scope `((group-version . ,group-version)
+  (transient-setup 'kele-resource nil nil :scope `((group-versions . ,group-versions)
                                                    (kind . ,kind)
                                                    (context . ,(kele-current-context-name)))))
 
