@@ -1189,24 +1189,43 @@ Also resets any specified peer arguments on the same prefix that
   ())
 
 (defclass kele--transient-switches (transient-infix)
+  ;; NB(@jinnovation): At some point we might need to expand this class to
+  ;; include the "no value is a value" case, but that's not today. :D
   ((options
    :initarg :options
    :initform (lambda () nil)
    :type function
    :documentation
-   "Function that returns the options for this infix to cycle through.")))
+   "Function that returns the options for this infix to cycle through.
+
+The car will be the default value.")))
 
 (cl-defmethod transient-infix-read ((obj kele--transient-switches))
+  "Read the new selected value for OBJ.
+
+This does not prompt for user input.  Instead, it cycles through
+  the CHOICES on invocation by the user."
   (let ((choices (oref obj choices))
         (value (oref obj value)))
     (or (cadr (member value choices))
         (car choices))))
 
 (cl-defmethod transient-init-value ((obj kele--transient-switches))
+  "Initialize the selected value for OBJ.
+
+This is the car of the OPTIONS function's retval."
   (oset obj choices (funcall (oref obj options)))
   (oset obj value (car (oref obj choices))))
 
 (cl-defmethod transient-format-value ((obj kele--transient-switches))
+  "Formats the selection options for OBJ.
+
+This draws heavy inspiration from `transient-switches', with the
+following differences:
+
+1. The ARGUMENT slot is not a part of the formatted value;
+
+2. We do not allow non-selection as an option."
   (with-slots (value choices) obj
     (mapconcat
      (lambda (choice)
@@ -1221,9 +1240,16 @@ Also resets any specified peer arguments on the same prefix that
 ;; --argument here when we literally don't use it other than as a glorified
 ;; index?
 (cl-defmethod transient-infix-value ((obj kele--transient-switches))
+  "Return the value of OBJ.
+
+This concatenates the `argument' slot with the `value' slot so
+  that the value can be retrieved via `transient-arg-value'."
   (concat (oref obj argument) (oref obj value)))
 
 (cl-defmethod transient-prompt ((_ kele--transient-switches))
+  "Return a nil prompt.
+
+`kele--transient-switches' does not prompt for user input."
   nil)
 
 (transient-define-infix kele--namespace-infix ()
