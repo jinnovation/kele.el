@@ -1156,12 +1156,10 @@ scope.")
 (cl-defmethod transient-infix-set ((obj kele--transient-scope-mutator) new-value)
   "Set the infix NEW-VALUE while modifying the current prefix's scope.
 
-Uses OBJ's `scope-key' field as the key for the current prefix's
-scope.
-
-Assumes that the prefix's scope is an alist.  Assumes that the
-key is already present in the alist."
+On each invocation, calls OBJ's `fn' field with the prefix's
+scope and NEW-VALUE."
   (cl-call-next-method obj new-value)
+  ;; FIXME: This should allow :fn to not be set
   (funcall (oref obj fn) (oref transient--prefix scope) new-value))
 
 (defclass kele--transient-infix-resetter (transient-option)
@@ -1173,8 +1171,10 @@ key is already present in the alist."
     "List of arguments on the same prefix to reset when this one changes.")))
 
 (cl-defmethod transient-infix-set ((obj kele--transient-infix-resetter) val)
-  "Set the infix VAL while resetting any specified peer arguments
-on the same prefix."
+  "Set the infix VAL for OBJ.
+
+Also resets any specified peer arguments on the same prefix that
+  match any element of `:resettees' on OBJ."
   (cl-call-next-method obj val)
   (dolist (arg (oref obj resettees))
     (when-let ((obj (cl-find-if (lambda (obj)

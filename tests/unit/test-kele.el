@@ -486,4 +486,17 @@ metadata:
   (it "sets the value of the actual infix properly"
     (expect (oref infix value) :to-equal "foo")))
 
+(describe "kele--transient-infix-resetter"
+  :var (infix other0 other1)
+  (before-each
+    (spy-on 'transient-init-value)
+    (setq other0 (transient-option :argument "--foo"))
+    (setq other1 (transient-option :argument "--bar"))
+    (setq transient--suffixes `(,other0 ,other1)))
+  (it "re-initializes the value of the specified infix"
+    (transient-infix-set
+     (kele--transient-infix-resetter :resettees '("--foo") :argument "--whatever=")
+     "value")
+    (expect 'transient-init-value :to-have-been-called-with other0)))
+
 ;;; test-kele.el ends here
