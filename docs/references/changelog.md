@@ -23,7 +23,8 @@ versioning][semver].
   what you're trying to accomplish
 - Added a `kele-context` command prefix for context-related actions
 - Added a `kele-resources` command prefix for acting on specific resource kinds,
-  e.g. `get`ting
+  e.g. `get`ting, with support for selecting the context, namespace, and the
+  group-version to use (in cases of ambiguity)
 
 ### Changed
 
