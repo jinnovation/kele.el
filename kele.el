@@ -1228,6 +1228,15 @@ Defaults to the currently active context as set in
                   :version version
                   :namespace namespace
                   :context context)))
+    :if (lambda ()
+          (-let (((&alist 'group-version gv
+                         'kind kind
+                         'context context)
+                 (oref transient--prefix scope)))
+            (kele--resource-has-verb-p
+             kele--global-discovery-cache
+             gv kind "get"
+             :context context)))
     :description
     (lambda ()
       (format "Get a single %s"
