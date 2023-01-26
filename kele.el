@@ -1223,7 +1223,7 @@ Also resets any specified peer arguments on the same prefix that
 (cl-defmethod transient-infix-value ((obj kele--transient-switches))
   (concat (oref obj argument) (oref obj value)))
 
-(cl-defmethod transient-prompt ((obj kele--transient-switches))
+(cl-defmethod transient-prompt ((_ kele--transient-switches))
   nil)
 
 (transient-define-infix kele--namespace-infix ()
