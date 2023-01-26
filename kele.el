@@ -1188,6 +1188,45 @@ Also resets any specified peer arguments on the same prefix that
                                  kele--transient-scope-mutator)
   ())
 
+(defclass kele--transient-switches (transient-infix)
+  ((options
+   :initarg :options
+   :initform (lambda () nil)
+   :type function
+   :documentation
+   "Function that returns the options for this infix to cycle through.")
+   (argument :initarg :argument :initform "")))
+
+(cl-defmethod transient-infix-read ((obj kele--transient-switches))
+  (let ((choices (oref obj choices))
+        (value (oref obj value)))
+    (or (cadr (member value choices))
+        (car choices))))
+
+(cl-defmethod transient-init-value ((obj kele--transient-switches))
+  (oset obj choices (funcall (oref obj options)))
+  (oset obj value (car (oref obj choices))))
+
+(cl-defmethod transient-format-value ((obj kele--transient-switches))
+  (with-slots (value choices) obj
+    (mapconcat
+     (lambda (choice)
+       (propertize choice 'face
+                   (if (equal choice value)
+                       'transient-value
+                     'transient-inactive-value)))
+     choices
+     (propertize "|" 'face 'transient-inactive-value))))
+
+(cl-defmethod transient-prompt ((obj kele--transient-switches))
+  nil)
+
+(transient-define-infix jjin--foo ()
+  :class 'kele--transient-switches
+  :options (lambda () '("foo" "bar" "baz"))
+  :description "testing"
+  :key "=f")
+
 (transient-define-infix kele--namespace-infix ()
   "Select a namespace to work with.
 
@@ -1231,6 +1270,7 @@ Defaults to the currently active context as set in
 (transient-define-prefix kele-resource (group-version kind)
   ["Arguments"
    (kele--context-infix)
+   (jjin--foo)
    (kele--namespace-infix)]
 
   ["Actions"
