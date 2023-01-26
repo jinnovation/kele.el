@@ -4,6 +4,19 @@
 [![MELPA Stable](https://stable.melpa.org/packages/kele-badge.svg)](https://stable.melpa.org/#/kele)
 [![License](https://img.shields.io/github/license/jinnovation/kele.el)](https://github.com/jinnovation/kele.el/blob/main/LICENSE)
 
+!!! warning
+
+    Kele is in **very** early stages of development. As of 2023/01/26, it is
+    usable (I use it everyday for my day job!) but there are rough edges.
+
+    Do give things a try and I'd appreciate [issues for any bugs or rough
+    edges](https://github.com/jinnovation/kele.el/issues) that you might come
+    across.
+
+    Thanks!
+
+    -- @jinnovation
+
 ![](./img/kele.jpg)
 ![](./img/demo.gif)
 
