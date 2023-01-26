@@ -1156,13 +1156,37 @@ scope.")
 (cl-defmethod transient-infix-set ((obj kele--transient-scope-mutator) new-value)
   "Set the infix NEW-VALUE while modifying the current prefix's scope.
 
-Uses OBJ's `scope-key' field as the key for the current prefix's
-scope.
+On each invocation, calls OBJ's `fn' field with the prefix's
+scope and NEW-VALUE."
+  (cl-call-next-method obj new-value)
+  (when (slot-boundp obj 'fn)
+    (funcall (oref obj fn) (oref transient--prefix scope) new-value)))
 
-Assumes that the prefix's scope is an alist.  Assumes that the
-key is already present in the alist."
-  (oset obj value new-value)
-  (funcall (oref obj fn) (oref transient--prefix scope) new-value))
+(defclass kele--transient-infix-resetter (transient-option)
+  ((resettees
+    :initarg :resettees
+    :initform nil
+    :type list
+    :documentation
+    "List of arguments on the same prefix to reset when this one changes."))
+  "A Transient infix that can also \"reset\" any of its peer infixes.")
+
+(cl-defmethod transient-infix-set ((obj kele--transient-infix-resetter) val)
+  "Set the infix VAL for OBJ.
+
+Also resets any specified peer arguments on the same prefix that
+  match any element of `:resettees' on OBJ."
+  (cl-call-next-method obj val)
+  (dolist (arg (oref obj resettees))
+    (when-let ((obj (cl-find-if (lambda (obj)
+                                  (and (slot-boundp obj 'argument)
+                                       (equal (oref obj argument) arg)))
+                                transient--suffixes)))
+      (transient-init-value obj))))
+
+(defclass kele--transient-infix (kele--transient-infix-resetter
+                                 kele--transient-scope-mutator)
+  ())
 
 (transient-define-infix kele--namespace-infix ()
   "Select a namespace to work with.
@@ -1191,9 +1215,10 @@ context as set in `kele-kubeconfig-path'."
 
 Defaults to the currently active context as set in
 `kele-kubeconfig-path'."
-  :class 'kele--transient-scope-mutator
+  :class 'kele--transient-infix
   :fn (lambda (scope value)
         (setf (cdr (assoc 'context scope)) value))
+  :resettees '("--namespace=")
   :prompt "Context: "
   :description "context"
   :key "=c"
@@ -1206,7 +1231,6 @@ Defaults to the currently active context as set in
 (transient-define-prefix kele-resource (group-version kind)
   ["Arguments"
    (kele--context-infix)
-   ;; FIXME(#117): Reset namespace if context changes
    (kele--namespace-infix)]
 
   ["Actions"
@@ -1241,6 +1265,7 @@ Defaults to the currently active context as set in
     (lambda ()
       (format "Get a single %s"
               (propertize (alist-get 'kind (oref transient--prefix scope)) 'face 'warning))))]
+
   (interactive (let* ((context (kele-current-context-name))
                       (kind (completing-read
                              "Choose a kind to work with: "
@@ -1256,6 +1281,7 @@ Defaults to the currently active context as set in
                                                      kind)
                                              gvs))))
                  (list gv kind)))
+
   (transient-setup 'kele-resource nil nil :scope `((group-version . ,group-version)
                                                    (kind . ,kind)
                                                    (context . ,(kele-current-context-name)))))
