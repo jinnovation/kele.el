@@ -1161,8 +1161,31 @@ scope.
 
 Assumes that the prefix's scope is an alist.  Assumes that the
 key is already present in the alist."
-  (oset obj value new-value)
+  (cl-call-next-method obj new-value)
   (funcall (oref obj fn) (oref transient--prefix scope) new-value))
+
+(defclass kele--transient-infix-resetter (transient-option)
+  ((resettees
+    :initarg :resettees
+    :initform nil
+    :type list
+    :documentation
+    "List of arguments on the same prefix to reset when this one changes.")))
+
+(cl-defmethod transient-infix-set ((obj kele--transient-infix-resetter) val)
+  "Set the infix VAL while resetting any specified peer arguments
+on the same prefix."
+  (cl-call-next-method obj val)
+  (dolist (arg (oref obj resettees))
+    (when-let ((obj (cl-find-if (lambda (obj)
+                                  (and (slot-boundp obj 'argument)
+                                       (equal (oref obj argument) arg)))
+                                transient--suffixes)))
+      (transient-init-value obj))))
+
+(defclass kele--transient-infix (kele--transient-infix-resetter
+                                 kele--transient-scope-mutator)
+  ())
 
 (transient-define-infix kele--namespace-infix ()
   "Select a namespace to work with.
@@ -1191,9 +1214,10 @@ context as set in `kele-kubeconfig-path'."
 
 Defaults to the currently active context as set in
 `kele-kubeconfig-path'."
-  :class 'kele--transient-scope-mutator
+  :class 'kele--transient-infix
   :fn (lambda (scope value)
         (setf (cdr (assoc 'context scope)) value))
+  :resettees '("--namespace=")
   :prompt "Context: "
   :description "context"
   :key "=c"
@@ -1241,6 +1265,7 @@ Defaults to the currently active context as set in
     (lambda ()
       (format "Get a single %s"
               (propertize (alist-get 'kind (oref transient--prefix scope)) 'face 'warning))))]
+
   (interactive (let* ((context (kele-current-context-name))
                       (kind (completing-read
                              "Choose a kind to work with: "
@@ -1256,6 +1281,7 @@ Defaults to the currently active context as set in
                                                      kind)
                                              gvs))))
                  (list gv kind)))
+
   (transient-setup 'kele-resource nil nil :scope `((group-version . ,group-version)
                                                    (kind . ,kind)
                                                    (context . ,(kele-current-context-name)))))
