@@ -1159,8 +1159,8 @@ scope.")
 On each invocation, calls OBJ's `fn' field with the prefix's
 scope and NEW-VALUE."
   (cl-call-next-method obj new-value)
-  ;; FIXME: This should allow :fn to not be set
-  (funcall (oref obj fn) (oref transient--prefix scope) new-value))
+  (when (slot-boundp obj 'fn)
+    (funcall (oref obj fn) (oref transient--prefix scope) new-value)))
 
 (defclass kele--transient-infix-resetter (transient-option)
   ((resettees
@@ -1168,7 +1168,8 @@ scope and NEW-VALUE."
     :initform nil
     :type list
     :documentation
-    "List of arguments on the same prefix to reset when this one changes.")))
+    "List of arguments on the same prefix to reset when this one changes."))
+  "A Transient infix that can also \"reset\" any of its peer infixes.")
 
 (cl-defmethod transient-infix-set ((obj kele--transient-infix-resetter) val)
   "Set the infix VAL for OBJ.
@@ -1230,7 +1231,6 @@ Defaults to the currently active context as set in
 (transient-define-prefix kele-resource (group-version kind)
   ["Arguments"
    (kele--context-infix)
-   ;; FIXME(#117): Reset namespace if context changes
    (kele--namespace-infix)]
 
   ["Actions"
