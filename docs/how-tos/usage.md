@@ -48,11 +48,6 @@ work with, after which you can choose to **get** a specific object of that kind
 by name. If the resource is namespaced, you will also be presented with the
 option to choose the namespace to select from.
 
-!!! tip ""
-
-    `kele-get` only shows you resource types that support `get`ting in the first
-    place.
-
 ### Refreshing a resource
 
 You can press `U` in a `kele-get` buffer to re-fetch and refresh the current resource.
