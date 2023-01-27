@@ -54,10 +54,7 @@ You can press `U` in a `kele-get` buffer to re-fetch and refresh the current res
 
 ## Contexts
 
-!!! tip
-
-    Most context-related Kele functionality can also be done via [Embark] on any
-    completion candidate in any context-related Kele command.
+![](./img/context-prefix.png)
 
 Kele commands involving Kubernetes [contexts] center around the `s-k c` prefix (`kele-context`).
 
@@ -66,6 +63,11 @@ Kele commands involving Kubernetes [contexts] center around the `s-k c` prefix (
 | `s-k c s`  | Switching from one context to another | `kele-context-switch`                       | ![](./img/context-switch.gif) |
 | `s-k c r`  | Renaming a context                    | `kele-context-rename`                       | ![](./img/context-rename.gif) |
 | `s-k c n`  | Changing the default namespace        | `kele-namespace-switch-for-current-context` |                               |
+
+!!! tip
+
+    Most context-related Kele functionality can also be done via [Embark] on any
+    completion candidate in any context-related Kele command.
 
 ### Managing proxy servers
 
