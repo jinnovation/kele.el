@@ -18,6 +18,7 @@ nav:
       - explanations/comparisons.md
   - References:
       - references/changelog.md
+  - contributing.md
 
 theme:
   name: material
