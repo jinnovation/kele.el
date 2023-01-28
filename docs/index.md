@@ -1,3 +1,7 @@
+---
+hide:
+  - navigation
+---
 # 🥤 kele.el (Kubernetes Enablement Layer for Emacs)
 
 [![MELPA](https://melpa.org/packages/kele-badge.svg)](https://melpa.org/#/kele)
