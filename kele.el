@@ -1373,7 +1373,8 @@ Defaults to the currently active context as set in
   "Work with Kubernetes clusters and configs."
   ["Work with..."
    ("c" "Contexts" kele-context)
-   ("r" "Resources" kele-resource)])
+   ("r" "Resources" kele-resource)
+   ("p" "Proxy servers" kele-proxy)])
 
 (transient-define-suffix kele--toggle-proxy-current-context (context)
   :key "p"
