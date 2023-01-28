@@ -4,7 +4,7 @@
 
 ;; Author: Jonathan Jin <me@jonathanj.in>
 
-;; Version: 0.2.1
+;; Version: 0.3.0
 ;; Homepage: https://github.com/jinnovation/kele.el
 ;; Keywords: kubernetes tools
 ;; SPDX-License-Identifier: Apache-2.0

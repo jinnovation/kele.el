@@ -9,7 +9,32 @@ versioning][semver].
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [semver]: https://semver.org/spec/v2.0.0.html
 
-## Upcoming
+## Unreleased
+
+## 0.3.0
+
+This release focuses on providing Kele's command palette and user interface with
+a scalable foundation for future growth. As Kele's spread of user-facing
+commands grows, it becomes less and less reasonable to expect users to `M-x`
+everything.
+
+To that end, this release adds the following:
+
+- A Kele command keymap that will allow keybinding-based access to all
+  Kele-based functionality (see [How-Tos > Customization] and [How-Tos > Usage]
+  for more details)
+- A spread of three [Transient]-based "prefix" commands -- `kele-context`,
+  `kele-resource`, and `kele-dispatch` -- for nested command discovery and
+  ad-hoc configuration, e.g. overriding the context and namespace to use for
+  resource fetching. Again, see [How-Tos > Usage] for more details.
+
+I'm optimistic that these two additions make Kele's user interface much more
+pleasant and nimble, while also giving it ample room to grow in complexity and
+scope in the coming releases.
+
+[How-Tos > Customization]:https://jonathanj.in/kele.el/how-tos/customization/
+[How-Tos > Usage]: https://jonathanj.in/kele.el/how-tos/usage/
+[Transient]: https://magit.vc/manual/transient.html
 
 ### Added
 
