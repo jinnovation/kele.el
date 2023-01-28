@@ -8,6 +8,22 @@ hide:
 [![MELPA Stable](https://stable.melpa.org/packages/kele-badge.svg)](https://stable.melpa.org/#/kele)
 [![License](https://img.shields.io/github/license/jinnovation/kele.el)](https://github.com/jinnovation/kele.el/blob/main/LICENSE)
 
+Kele (*kě lè*, or *kə-ˈlə*) ("Kubernetes Enablement Layer for Emacs") is a
+Kubernetes cluster management package. It empowers you to perform operations as
+coarse or fine-grained as you need, **fast**, and get back to your work.
+
+With Kele, you can:
+
+- Manage [contexts], e.g. [switching, renaming, changing the default
+  namespace](./how-tos/usage.md#contexts);
+- [Fetch and display the manifest of a single
+  resource](./how-tos/usage.md#displaying-a-single-resource);
+- Start and stop [proxy servers](./how-tos/usage.md#managing-proxy-servers);
+- And more! :sunglasses:
+
+See [How-Tos > Usage](./how-tos/usage.md) for more details on what's possible
+with Kele.
+
 !!! warning
 
     Kele is in **very** early stages of development. As of 2023/01/26, it is
@@ -21,23 +37,7 @@ hide:
 
     -- @jinnovation
 
-![](./img/kele.jpg)
 ![](./img/demo.gif)
-
-Kele (*kě lè*, or *kə-ˈlə*) ("Kubernetes Enablement Layer for Emacs") is a
-Kubernetes cluster management package. It empowers you to perform operations as
-coarse or fine-grained as you need, **fast**, and get back to your work. With
-Kele, you can:
-
-- Manage [contexts], e.g. [switching, renaming, changing the default
-  namespace](./how-tos/usage.md#contexts);
-- [Fetch and display the manifest of a single
-  resource](./how-tos/usage.md#displaying-a-single-resource);
-- Start and stop [proxy servers](./how-tos/usage.md#managing-proxy-servers);
-- And more! :sunglasses:
-
-See [How-Tos > Usage](./how-tos/usage.md) for more details on what's possible
-with Kele.
 
 !!! tip
 
