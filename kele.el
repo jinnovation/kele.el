@@ -103,6 +103,16 @@ pods."
 (define-error 'kele-ambiguous-groupversion-error
   "Found multiple group-versions associated with the given resource")
 
+(defmacro kele--with-progress (msg &rest body)
+  "Execute BODY with a progress reporter using MSG.
+
+Returns the last evaluated value of BODY."
+  (declare (indent defun))
+  `(let ((prog (make-progress-reporter ,msg))
+         (res (progn ,@body)))
+     (progress-reporter-done prog)
+     res))
+
 (cl-defun kele--retry (fn &key (count 5) (wait 1) (timeout 100))
   "Retry FN COUNT times, waiting WAIT seconds between each.
 
@@ -230,11 +240,30 @@ in sync with the filesystem.")
   ((contents
     :documentation "The loaded kubeconfig contents.")
    (filewatch-id
-    :documentation "The ID of the file watcher."))
+    :documentation "The ID of the file watcher.")
+   (update-in-progress
+    :documentation "Flag denoting whether an update is in progress."
+    :initform nil))
   "Track the kubeconfig cache.
 
 A class for loading kubeconfig contents and keeping them in sync
 with the filesystem.")
+
+(cl-defmethod kele--wait ((cache kele--kubeconfig-cache)
+                          &key
+                          (count 10)
+                          (wait 1)
+                          (timeout 100)
+                          (msg "Waiting for kubeconfig update to finish..."))
+  "Wait for CACHE to finish updating.
+
+COUNT, WAIT, and TIMEOUT are as defined in `kele--retry'.
+
+MSG is the progress reporting message to display."
+  (when (oref cache update-in-progress)
+    (kele--with-progress msg
+      (kele--retry (lambda () (not (oref cache update-in-progress)))
+                   :count count :wait wait :timeout timeout))))
 
 (defun kele--get-host-for-context (&optional context)
   "Get host for CONTEXT."
@@ -364,7 +393,9 @@ retval into `async-wait'."
   (let* ((progress-reporter (make-progress-reporter "Pulling kubeconfig contents..."))
          (func-complete (lambda (config)
                           (oset cache contents config)
+                          (oset cache update-in-progress nil)
                           (progress-reporter-done progress-reporter))))
+    (oset cache update-in-progress t)
     (async-start `(lambda ()
                     ;; TODO: How to just do all of these in one fell swoop?
                     (add-to-list 'load-path (file-name-directory ,(locate-library "yaml")))
@@ -434,6 +465,7 @@ those that support the given verb."
 
 The value is kept up-to-date with any changes to the underlying
 configuration, e.g. via `kubectl config'."
+  (kele--wait kele--global-kubeconfig-cache)
   (alist-get 'current-context (oref kele--global-kubeconfig-cache contents)))
 
 (defun kele--default-namespace-for-context (context)
@@ -558,16 +590,6 @@ STR, PRED, and ACTION are as defined in completion functions."
 PROMPT, INITIAL-INPUT, and HISTORY are all as defined in Info
 node `(elisp)Programmed Completion'."
   (completing-read prompt #'kele--contexts-complete nil t initial-input history))
-
-(defmacro kele--with-progress (msg &rest body)
-  "Execute BODY with a progress reporter using MSG.
-
-Returns the last evaluated value of BODY."
-  (declare (indent defun))
-  `(let ((prog (make-progress-reporter ,msg))
-         (res (progn ,@body)))
-     (progress-reporter-done prog)
-     res))
 
 (defun kele-context-switch (context)
   "Switch to CONTEXT."
@@ -1340,7 +1362,6 @@ Defaults to the currently active context as set in
                             kind
                             :context context)))
                  (list gvs kind)))
-
   (transient-setup 'kele-resource nil nil :scope `((group-versions . ,group-versions)
                                                    (kind . ,kind)
                                                    (context . ,(kele-current-context-name)))))
@@ -1351,7 +1372,7 @@ Defaults to the currently active context as set in
    ("c" "Contexts" kele-context)
    ("r" "Resources" kele-resource)])
 
-(transient-define-prefix kele-context (context)
+(transient-define-prefix kele-context ()
   "Work with a Kubernetes CONTEXT."
   [:description
    "Contexts"
@@ -1364,8 +1385,8 @@ Defaults to the currently active context as set in
     :description (lambda () (format "Change default namespace of %s to..."
                                     (propertize (oref transient--prefix scope)
                                                 'face 'warning))))]
-  (interactive (list (kele-current-context-name)))
-  (transient-setup 'kele-context nil nil :scope context))
+  (interactive)
+  (transient-setup 'kele-context nil nil :scope (kele-current-context-name)))
 
 (provide 'kele)
 
