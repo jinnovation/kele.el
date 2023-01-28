@@ -11,6 +11,11 @@ versioning][semver].
 
 ## Unreleased
 
+### Fixed
+
+- `kele-context` now waits on kubeconfig sync completion to finish if one is
+  currently in progress
+
 ## 0.3.0
 
 This release focuses on providing Kele's command palette and user interface with

@@ -230,11 +230,30 @@ in sync with the filesystem.")
   ((contents
     :documentation "The loaded kubeconfig contents.")
    (filewatch-id
-    :documentation "The ID of the file watcher."))
+    :documentation "The ID of the file watcher.")
+   (update-in-progress
+    :documentation "Flag denoting whether an update is in progress."
+    :initform nil))
   "Track the kubeconfig cache.
 
 A class for loading kubeconfig contents and keeping them in sync
 with the filesystem.")
+
+(cl-defmethod kele--wait ((cache kele--kubeconfig-cache)
+                          &key
+                          (count 10)
+                          (wait 1)
+                          (timeout 100)
+                          (msg "Waiting for kubeconfig update to finish..."))
+  "Wait for CACHE to finish updating.
+
+COUNT, WAIT, and TIMEOUT are as defined in `kele--retry'.
+
+MSG is the progress reporting message to display."
+  (when (oref cache update-in-progress)
+    (kele--with-progress msg
+      (kele--retry (lambda () (not (oref cache update-in-progress)))
+                   :count count :wait wait :timeout timeout))))
 
 (defun kele--get-host-for-context (&optional context)
   "Get host for CONTEXT."
@@ -364,7 +383,9 @@ retval into `async-wait'."
   (let* ((progress-reporter (make-progress-reporter "Pulling kubeconfig contents..."))
          (func-complete (lambda (config)
                           (oset cache contents config)
+                          (oset cache update-in-progress nil)
                           (progress-reporter-done progress-reporter))))
+    (oset cache update-in-progress t)
     (async-start `(lambda ()
                     ;; TODO: How to just do all of these in one fell swoop?
                     (add-to-list 'load-path (file-name-directory ,(locate-library "yaml")))
@@ -1351,7 +1372,7 @@ Defaults to the currently active context as set in
    ("c" "Contexts" kele-context)
    ("r" "Resources" kele-resource)])
 
-(transient-define-prefix kele-context (context)
+(transient-define-prefix kele-context ()
   "Work with a Kubernetes CONTEXT."
   [:description
    "Contexts"
@@ -1364,8 +1385,9 @@ Defaults to the currently active context as set in
     :description (lambda () (format "Change default namespace of %s to..."
                                     (propertize (oref transient--prefix scope)
                                                 'face 'warning))))]
-  (interactive (list (kele-current-context-name)))
-  (transient-setup 'kele-context nil nil :scope context))
+  (interactive)
+  (kele--wait kele--global-kubeconfig-cache)
+  (transient-setup 'kele-context nil nil :scope (kele-current-context-name)))
 
 (provide 'kele)
 
