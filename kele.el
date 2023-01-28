@@ -455,6 +455,7 @@ those that support the given verb."
 
 The value is kept up-to-date with any changes to the underlying
 configuration, e.g. via `kubectl config'."
+  (kele--wait kele--global-kubeconfig-cache)
   (alist-get 'current-context (oref kele--global-kubeconfig-cache contents)))
 
 (defun kele--default-namespace-for-context (context)
@@ -1361,7 +1362,6 @@ Defaults to the currently active context as set in
                             kind
                             :context context)))
                  (list gvs kind)))
-
   (transient-setup 'kele-resource nil nil :scope `((group-versions . ,group-versions)
                                                    (kind . ,kind)
                                                    (context . ,(kele-current-context-name)))))
@@ -1386,7 +1386,6 @@ Defaults to the currently active context as set in
                                     (propertize (oref transient--prefix scope)
                                                 'face 'warning))))]
   (interactive)
-  (kele--wait kele--global-kubeconfig-cache)
   (transient-setup 'kele-context nil nil :scope (kele-current-context-name)))
 
 (provide 'kele)

@@ -13,8 +13,8 @@ versioning][semver].
 
 ### Fixed
 
-- `kele-context` now waits on kubeconfig sync completion to finish if one is
-  currently in progress
+- `kele-context` and `kele-resource` now wait on kubeconfig sync completion to
+  finish if one is currently in progress
 
 ## 0.3.0
 
