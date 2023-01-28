@@ -612,7 +612,9 @@ node `(elisp)Programmed Completion'."
   (-let (((&alist 'proc proc 'timer timer) (alist-get (intern context) kele--context-proxy-ledger)))
     (kele--kill-process-quietly proc)
     (when timer (cancel-timer timer)))
-  (setq kele--context-proxy-ledger (assoc-delete-all (intern context) kele--context-proxy-ledger)))
+  (setq kele--context-proxy-ledger (assoc-delete-all (intern context)
+                                                     kele--context-proxy-ledger))
+  (message (format "[kele] Stopped proxy for context `%s'" context)))
 
 (cl-defun kele-proxy-start (context &key port (ephemeral t))
   "Start a proxy process for CONTEXT at PORT.
@@ -1131,6 +1133,7 @@ Only populated if Embark is installed.")
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "c") #'kele-context)
     (define-key map (kbd "r") #'kele-resource)
+    (define-key map (kbd "p") #'kele-proxy)
     (define-key map (kbd "?") #'kele-dispatch)
     map)
   "Keymap for Kele commands.")
@@ -1372,10 +1375,23 @@ Defaults to the currently active context as set in
    ("c" "Contexts" kele-context)
    ("r" "Resources" kele-resource)])
 
+(transient-define-suffix kele--toggle-proxy-current-context (context)
+  :key "p"
+  :description
+  (lambda ()
+    (format "%s proxy server for %s"
+            (if (kele--proxy-enabled-p (oref transient--prefix scope))
+                "Disable"
+              "Enable")
+            (propertize (oref transient--prefix scope) 'face
+                        'warning)))
+  (interactive (list (oref transient-current-prefix scope)))
+  (kele-proxy-toggle context))
+
 (transient-define-prefix kele-context ()
   "Work with a Kubernetes CONTEXT."
-  [:description
-   "Contexts"
+  ["Contexts"
+
    ("s" kele-context-switch
     :description (lambda ()
                    (format "Switch from %s to..."
@@ -1384,9 +1400,18 @@ Defaults to the currently active context as set in
    ("n" kele-namespace-switch-for-current-context
     :description (lambda () (format "Change default namespace of %s to..."
                                     (propertize (oref transient--prefix scope)
-                                                'face 'warning))))]
+                                                'face 'warning))))
+   (kele--toggle-proxy-current-context)]
   (interactive)
   (transient-setup 'kele-context nil nil :scope (kele-current-context-name)))
+
+(transient-define-prefix kele-proxy ()
+  "Work with kubectl proxy servers."
+  ["Proxy servers"
+   (kele--toggle-proxy-current-context)
+   ("P" kele-proxy-toggle :description "Start/stop proxy server for...")]
+  (interactive)
+  (transient-setup 'kele-proxy nil nil :scope (kele-current-context-name)))
 
 (provide 'kele)
 

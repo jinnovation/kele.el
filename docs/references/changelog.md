@@ -11,6 +11,12 @@ versioning][semver].
 
 ## Unreleased
 
+### Added
+
+- Added a `kele-proxy` command prefix for managing proxy servers
+- Added a keybinding to `kele-context` to enable/disable the proxy server for
+  the current context
+
 ### Fixed
 
 - `kele-context` and `kele-resource` now wait on kubeconfig sync completion to
