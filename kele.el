@@ -103,6 +103,16 @@ pods."
 (define-error 'kele-ambiguous-groupversion-error
   "Found multiple group-versions associated with the given resource")
 
+(defmacro kele--with-progress (msg &rest body)
+  "Execute BODY with a progress reporter using MSG.
+
+Returns the last evaluated value of BODY."
+  (declare (indent defun))
+  `(let ((prog (make-progress-reporter ,msg))
+         (res (progn ,@body)))
+     (progress-reporter-done prog)
+     res))
+
 (cl-defun kele--retry (fn &key (count 5) (wait 1) (timeout 100))
   "Retry FN COUNT times, waiting WAIT seconds between each.
 
@@ -580,16 +590,6 @@ STR, PRED, and ACTION are as defined in completion functions."
 PROMPT, INITIAL-INPUT, and HISTORY are all as defined in Info
 node `(elisp)Programmed Completion'."
   (completing-read prompt #'kele--contexts-complete nil t initial-input history))
-
-(defmacro kele--with-progress (msg &rest body)
-  "Execute BODY with a progress reporter using MSG.
-
-Returns the last evaluated value of BODY."
-  (declare (indent defun))
-  `(let ((prog (make-progress-reporter ,msg))
-         (res (progn ,@body)))
-     (progress-reporter-done prog)
-     res))
 
 (defun kele-context-switch (context)
   "Switch to CONTEXT."
