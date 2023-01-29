@@ -56,6 +56,7 @@ Kele commands involving Kubernetes [contexts] center around the `s-k c` prefix (
 |:-----------|---------------------------------------|:--------------------------------------------|:------------------------------|
 | `s-k c s`  | Switching from one context to another | `kele-context-switch`                       | ![](./img/context-switch.gif) |
 | `s-k c r`  | Renaming a context                    | `kele-context-rename`                       | ![](./img/context-rename.gif) |
+| `s-k c d`  | Deleting a context                    | `kele-context-delete`                       |                               |
 | `s-k c n`  | Changing the default namespace        | `kele-namespace-switch-for-current-context` |                               |
 
 !!! tip

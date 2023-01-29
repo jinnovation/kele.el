@@ -644,6 +644,13 @@ node `(elisp)Programmed Completion'."
   ;; TODO: This needs to update `kele--context-proxy-ledger' as well.
   (kele-kubectl-do "config" "rename-context" old-name new-name))
 
+(transient-define-suffix kele-context-delete (context)
+  :key "d"
+  :description "Delete a context"
+  (interactive (list (completing-read "Context: " #'kele--contexts-complete)))
+  (kele--with-progress (format "Deleting context `%s'..." context)
+    (kele-kubectl-do "config" "delete-context" context)))
+
 (cl-defun kele-proxy-stop (context)
   "Clean up the proxy for CONTEXT."
   (interactive (list (completing-read "Stop proxy for context: " #'kele--contexts-complete)))
@@ -1440,6 +1447,7 @@ Defaults to the currently active context as set in
   ["Contexts"
    (kele-context-switch)
    (kele-context-rename)
+   (kele-context-delete)
    (kele-namespace-switch-for-current-context)
    (kele--toggle-proxy-current-context)]
   (interactive)

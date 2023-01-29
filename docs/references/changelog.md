@@ -16,6 +16,7 @@ versioning][semver].
 - Added a `kele-proxy` command prefix for managing proxy servers
 - Added a keybinding to `kele-context` to enable/disable the proxy server for
   the current context
+- Added a keybinding to `kele-context` for deleting a context
 
 ### Fixed
 
