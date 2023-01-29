@@ -378,6 +378,11 @@ If BOOTSTRAP is non-nil, perform an initial read."
   "Stop file-watch for CACHE."
   (kele--fnr-rm-watch (oref cache filewatch-id)))
 
+(defvar kele--enabled nil
+  "Flag indicating whether Kele has already been enabled or not.
+
+This is separate from `kele-mode' to ensure that activating
+`kele-mode' is idempotent.")
 (defvar kele--global-kubeconfig-cache (kele--kubeconfig-cache))
 (defvar kele--global-discovery-cache (kele--discovery-cache))
 
@@ -1106,25 +1111,33 @@ Only populated if Embark is installed.")
         (delete entry embark-keymap-alist)))))
 
 (defun kele--enable ()
-  "Enables Kele functionality."
-  ;; FIXME: Update the watcher when `kele-kubeconfig-path' changes.
-  (kele--cache-start kele--global-kubeconfig-cache :bootstrap t)
-  ;; FIXME: Update the watcher when `kele-cache-dir' changes.
-  (kele--cache-start kele--global-discovery-cache :bootstrap t)
+  "Enables Kele functionality.
 
-  (kele--setup-embark-maybe)
-  (if (featurep 'awesome-tray)
-      (with-suppressed-warnings ((free-vars awesome-tray-module-alist))
-        (add-to-list 'awesome-tray-module-alist kele--awesome-tray-module))))
+This is idempotent."
+  (unless kele--enabled
+    (setq kele--enabled t)
+    ;; FIXME: Update the watcher when `kele-kubeconfig-path' changes.
+    (kele--cache-start kele--global-kubeconfig-cache :bootstrap t)
+    ;; FIXME: Update the watcher when `kele-cache-dir' changes.
+    (kele--cache-start kele--global-discovery-cache :bootstrap t)
+
+    (kele--setup-embark-maybe)
+    (if (featurep 'awesome-tray)
+        (with-suppressed-warnings ((free-vars awesome-tray-module-alist))
+          (add-to-list 'awesome-tray-module-alist kele--awesome-tray-module)))))
 
 (defun kele--disable ()
-  "Disable Kele functionality."
-  (kele--cache-stop kele--global-kubeconfig-cache)
-  (kele--cache-stop kele--global-discovery-cache)
-  (kele--teardown-embark-maybe)
-  (if (featurep 'awesome-tray)
-      (with-suppressed-warnings ((free-vars awesome-tray-module-alist))
-        (delete kele--awesome-tray-module awesome-tray-module-alist))))
+  "Disable Kele functionality.
+
+This is idempotent."
+  (unless (not kele--enabled)
+    (setq kele--enabled nil)
+    (kele--cache-stop kele--global-kubeconfig-cache)
+    (kele--cache-stop kele--global-discovery-cache)
+    (kele--teardown-embark-maybe)
+    (if (featurep 'awesome-tray)
+        (with-suppressed-warnings ((free-vars awesome-tray-module-alist))
+          (delete kele--awesome-tray-module awesome-tray-module-alist)))))
 
 (defvar kele-mode-map (make-sparse-keymap)
   "Keymap for Kele mode.")
