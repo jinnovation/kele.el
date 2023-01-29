@@ -25,15 +25,9 @@ to accomplish, reach for `kele-dispatch`.
 
 ## Working with Resources
 
-### Displaying a single resource
-
-| Keybinding | Interactive function |
-|:-----------|:---------------------|
-| `s-k r`    | `kele-resource`      |
-
-??? example "Demo"
-
-    ![](./img/kele-resource.gif)
+| Keybinding | Functionality               | Interactive function | Demo                         |
+|:-----------|-----------------------------|:---------------------|------------------------------|
+| `s-k r`    | Work with a single resource | `kele-resource`      | ![](./img/kele-resource.gif) |
 
 !!! tip inline ""
 
@@ -78,7 +72,7 @@ annotations for each cluster completion candidate.
 
 ??? example "Demo"
 
-    ![](./img/proxy-status-completion.png)
+    ![](./img/kele-proxy.png)
 
 !!! note
 
@@ -91,14 +85,10 @@ annotations for each cluster completion candidate.
     Each context can only have one proxy server active at a time. This is an
     artificial limitation put in place by Kele.
 
-`M-x kele-proxy-start`
-: Start a proxy server process for a given context
-
-`M-x kele-proxy-stop`
-: Stop a proxy server process for a given context
-
-`M-x kele-proxy-toggle`
-: Start or stop a proxy server process for a given context, depending on current status
+| Keybinding | Functionality                                           | Interactive function |
+|:-----------|:--------------------------------------------------------|:---------------------|
+| `s-k p p`  | Start/stop proxy server process for the current context | `kele-proxy-toggle`  |
+| `s-k p P`  | Start/stop proxy server process for a specific context  | `kele-proxy-toggle`  |
 
 [Embark]: https://github.com/oantolin/embark
 [custom resources]: https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/
