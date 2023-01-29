@@ -570,16 +570,31 @@ as."
                                               :category 'kele-namespace)))))
   (kele-kubectl-do "config" "set-context" context "--namespace" namespace))
 
-(defun kele-namespace-switch-for-current-context (namespace)
+(transient-define-suffix kele-namespace-switch-for-current-context (namespace)
   "Switch to NAMESPACE for the current context."
+  :key "n"
+  :description
+  (lambda ()
+    (format "Change default namespace of %s to..."
+            (propertize (oref transient--prefix scope)
+                        'face 'warning)))
   (interactive
-   (list
-    (completing-read
-     (format "Namespace (%s): " (kele-current-context-name))
-     (-cut kele--resources-complete <> <> <>
-           :cands (kele--get-namespaces (kele-current-context-name))
-           :category 'kele-namespace))))
-  (kele-namespace-switch-for-context (kele-current-context-name) namespace))
+   (let ((ctx (if (and transient--prefix
+                      (slot-boundp transient--prefix 'scope))
+                 (oref transient--prefix scope)
+               (kele-current-context-name))))
+     (list
+      (completing-read
+       (format "Namespace (%s): " ctx)
+       (-cut kele--resources-complete <> <> <>
+             :cands (kele--get-namespaces ctx)
+             :category 'kele-namespace)))))
+  (kele-namespace-switch-for-context
+   (if (and transient--prefix
+            (slot-boundp transient--prefix 'scope))
+       (oref transient--prefix scope)
+     (kele-current-context-name))
+   namespace))
 
 ;; TODO
 (defun kele--namespace-annotate (_namespace-name)
@@ -618,8 +633,10 @@ node `(elisp)Programmed Completion'."
   (kele--with-progress (format "Switching to use context `%s'..." context)
     (kele-kubectl-do "config" "use-context" context)))
 
-(defun kele-context-rename (old-name new-name)
+(transient-define-suffix kele-context-rename (old-name new-name)
   "Rename context named OLD-NAME to NEW-NAME."
+  :key "r"
+  :description "Rename a context"
   (interactive (list (completing-read "Context to rename: "
                                       #'kele--contexts-complete
                                       nil t nil nil (kele-current-context-name))
@@ -1422,11 +1439,8 @@ Defaults to the currently active context as set in
   "Work with a Kubernetes CONTEXT."
   ["Contexts"
    (kele-context-switch)
-   ("r" kele-context-rename :description "Rename")
-   ("n" kele-namespace-switch-for-current-context
-    :description (lambda () (format "Change default namespace of %s to..."
-                                    (propertize (oref transient--prefix scope)
-                                                'face 'warning))))
+   (kele-context-rename)
+   (kele-namespace-switch-for-current-context)
    (kele--toggle-proxy-current-context)]
   (interactive)
   (transient-setup 'kele-context nil nil :scope (kele-current-context-name)))
