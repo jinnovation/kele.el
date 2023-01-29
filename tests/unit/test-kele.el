@@ -499,4 +499,26 @@ metadata:
      "value")
     (expect 'transient-init-value :to-have-been-called-with other0)))
 
+(describe "kele-mode"
+  (describe "enabling"
+    (describe "when `kele-enabled' is truthy"
+      (before-each
+        (setq kele--enabled t)
+        (spy-on 'kele--cache-start)
+        (spy-on 'kele--setup-embark-maybe))
+      (it "does nothing"
+        (kele-mode 1)
+        (expect 'kele--cache-start :not :to-have-been-called)
+        (expect 'kele--setup-embark-maybe :not :to-have-been-called))))
+  (describe "disabling"
+    (describe "when `kele--enabled' is nil"
+      (before-each
+        (setq kele--enabled nil)
+        (spy-on 'kele--cache-stop)
+        (spy-on 'kele--teardown-embark-maybe))
+      (it "does nothing"
+        (kele-mode -1)
+        (expect 'kele--cache-stop :not :to-have-been-called)
+        (expect 'kele--teardown-embark-maybe :not :to-have-been-called)))))
+
 ;;; test-kele.el ends here
