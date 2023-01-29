@@ -68,19 +68,6 @@
     (async-wait (kele--cache-update kele--global-kubeconfig-cache))
     (expect (kele-current-context-name) :to-equal "development")))
 
-(describe "kele-namespace-switch-for-context"
-  (it "switches context properly"
-    (setq kele-kubeconfig-path
-          (make-temp-file
-           "temp-test-kubeconfig"
-           nil
-           ".yaml"
-           (f-read-text (f-expand "./tests/testdata/kubeconfig.yaml"))))
-    (async-wait (kele--cache-update kele--global-kubeconfig-cache))
-    (kele-namespace-switch-for-context "development" "foobar")
-    (async-wait (kele--cache-update kele--global-kubeconfig-cache))
-    (expect (kele-current-namespace) :to-equal "foobar")))
-
 (describe "kele--context-annotate"
   (it "returns the proper annotation text"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))

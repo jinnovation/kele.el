@@ -10,6 +10,14 @@
 (require 'plz)
 (require 'with-simulated-input)
 
+(describe "config interactions"
+  (describe "kele-namespace-switch-for-context"
+    (it "switches context properly"
+      (kele-context-switch "kind-kele-test-cluster0")
+      (kele-namespace-switch-for-context "kind-kele-test-cluster0" "kube-public")
+      (async-wait (kele--cache-update kele--global-kubeconfig-cache))
+      (expect (kele-current-namespace) :to-equal "kube-public"))))
+
 (describe "kele--fetch-resource-names"
   (before-each
     (async-wait (kele--cache-update kele--global-discovery-cache)))
