@@ -1443,13 +1443,19 @@ Defaults to the currently active context as set in
   (kele-proxy-toggle context))
 
 (transient-define-prefix kele-context ()
-  "Work with a Kubernetes CONTEXT."
-  ["Contexts"
-   (kele-context-switch)
+  "Work with a Kubernetes CONTEXT.
+
+The `scope' is the current context name."
+  [[:description
+    (lambda ()
+      (format "Context: %s"
+              (propertize (oref transient--prefix scope) 'face 'warning)))
+    (kele-context-switch)
+    (kele-namespace-switch-for-current-context)
+    (kele--toggle-proxy-current-context)]
+   ["Actions"
    (kele-context-rename)
-   (kele-context-delete)
-   (kele-namespace-switch-for-current-context)
-   (kele--toggle-proxy-current-context)]
+   (kele-context-delete)]]
   (interactive)
   (transient-setup 'kele-context nil nil :scope (kele-current-context-name)))
 
