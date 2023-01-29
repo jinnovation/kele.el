@@ -602,8 +602,18 @@ PROMPT, INITIAL-INPUT, and HISTORY are all as defined in Info
 node `(elisp)Programmed Completion'."
   (completing-read prompt #'kele--contexts-complete nil t initial-input history))
 
-(defun kele-context-switch (context)
-  "Switch to CONTEXT."
+(transient-define-suffix kele-context-switch (context)
+  "Switch to a new CONTEXT."
+  :key "s"
+  :description
+  (lambda ()
+    (format "Switch from %s to..."
+            (propertize (if (and transient--prefix
+                                 (slot-boundp transient--prefix 'scope))
+                            (oref transient--prefix scope)
+                          (kele-current-context-name))
+                        'face
+                        'warning)))
   (interactive (list (completing-read "Context: " #'kele--contexts-complete)))
   (kele--with-progress (format "Switching to use context `%s'..." context)
     (kele-kubectl-do "config" "use-context" context)))
@@ -1411,11 +1421,7 @@ Defaults to the currently active context as set in
 (transient-define-prefix kele-context ()
   "Work with a Kubernetes CONTEXT."
   ["Contexts"
-
-   ("s" kele-context-switch
-    :description (lambda ()
-                   (format "Switch from %s to..."
-                           (propertize (oref transient--prefix scope) 'face 'warning))))
+   (kele-context-switch)
    ("r" kele-context-rename :description "Rename")
    ("n" kele-namespace-switch-for-current-context
     :description (lambda () (format "Change default namespace of %s to..."
