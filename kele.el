@@ -465,12 +465,16 @@ those that support the given verb."
        (-map (lambda (resource) (alist-get 'name resource)))
        (-uniq)))
 
-(defun kele-current-context-name ()
+(cl-defun kele-current-context-name (&key (wait t))
   "Get the current context name.
 
 The value is kept up-to-date with any changes to the underlying
-configuration, e.g. via `kubectl config'."
-  (kele--wait kele--global-kubeconfig-cache)
+configuration, e.g. via `kubectl config'.
+
+If WAIT is non-nil, does not wait for any current update process
+to complete.  Returned value may not be up to date."
+  (when wait
+    (kele--wait kele--global-kubeconfig-cache))
   (alist-get 'current-context (oref kele--global-kubeconfig-cache contents)))
 
 (defun kele--default-namespace-for-context (context)
@@ -481,21 +485,23 @@ configuration, e.g. via `kubectl config'."
                       (alist-get 'contexts (oref kele--global-kubeconfig-cache contents)))))
       namespace))
 
-(defun kele-current-namespace ()
+(cl-defun kele-current-namespace (&key (wait t))
   "Get the current context's default namespace.
 
 The value is kept up-to-date with any changes to the underlying
-configuration, e.g. via `kubectl config'."
-  (kele--default-namespace-for-context (kele-current-context-name)))
+configuration, e.g. via `kubectl config'.
+
+If WAIT is non-nil, does not wait for any current update process
+to complete.  Returned value may not be up to date."
+  (kele--default-namespace-for-context (kele-current-context-name :wait wait)))
 
 (defun kele-status-simple ()
   "Return a simple status string suitable for modeline display."
-  (let ((status (if (not (or (kele-current-context-name) (kele-current-namespace)))
-                    "--"
-                  (concat (kele-current-context-name)
-                          (if (kele-current-namespace)
-                              (concat "(" (kele-current-namespace) ")")
-                            "")))))
+  (let* ((ctx (kele-current-context-name :wait nil))
+         (ns (kele-current-namespace :wait nil))
+         (status (if (not (or ctx ns))
+                     "--"
+                   (concat ctx (if ns (concat "(" ns ")") "")))))
     (concat "k8s:" status)))
 
 (defconst kele--awesome-tray-module '("kele" . (kele-status-simple nil)))
