@@ -503,11 +503,17 @@ metadata:
   :var (switch)
   (before-each
     (spy-on 'transient--show)
-    (setq switch (kele--transient-switches :options (lambda () '("foo" "bar"))))
+    (setq switch (kele--transient-switches
+                  :options (lambda () '("foo" "bar"))
+                  :argument "argument="))
     (transient-init-value switch))
 
   (it "starts at the first item in the list"
     (expect (oref switch value) :to-equal "foo"))
+
+  (describe "transient-infix-value"
+    (it "formats as <argument>=<value>"
+      (expect (transient-infix-value switch) :to-equal "argument=foo")))
 
   (describe "transient-infix-read"
     (it "returns the next choice in the list"
