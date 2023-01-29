@@ -22,7 +22,8 @@ versioning][semver].
 - `kele-context` and `kele-resource` now wait on kubeconfig sync completion to
   finish if one is currently in progress
 - Fixed a bug where force-enabling or force-disabling `kele-mode` (via either
-  `(kele-mode 1)` or `(kele-mode -1)`) resulted in errors
+  `(kele-mode 1)` or `(kele-mode -1)`) when `kele-mode` is already active or
+  inactive (respectively) resulted in errors
 
 ## 0.3.0
 
