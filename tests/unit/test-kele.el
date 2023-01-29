@@ -499,6 +499,25 @@ metadata:
      "value")
     (expect 'transient-init-value :to-have-been-called-with other0)))
 
+(describe "kele--transient-switches"
+  :var (switch)
+  (before-each
+    (spy-on 'transient--show)
+    (setq switch (kele--transient-switches :options (lambda () '("foo" "bar"))))
+    (transient-init-value switch))
+
+  (it "starts at the first item in the list"
+    (expect (oref switch value) :to-equal "foo"))
+
+  (describe "transient-infix-read"
+    (it "returns the next choice in the list"
+      (expect (transient-infix-read switch) :to-equal "bar"))
+    (describe "when current selection is the last item"
+      (before-each
+        (transient-infix-set switch "bar"))
+      (it "loops back to the first item in the list"
+        (expect (transient-infix-read switch) :to-equal "foo")))))
+
 (describe "kele-mode"
   (describe "enabling"
     (describe "when `kele-enabled' is truthy"
