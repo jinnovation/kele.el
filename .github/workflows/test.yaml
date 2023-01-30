@@ -13,6 +13,11 @@ jobs:
       matrix:
         emacs_version:
           - 28.1
+        kubectl_version:
+          - v1.26.1
+          - v1.25.6
+          - v1.24.10
+          - v1.23.12
         include:
           - emacs_version: snapshot
             ignore_error: true
@@ -52,6 +57,7 @@ jobs:
         with:
           config: tests/test-cluster.yaml
           cluster_name: kele-test-cluster0
+          kubectl_version: ${{ matrix.kubectl_version }}
 
       # See #69
       - name: Try populating discovery cache
