@@ -1389,6 +1389,26 @@ Defaults to the currently active context as set in
   :options (lambda ()
              (alist-get 'group-versions (oref transient--prefix scope))))
 
+(transient-define-suffix kele-list (group-version kind &optional context namespace)
+  "List all resources of a given GROUP-VERSION and KIND.
+
+If CONTEXT is provided, use it.  Otherwise, use the current context as reported
+by `kele-current-context-name'.
+
+If NAMESPACE is provided, use it.  Otherwise, use the default
+namespace for the context.  If NAMESPACE is provided and the KIND
+is not namespaced, returns an error."
+  :key "l"
+  :description
+  (lambda ()
+    (format "List all %s"
+            (propertize
+             (alist-get 'kind (oref transient--prefix scope))
+             'face
+             'warning)))
+  (interactive (list "foo" "bar"))
+  (message "TODO!!!"))
+
 (transient-define-prefix kele-resource (group-versions kind)
   ["Arguments"
    (kele--context-infix)
@@ -1416,8 +1436,11 @@ Defaults to the currently active context as set in
                   :context context)))
     :description
     (lambda ()
-      (format "Get a single %s"
-              (propertize (alist-get 'kind (oref transient--prefix scope)) 'face 'warning))))]
+      (--> (oref transient--prefix scope)
+           (alist-get 'kind it)
+           (propertize it 'face 'warning)
+           (format "Get a single %s" it))))
+   (kele-list)]
 
   (interactive (let* ((context (kele-current-context-name))
                       (kind (completing-read
