@@ -14,8 +14,10 @@ jobs:
         emacs_version:
           - 28.1
         kubectl_version:
-          - v1.23.12
+          - v1.26.1
+          - v1.25.6
           - v1.24.10
+          - v1.23.12
         include:
           - emacs_version: snapshot
             ignore_error: true
