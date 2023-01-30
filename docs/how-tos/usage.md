@@ -50,7 +50,7 @@ You can press `U` in a `kele-get` buffer to re-fetch and refresh the current res
 
 ![](./img/context-prefix.png)
 
-Kele commands involving Kubernetes [contexts] center around the `s-k c` prefix (`kele-context`).
+Kele commands involving Kubernetes [contexts] center around the `s-k c` prefix (`kele-config`).
 
 | Keybinding | Functionality                         | Interactive function                        | Demo                          |
 |:-----------|---------------------------------------|:--------------------------------------------|:------------------------------|

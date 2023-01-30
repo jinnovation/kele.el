@@ -1127,6 +1127,17 @@ Only populated if Embark is installed.")
 (defconst kele--embark-keymap-entries '((kele-context . kele--context-keymap)
                                         (kele-namespace . kele--namespace-keymap)))
 
+(transient-define-suffix kele-find-kubeconfig ()
+  "Open the configured kubeconfig file in a buffer."
+  :key "c"
+  :description
+  (lambda ()
+    (format "Open %s" (propertize kele-kubeconfig-path 'face 'transient-value)))
+  (interactive)
+  (if (file-exists-p kele-kubeconfig-path)
+      (find-file kele-kubeconfig-path)
+    (message "[kele] %s does not exist; try initializing kubectl first." kele-kubeconfig-path)))
+
 (defun kele--setup-embark-maybe ()
   "Optionally set up Embark integration."
   (when (featurep 'embark)
@@ -1184,7 +1195,7 @@ This is idempotent."
 
 (defvar kele-command-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "c") #'kele-context)
+    (define-key map (kbd "c") #'kele-config)
     (define-key map (kbd "r") #'kele-resource)
     (define-key map (kbd "p") #'kele-proxy)
     (define-key map (kbd "?") #'kele-dispatch)
@@ -1425,7 +1436,7 @@ Defaults to the currently active context as set in
 (transient-define-prefix kele-dispatch ()
   "Work with Kubernetes clusters and configs."
   ["Work with..."
-   ("c" "Contexts" kele-context)
+   ("c" "Configurations" kele-config)
    ("r" "Resources" kele-resource)
    ("p" "Proxy servers" kele-proxy)])
 
@@ -1442,8 +1453,8 @@ Defaults to the currently active context as set in
   (interactive (list (oref transient-current-prefix scope)))
   (kele-proxy-toggle context))
 
-(transient-define-prefix kele-context ()
-  "Work with a Kubernetes CONTEXT.
+(transient-define-prefix kele-config ()
+  "Work with Kubernetes configurations.
 
 The `scope' is the current context name."
   [[:description
@@ -1455,9 +1466,11 @@ The `scope' is the current context name."
     (kele--toggle-proxy-current-context)]
    ["Actions"
    (kele-context-rename)
-   (kele-context-delete)]]
+   (kele-context-delete)]
+   ["Files"
+    (kele-find-kubeconfig)]]
   (interactive)
-  (transient-setup 'kele-context nil nil :scope (kele-current-context-name)))
+  (transient-setup 'kele-config nil nil :scope (kele-current-context-name)))
 
 (transient-define-prefix kele-proxy ()
   "Work with kubectl proxy servers."

@@ -17,6 +17,7 @@ versioning][semver].
 - Added a keybinding to `kele-context` to enable/disable the proxy server for
   the current context
 - Added a keybinding to `kele-context` for deleting a context
+- Added a keybinding to open `kele-kubeconfig-path` in a buffer
 
 ### Fixed
 
@@ -25,6 +26,10 @@ versioning][semver].
 - Fixed a bug where force-enabling or force-disabling `kele-mode` (via either
   `(kele-mode 1)` or `(kele-mode -1)`) when `kele-mode` is already active or
   inactive (respectively) resulted in errors
+
+### Changed
+
+- Renamed `kele-context` to `kele-config`
 
 ## 0.3.0
 
