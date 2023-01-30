@@ -865,6 +865,18 @@ show the requested Kubernetes object manifest.
             (,(kbd "U") . kele--refetch))
   (read-only-mode 1))
 
+(define-derived-mode kele-list-mode tabulated-list-mode "Kele: List"
+  "Major mode for listing multiple resources of a single kind."
+  :group 'kele
+  :interactive nil
+  (setq-local tabulated-list-format
+              (vector (list "Name" 50 t)
+                      (list "Namespace" 20 t)
+                      (list "Group" 10 t)
+                      (list "Version" 5 t)))
+  (tabulated-list-init-header)
+  (read-only-mode 1))
+
 (defun kele--refetch ()
   "Refetches the currently displayed resource."
   (interactive)
@@ -936,6 +948,59 @@ Returns a list where the car is the group and the cadr is the version.
 Nil value for group denotes the core API."
   (let ((split (s-split "/" group-version)))
     (if (length= split 1) (list nil (car split)) split)))
+
+(cl-defun kele--list-resources (group version kind &key namespace context)
+  "Return the List of the given resource."
+  (when (and namespace
+             (not (kele--resource-namespaced-p
+                   kele--global-discovery-cache
+                   (kele--groupversion-string group version)
+                   kind)))
+    (signal 'user-error '()))
+
+  (-if-let* (((&alist 'port port) (kele--ensure-proxy
+                                   (or context (kele-current-context-name))))
+             (url (format "http://localhost:%s/%s/%s"
+                          port
+                          (if group
+                              (format "apis/%s/%s" group version)
+                            (format "api/%s" version))
+                          kind))
+             (data (kele--retry (lambda () (plz 'get url :as #'json-read))))
+             (filtered-items (->> (append  (alist-get 'items data) '())
+                                  (-filter (lambda (item)
+                                             (if (not namespace) t
+                                               (let-alist item
+                                                 (equal .metadata.namespace namespace))))))))
+      (progn
+        (setf (cdr (assoc 'items data)) filtered-items)
+        data)
+    (signal 'error (format "Failed to fetch %s/%s/%s" group version kind))))
+
+(cl-defun kele--fetch-resources (group version kind &key namespace context)
+  (when (and namespace
+             (not (kele--resource-namespaced-p
+                   kele--global-discovery-cache
+                   (kele--groupversion-string group version)
+                   kind)))
+    (signal 'user-error '()))
+
+  (-if-let* (((&alist 'port port) (kele--ensure-proxy
+                                   (or context (kele-current-context-name))))
+             (url (format "http://localhost:%s/%s/%s"
+                          port
+                          (if group
+                              (format "apis/%s/%s" group version)
+                            (format "api/%s" version))
+                          kind))
+             (data (kele--retry (lambda () (plz 'get url :as #'json-read))))
+             ((&alist 'items items) data))
+      (->> (append items '())
+           (-filter (lambda (item)
+                      (if (not namespace) t
+                        (let-alist item
+                          (equal .metadata.namespace namespace))))))
+    (signal 'error (format "Failed to fetch %s/%s/%s" group version kind))))
 
 ;; TODO (#72): Allow for injecting the proxy dependency.
 ;; This would allow for consumers to create their own proxy, e.g. to start it
@@ -1389,7 +1454,7 @@ Defaults to the currently active context as set in
   :options (lambda ()
              (alist-get 'group-versions (oref transient--prefix scope))))
 
-(transient-define-suffix kele-list (group-version kind &optional context namespace)
+(transient-define-suffix kele-list (group-version kind context namespace)
   "List all resources of a given GROUP-VERSION and KIND.
 
 If CONTEXT is provided, use it.  Otherwise, use the current context as reported
@@ -1406,8 +1471,37 @@ is not namespaced, returns an error."
              (alist-get 'kind (oref transient--prefix scope))
              'face
              'warning)))
-  (interactive (list "foo" "bar"))
-  (message "TODO!!!"))
+  (interactive
+   (let* ((kind (alist-get 'kind (oref transient-current-prefix scope)))
+          (args (transient-args transient-current-command))
+          (group-version (transient-arg-value "--groupversion=" args))
+          (namespace (transient-arg-value "--namespace=" args))
+          (context (transient-arg-value "--context=" args)))
+     (list group-version kind context namespace)))
+
+  (-let* (((group version) (kele--groupversion-split group-version))
+          (fn-entries (lambda ()
+                        (let* ((resource-list (kele--list-resources
+                                              group version kind
+                                              :context context
+                                              :namespace namespace))
+                               (api-version (alist-get 'apiVersion resource-list)))
+                        (->> resource-list
+                             (alist-get 'items)
+                             (-map (lambda (resource)
+                                     (-let (((&alist 'metadata (&alist 'name name 'namespace namespace)) resource)
+                                            ((group version) (kele--groupversion-split api-version)))
+                                         (list namep (vector name namespace group version))))))))))
+    (let ((buf (get-buffer-create (format " *kele: %s/%s [%s(%s)]*"
+                                          group-version
+                                          kind
+                                          context
+                                          namespace))))
+      (with-current-buffer buf
+        (kele-list-mode)
+        (setq-local tabulated-list-entries fn-entries)
+        (tabulated-list-print))
+      (select-window (display-buffer buf)))))
 
 (transient-define-prefix kele-resource (group-versions kind)
   ["Arguments"
