@@ -986,12 +986,6 @@ If CONTEXT is not provided, use the current context."
         data)
     (signal 'error (format "Failed to fetch %s/%s/%s" group version kind))))
 
-;; TODO (#72): Allow for injecting the proxy dependency.
-;; This would allow for consumers to create their own proxy, e.g. to start it
-;; async while accepting user input, and defer its use to here.
-;;
-;; :proxy value should be assumed to be either a proxy container struct or a
-;; future that's expected to return one.
 (cl-defun kele--fetch-resource-names (group version kind &key namespace context)
   "Fetch names of resources belonging to GROUP, VERSION, and KIND.
 
