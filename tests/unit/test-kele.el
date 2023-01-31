@@ -546,4 +546,34 @@ metadata:
         (expect 'kele--cache-stop :not :to-have-been-called)
         (expect 'kele--teardown-embark-maybe :not :to-have-been-called)))))
 
+(describe "kele--get-context-arg"
+  (before-each
+    (spy-on 'kele-current-context-name :and-return-value "bar"))
+  (describe "when called in a Transient suffix"
+    (before-each
+      (setq transient-current-command t)
+      (spy-on 'transient-args :and-return-value '("--context=foo")))
+    (it "retrieves from the suffix's arguments"
+      (expect (kele--get-context-arg) :to-equal "foo")))
+  (describe "when called outside of a Transient"
+    (before-each
+      (setq transient-current-command nil))
+    (it "retrieves the current context"
+      (expect (kele--get-context-arg) :to-equal "bar"))))
+
+(describe "kele--get-namespace-arg"
+  (before-all
+    (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
+    (async-wait (kele--cache-update kele--global-kubeconfig-cache)))
+  (describe "when called in a Transient suffix"
+    (before-each
+      (setq transient-current-command t)
+      (spy-on 'transient-args :and-return-value '("--namespace=foo")))
+    (it "retrieves from the suffix's arguments"
+      (expect (kele--get-namespace-arg) :to-equal "foo")))
+  (describe "when called outside of a Transient"
+    (before-each
+      (setq transient-current-command nil))
+    (it "retrieves the default namespace of the current context"
+      (expect (kele--get-namespace-arg) :to-equal "development-namespace"))))
 ;;; test-kele.el ends here
