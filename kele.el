@@ -1412,6 +1412,22 @@ Defaults to the currently active context as set in
   :options (lambda ()
              (alist-get 'group-versions (oref transient--prefix scope))))
 
+(cl-defun kele--get-context-arg ()
+  "Get the value to use for Kubernetes context."
+  (if-let* ((_ transient-current-command)
+            (args (transient-args transient-current-command))
+            (value (transient-arg-value "--context=" args)))
+      value
+    (kele-current-context-name)))
+
+(cl-defun kele--get-namespace-arg ()
+  "Get the value to use for Kubernetes namespace."
+  (if-let* ((_ transient-current-command)
+            (args (transient-args transient-current-command))
+            (value (transient-arg-value "--namespace=" args)))
+      value
+    (kele--default-namespace-for-context (kele--get-context-arg))))
+
 (transient-define-suffix kele-list (group-version kind context namespace)
   "List all resources of a given GROUP-VERSION and KIND.
 
@@ -1432,10 +1448,8 @@ is not namespaced, returns an error."
   (interactive
    (let* ((kind (alist-get 'kind (oref transient-current-prefix scope)))
           (args (transient-args transient-current-command))
-          (group-version (transient-arg-value "--groupversion=" args))
-          (namespace (transient-arg-value "--namespace=" args))
-          (context (transient-arg-value "--context=" args)))
-     (list group-version kind context namespace)))
+          (group-version (transient-arg-value "--groupversion=" args)))
+     (list group-version kind (kele--get-context-arg) (kele--get-namespace-arg))))
 
   (-let* (((group version) (kele--groupversion-split group-version))
           (fn-entries (lambda ()
