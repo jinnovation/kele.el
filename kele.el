@@ -1491,7 +1491,7 @@ is not namespaced, returns an error."
                              (-map (lambda (resource)
                                      (-let (((&alist 'metadata (&alist 'name name 'namespace namespace)) resource)
                                             ((group version) (kele--groupversion-split api-version)))
-                                         (list namep (vector name namespace group version))))))))))
+                                         (list name (vector name namespace group version))))))))))
     (let ((buf (get-buffer-create (format " *kele: %s/%s [%s(%s)]*"
                                           group-version
                                           kind
