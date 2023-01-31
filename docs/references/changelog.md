@@ -18,6 +18,8 @@ versioning][semver].
   the current context
 - Added a keybinding to `kele-context` for deleting a context
 - Added a keybinding to open `kele-kubeconfig-path` in a buffer
+- Added a keybinding to `kele-resource` to support listing out all resources of
+  a given type
 
 ### Fixed
 

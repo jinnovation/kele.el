@@ -25,22 +25,29 @@ to accomplish, reach for `kele-dispatch`.
 
 ## Working with Resources
 
-| Keybinding | Functionality               | Interactive function | Demo                         |
-|:-----------|-----------------------------|:---------------------|------------------------------|
-| `s-k r`    | Work with a single resource | `kele-resource`      | ![](./img/kele-resource.gif) |
+`s-k r` is bound to `kele-resource`, the "prefix" command for working with
+resources in Kele.
+
+`kele-resource` allows you to act on specific resource kinds. With
+`kele-resource`, you can, for example:
+
+- Look up a given Kubernetes object by name, fetch its manifest, and display it
+  in a separate buffer;
+- List out all resources of a given type.
 
 !!! tip inline ""
 
     `kele-resource` supports [custom resources] too!
 
-`kele-resource` allows you to act on specific resource kinds. With
-`kele-resource`, you can retrieve the manifest for a given Kubernetes object and
-display it in a separate buffer.
-
 `kele-resource` will first prompt you to select the **kind** that you'd like to
 work with, after which you can choose to **get** a specific object of that kind
 by name. If the resource is namespaced, you will also be presented with the
 option to choose the namespace to select from.
+
+| Keybinding                            | Functionality                      | Interactive function | Demo                         |
+|:--------------------------------------|------------------------------------|:---------------------|------------------------------|
+| `s-k r <kind-name> g <resource-name>` | Display a single resource          | `kele-get`           | ![](./img/kele-resource.gif) |
+| `s-k r <kind name> l`                 | List all resources of a given type | `kele-list`          | ![](./img/kele-list.png)     |
 
 ### Refreshing a resource
 
