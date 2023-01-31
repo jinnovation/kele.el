@@ -999,10 +999,12 @@ If NAMESPACE is provided, return only resources belonging to that namespace.  If
 NAMESPACE is provided for non-namespaced KIND, throws an error.
 
 If CONTEXT is not provided, use the current context."
-  (->> (kele--list-resources group version kind
-                             :namespace namespace
-                             :context context)
-       (-map (lambda (item) (let-alist item .metadata.name)))))
+  (let* ((resource-list (kele--list-resources
+                        group version kind
+                        :namespace namespace
+                        :context context))
+         (items (append (alist-get 'items resource-list) '())))
+    (-map (lambda (item) (let-alist item .metadata.name)))))
 
 (cl-defun kele-get (kind name &key group version context namespace)
   "Get resource KIND by NAME and display it in a buffer.
