@@ -950,7 +950,16 @@ Nil value for group denotes the core API."
     (if (length= split 1) (list nil (car split)) split)))
 
 (cl-defun kele--list-resources (group version kind &key namespace context)
-  "Return the List of the given resource."
+  "Return the List of the resources of type specified by GROUP, VERSION, and KIND.
+
+Return value is an alist mirroring the Kubernetes List type of
+the type in question.
+
+If NAMESPACE is provided, return only resources belonging to that
+namespace.  If NAMESPACE is provided for non-namespaced KIND,
+throws an error.
+
+If CONTEXT is not provided, use the current context."
   (when (and namespace
              (not (kele--resource-namespaced-p
                    kele--global-discovery-cache
@@ -977,31 +986,6 @@ Nil value for group denotes the core API."
         data)
     (signal 'error (format "Failed to fetch %s/%s/%s" group version kind))))
 
-(cl-defun kele--fetch-resources (group version kind &key namespace context)
-  (when (and namespace
-             (not (kele--resource-namespaced-p
-                   kele--global-discovery-cache
-                   (kele--groupversion-string group version)
-                   kind)))
-    (signal 'user-error '()))
-
-  (-if-let* (((&alist 'port port) (kele--ensure-proxy
-                                   (or context (kele-current-context-name))))
-             (url (format "http://localhost:%s/%s/%s"
-                          port
-                          (if group
-                              (format "apis/%s/%s" group version)
-                            (format "api/%s" version))
-                          kind))
-             (data (kele--retry (lambda () (plz 'get url :as #'json-read))))
-             ((&alist 'items items) data))
-      (->> (append items '())
-           (-filter (lambda (item)
-                      (if (not namespace) t
-                        (let-alist item
-                          (equal .metadata.namespace namespace))))))
-    (signal 'error (format "Failed to fetch %s/%s/%s" group version kind))))
-
 ;; TODO (#72): Allow for injecting the proxy dependency.
 ;; This would allow for consumers to create their own proxy, e.g. to start it
 ;; async while accepting user input, and defer its use to here.
@@ -1015,32 +999,10 @@ If NAMESPACE is provided, return only resources belonging to that namespace.  If
 NAMESPACE is provided for non-namespaced KIND, throws an error.
 
 If CONTEXT is not provided, use the current context."
-  (when (and namespace
-             (not (kele--resource-namespaced-p
-                   kele--global-discovery-cache
-                   (kele--groupversion-string group version)
-                   kind)))
-    (signal 'user-error '()))
-
-  (-if-let* (((&alist 'port port) (kele--ensure-proxy
-                                   (or context (kele-current-context-name))))
-             (url (format "http://localhost:%s/%s/%s"
-                          port
-                          (if group
-                              (format "apis/%s/%s" group version)
-                            (format "api/%s" version))
-                          kind))
-             (data (kele--retry (lambda () (plz 'get url :as #'json-read))))
-             ((&alist 'items items) data))
-      (->> (append items '())
-           (-filter (lambda (item)
-                      (if (not namespace) t
-                        (let-alist item
-                          (equal .metadata.namespace namespace)))))
-           (-map (lambda (item)
-                   (let-alist item
-                     .metadata.name))))
-    (signal 'error (format "Failed to fetch %s/%s/%s" group version kind))))
+  (->> (kele--list-resources group version kind
+                             :namespace namespace
+                             :context context)
+       (-map (lambda (item) (let-alist item .metadata.name)))))
 
 (cl-defun kele-get (kind name &key group version context namespace)
   "Get resource KIND by NAME and display it in a buffer.
