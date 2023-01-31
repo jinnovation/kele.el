@@ -1414,16 +1414,16 @@ Defaults to the currently active context as set in
 
 (cl-defun kele--get-context-arg ()
   "Get the value to use for Kubernetes context."
-  (if-let* ((_ transient-current-command)
-            (args (transient-args transient-current-command))
+  (if-let* ((cmd transient-current-command)
+            (args (transient-args cmd))
             (value (transient-arg-value "--context=" args)))
       value
     (kele-current-context-name)))
 
 (cl-defun kele--get-namespace-arg ()
   "Get the value to use for Kubernetes namespace."
-  (if-let* ((_ transient-current-command)
-            (args (transient-args transient-current-command))
+  (if-let* ((cmd transient-current-command)
+            (args (transient-args cmd))
             (value (transient-arg-value "--namespace=" args)))
       value
     (kele--default-namespace-for-context (kele--get-context-arg))))
