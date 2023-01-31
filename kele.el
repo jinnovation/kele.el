@@ -1004,7 +1004,7 @@ If CONTEXT is not provided, use the current context."
                         :namespace namespace
                         :context context))
          (items (append (alist-get 'items resource-list) '())))
-    (-map (lambda (item) (let-alist item .metadata.name)))))
+    (-map (lambda (item) (let-alist item .metadata.name)) items)))
 
 (cl-defun kele-get (kind name &key group version context namespace)
   "Get resource KIND by NAME and display it in a buffer.
