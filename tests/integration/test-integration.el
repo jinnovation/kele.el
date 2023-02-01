@@ -96,7 +96,7 @@
             :to-contain
             " *kele: apps/v1/deployments [kind-kele-test-cluster0(kube-system)]*")
     (expect (buffer-local-value 'tabulated-list-entries
-                                (get-buffer " *kele: apps/v1/deployments [kind-kele-test-cluster0(kube-system)]"))
+                                (get-buffer " *kele: apps/v1/deployments [kind-kele-test-cluster0(kube-system)]*"))
             :to-have-same-items-as '(("coredns" ["coredns" "kube-system" "apps" "v1"])))))
 
 ;;; test-integration.el ends here
