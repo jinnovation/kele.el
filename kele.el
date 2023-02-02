@@ -1462,7 +1462,6 @@ is not namespaced, returns an error."
              'warning)))
   (interactive
    (let* ((kind (kele--get-kind-arg))
-          (args (transient-args transient-current-command))
           (group-version (kele--get-groupversion-arg kind)))
      (list group-version kind (kele--get-context-arg) (kele--get-namespace-arg))))
 
