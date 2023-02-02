@@ -17,7 +17,8 @@ With Kele, you can:
 - Manage [contexts], e.g. [switching, renaming, changing the default
   namespace](./how-tos/usage.md#contexts);
 - [Fetch and display the manifest of a single
-  resource](./how-tos/usage.md#displaying-a-single-resource);
+  resource](./how-tos/usage.md#working-with-resources);
+- [List collections of resources](./how-tos/usage.md#working-with-resources);
 - Start and stop [proxy servers](./how-tos/usage.md#managing-proxy-servers);
 - And more! :sunglasses:
 
