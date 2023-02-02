@@ -576,4 +576,12 @@ metadata:
       (setq transient-current-command nil))
     (it "retrieves the default namespace of the current context"
       (expect (kele--get-namespace-arg) :to-equal "development-namespace"))))
-;;; test-kele.el ends here
+
+(describe "kele--get-kind-arg"
+  (describe "when called in a Transient suffix"
+    (it "returns the kind set on the scope"
+      (setq transient-current-prefix
+            (transient-prefix :scope '((kind . "foo"))))
+      (expect (kele--get-kind-arg) :to-equal "foo"))))
+
+ ;;; test-kele.el ends here

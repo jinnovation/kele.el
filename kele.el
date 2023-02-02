@@ -1413,7 +1413,10 @@ Defaults to the currently active context as set in
              (alist-get 'group-versions (oref transient--prefix scope))))
 
 (cl-defun kele--get-context-arg ()
-  "Get the value to use for Kubernetes context."
+  "Get the value to use for Kubernetes context.
+
+First checks the current Transient command's arguments if set.
+Otherwise, returns the current context name from kubeconfig."
   (if-let* ((cmd transient-current-command)
             (args (transient-args cmd))
             (value (transient-arg-value "--context=" args)))
@@ -1421,7 +1424,11 @@ Defaults to the currently active context as set in
     (kele-current-context-name)))
 
 (cl-defun kele--get-namespace-arg ()
-  "Get the value to use for Kubernetes namespace."
+  "Get the value to use for Kubernetes namespace.
+
+First checks the current Transient command's arguments if set.
+Otherwise, returns the current context's default namespace from
+kubeconfig."
   (if-let* ((cmd transient-current-command)
             (args (transient-args cmd))
             (value (transient-arg-value "--namespace=" args)))
@@ -1429,6 +1436,12 @@ Defaults to the currently active context as set in
     (kele--default-namespace-for-context (kele--get-context-arg))))
 
 (cl-defun kele--get-groupversion-arg (&optional kind)
+  "Get the group-version to use for a command.
+
+First checks the current Transient command's arguments if set.
+Otherwise, prompts user to select from the group-versions
+available for the argument KIND.  If there is only one, no user
+prompting and the function simply returns the single option."
   (if-let* ((cmd transient-current-command)
             (args (transient-args cmd))
             (value (transient-arg-value "--groupversion=" args)))
@@ -1490,6 +1503,10 @@ is not namespaced, returns an error."
       (select-window (display-buffer buf)))))
 
 (cl-defun kele--get-kind-arg ()
+  "Get the kind to work with.
+
+First checks if the kind is set in the current Transient prefix,
+if it's set.  Otherwise, prompts user for input."
   (or (and transient-current-prefix
            (alist-get 'kind (oref transient-current-prefix scope)))
       (completing-read "Choose a kind to work with: "
