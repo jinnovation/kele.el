@@ -546,4 +546,67 @@ metadata:
         (expect 'kele--cache-stop :not :to-have-been-called)
         (expect 'kele--teardown-embark-maybe :not :to-have-been-called)))))
 
-;;; test-kele.el ends here
+(describe "kele--get-context-arg"
+  (before-each
+    (spy-on 'kele-current-context-name :and-return-value "bar"))
+  (describe "when called in a Transient suffix"
+    (before-each
+      (setq transient-current-command t)
+      (spy-on 'transient-args :and-return-value '("--context=foo")))
+    (it "retrieves from the suffix's arguments"
+      (expect (kele--get-context-arg) :to-equal "foo")))
+  (describe "when called outside of a Transient"
+    (before-each
+      (setq transient-current-command nil))
+    (it "retrieves the current context"
+      (expect (kele--get-context-arg) :to-equal "bar"))))
+
+(describe "kele--get-namespace-arg"
+  (before-all
+    (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
+    (async-wait (kele--cache-update kele--global-kubeconfig-cache)))
+  (describe "when called in a Transient suffix"
+    (before-each
+      (setq transient-current-command t)
+      (spy-on 'transient-args :and-return-value '("--namespace=foo")))
+    (it "retrieves from the suffix's arguments"
+      (expect (kele--get-namespace-arg) :to-equal "foo")))
+  (describe "when called outside of a Transient"
+    (before-each
+      (setq transient-current-command nil))
+    (it "retrieves the default namespace of the current context"
+      (expect (kele--get-namespace-arg) :to-equal "development-namespace"))))
+
+(describe "kele--get-kind-arg"
+  (describe "when called in a Transient suffix"
+    (it "returns the kind set on the scope"
+      (setq transient-current-prefix
+            (transient-prefix :scope '((kind . "foo"))))
+      (expect (kele--get-kind-arg) :to-equal "foo"))))
+
+(describe "kele--get-groupversion-arg"
+  (describe "when called in a Transient buffer"
+    (before-each
+      (setq transient-current-command t))
+    (describe "when the current command has a `--groupversion' arg"
+      (before-each
+        (spy-on 'transient-args :and-return-value '("--groupversion=foo")))
+
+      (it "returns that value"
+        (expect (kele--get-groupversion-arg) :to-equal "foo"))))
+
+  (describe "when the kind is of unambiguous group-version"
+    (before-each
+      (spy-on 'kele--get-groupversions-for-type :and-return-value '("foo/v1")))
+    (it "returns the group-version"
+      (expect (kele--get-groupversion-arg) :to-equal "foo/v1")))
+
+  (describe "when the kind has multiple group-versions"
+    (before-each
+      (spy-on 'kele--get-groupversions-for-type :and-return-value '("foo/v1" "bar/v1")))
+    (it "prompts user for completion"
+      (spy-on 'completing-read)
+      (kele--get-groupversion-arg)
+      (expect 'completing-read :to-have-been-called))))
+
+ ;;; test-kele.el ends here

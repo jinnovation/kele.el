@@ -865,6 +865,18 @@ show the requested Kubernetes object manifest.
             (,(kbd "U") . kele--refetch))
   (read-only-mode 1))
 
+(define-derived-mode kele-list-mode tabulated-list-mode "Kele: List"
+  "Major mode for listing multiple resources of a single kind."
+  :group 'kele
+  :interactive nil
+  (setq-local tabulated-list-format
+              (vector (list "Name" 50 t)
+                      (list "Namespace" 20 t)
+                      (list "Group" 10 t)
+                      (list "Version" 5 t)))
+  (tabulated-list-init-header)
+  (read-only-mode 1))
+
 (defun kele--refetch ()
   "Refetches the currently displayed resource."
   (interactive)
@@ -937,17 +949,15 @@ Nil value for group denotes the core API."
   (let ((split (s-split "/" group-version)))
     (if (length= split 1) (list nil (car split)) split)))
 
-;; TODO (#72): Allow for injecting the proxy dependency.
-;; This would allow for consumers to create their own proxy, e.g. to start it
-;; async while accepting user input, and defer its use to here.
-;;
-;; :proxy value should be assumed to be either a proxy container struct or a
-;; future that's expected to return one.
-(cl-defun kele--fetch-resource-names (group version kind &key namespace context)
-  "Fetch names of resources belonging to GROUP, VERSION, and KIND.
+(cl-defun kele--list-resources (group version kind &key namespace context)
+  "Return the List of the resources of type specified by GROUP, VERSION, and KIND.
 
-If NAMESPACE is provided, return only resources belonging to that namespace.  If
-NAMESPACE is provided for non-namespaced KIND, throws an error.
+Return value is an alist mirroring the Kubernetes List type of
+the type in question.
+
+If NAMESPACE is provided, return only resources belonging to that
+namespace.  If NAMESPACE is provided for non-namespaced KIND,
+throws an error.
 
 If CONTEXT is not provided, use the current context."
   (when (and namespace
@@ -966,16 +976,29 @@ If CONTEXT is not provided, use the current context."
                             (format "api/%s" version))
                           kind))
              (data (kele--retry (lambda () (plz 'get url :as #'json-read))))
-             ((&alist 'items items) data))
-      (->> (append items '())
-           (-filter (lambda (item)
-                      (if (not namespace) t
-                        (let-alist item
-                          (equal .metadata.namespace namespace)))))
-           (-map (lambda (item)
-                   (let-alist item
-                     .metadata.name))))
+             (filtered-items (->> (append  (alist-get 'items data) '())
+                                  (-filter (lambda (item)
+                                             (if (not namespace) t
+                                               (let-alist item
+                                                 (equal .metadata.namespace namespace))))))))
+      (progn
+        (setf (cdr (assoc 'items data)) filtered-items)
+        data)
     (signal 'error (format "Failed to fetch %s/%s/%s" group version kind))))
+
+(cl-defun kele--fetch-resource-names (group version kind &key namespace context)
+  "Fetch names of resources belonging to GROUP, VERSION, and KIND.
+
+If NAMESPACE is provided, return only resources belonging to that namespace.  If
+NAMESPACE is provided for non-namespaced KIND, throws an error.
+
+If CONTEXT is not provided, use the current context."
+  (let* ((resource-list (kele--list-resources
+                        group version kind
+                        :namespace namespace
+                        :context context))
+         (items (append (alist-get 'items resource-list) '())))
+    (-map (lambda (item) (let-alist item .metadata.name)) items)))
 
 (cl-defun kele-get (kind name &key group version context namespace)
   "Get resource KIND by NAME and display it in a buffer.
@@ -1389,6 +1412,107 @@ Defaults to the currently active context as set in
   :options (lambda ()
              (alist-get 'group-versions (oref transient--prefix scope))))
 
+(cl-defun kele--get-context-arg ()
+  "Get the value to use for Kubernetes context.
+
+First checks the current Transient command's arguments if set.
+Otherwise, returns the current context name from kubeconfig."
+  (if-let* ((cmd transient-current-command)
+            (args (transient-args cmd))
+            (value (transient-arg-value "--context=" args)))
+      value
+    (kele-current-context-name)))
+
+(cl-defun kele--get-namespace-arg ()
+  "Get the value to use for Kubernetes namespace.
+
+First checks the current Transient command's arguments if set.
+Otherwise, returns the current context's default namespace from
+kubeconfig."
+  (if-let* ((cmd transient-current-command)
+            (args (transient-args cmd))
+            (value (transient-arg-value "--namespace=" args)))
+      value
+    (kele--default-namespace-for-context (kele--get-context-arg))))
+
+(cl-defun kele--get-groupversion-arg (&optional kind)
+  "Get the group-version to use for a command.
+
+First checks the current Transient command's arguments if set.
+Otherwise, prompts user to select from the group-versions
+available for the argument KIND.  If there is only one, no user
+prompting and the function simply returns the single option."
+  (if-let* ((cmd transient-current-command)
+            (args (transient-args cmd))
+            (value (transient-arg-value "--groupversion=" args)))
+      value
+    (let ((gvs (kele--get-groupversions-for-type
+                kele--global-discovery-cache
+                kind
+                :context (kele--get-context-arg))))
+      (if (= (length gvs) 1)
+          (car gvs)
+        (completing-read (format "Desired group-version of `%s': "
+                                 kind)
+                         gvs)))))
+
+(transient-define-suffix kele-list (group-version kind context namespace)
+  "List all resources of a given GROUP-VERSION and KIND.
+
+If CONTEXT is provided, use it.  Otherwise, use the current context as reported
+by `kele-current-context-name'.
+
+If NAMESPACE is provided, use it.  Otherwise, use the default
+namespace for the context.  If NAMESPACE is provided and the KIND
+is not namespaced, returns an error."
+  :key "l"
+  :description
+  (lambda ()
+    (format "List all %s"
+            (propertize
+             (alist-get 'kind (oref transient--prefix scope))
+             'face
+             'warning)))
+  (interactive
+   (let* ((kind (kele--get-kind-arg))
+          (group-version (kele--get-groupversion-arg kind)))
+     (list group-version kind (kele--get-context-arg) (kele--get-namespace-arg))))
+
+  (-let* (((group version) (kele--groupversion-split group-version))
+          (fn-entries (lambda ()
+                        (let* ((resource-list (kele--list-resources
+                                              group version kind
+                                              :context context
+                                              :namespace namespace))
+                               (api-version (alist-get 'apiVersion resource-list)))
+                        (->> resource-list
+                             (alist-get 'items)
+                             (-map (lambda (resource)
+                                     (-let (((&alist 'metadata (&alist 'name name 'namespace namespace)) resource)
+                                            ((group version) (kele--groupversion-split api-version)))
+                                         (list name (vector name namespace group version))))))))))
+    (let ((buf (get-buffer-create (format " *kele: %s/%s [%s(%s)]*"
+                                          group-version
+                                          kind
+                                          context
+                                          namespace))))
+      (with-current-buffer buf
+        (kele-list-mode)
+        (setq-local tabulated-list-entries fn-entries)
+        (tabulated-list-print))
+      (select-window (display-buffer buf)))))
+
+(cl-defun kele--get-kind-arg ()
+  "Get the kind to work with.
+
+First checks if the kind is set in the current Transient prefix,
+if it's set.  Otherwise, prompts user for input."
+  (or (and transient-current-prefix
+           (alist-get 'kind (oref transient-current-prefix scope)))
+      (completing-read "Choose a kind to work with: "
+                       (kele--get-resource-types-for-context
+                        (kele--get-context-arg)))))
+
 (transient-define-prefix kele-resource (group-versions kind)
   ["Arguments"
    (kele--context-infix)
@@ -1400,14 +1524,11 @@ Defaults to the currently active context as set in
     :command
     (lambda ()
       (interactive)
-      (-let* (((&alist 'kind kind) (oref transient-current-prefix scope))
-              (args (transient-args transient-current-command))
-              ((group version) (kele--groupversion-split (transient-arg-value "--groupversion=" args)))
-              (namespace (transient-arg-value "--namespace=" args))
-              (context (transient-arg-value "--context=" args))
+      (-let* ((kind (kele--get-kind-arg))
+              ((group version) (kele--groupversion-split (kele--get-groupversion-arg)))
               (cands (kele--fetch-resource-names group version kind
-                                                 :namespace namespace
-                                                 :context context))
+                                                 :namespace (kele--get-namespace-arg)
+                                                 :context (kele--get-context-arg)))
               (name (completing-read "Name: " (-cut kele--resources-complete <> <> <> :cands cands))))
         (kele-get kind name
                   :group group
@@ -1416,8 +1537,11 @@ Defaults to the currently active context as set in
                   :context context)))
     :description
     (lambda ()
-      (format "Get a single %s"
-              (propertize (alist-get 'kind (oref transient--prefix scope)) 'face 'warning))))]
+      (--> (oref transient--prefix scope)
+           (alist-get 'kind it)
+           (propertize it 'face 'warning)
+           (format "Get a single %s" it))))
+   (kele-list)]
 
   (interactive (let* ((context (kele-current-context-name))
                       (kind (completing-read
