@@ -584,4 +584,29 @@ metadata:
             (transient-prefix :scope '((kind . "foo"))))
       (expect (kele--get-kind-arg) :to-equal "foo"))))
 
+(describe "kele--get-groupversion-arg"
+  (describe "when called in a Transient buffer"
+    (before-each
+      (setq transient-current-command t))
+    (describe "when the current command has a `--groupversion' arg"
+      (before-each
+        (spy-on 'transient-args :and-return-value '("--groupversion=foo")))
+
+      (it "returns that value"
+        (expect (kele--get-groupversion-arg) :to-equal "foo"))))
+
+  (describe "when the kind is of unambiguous group-version"
+    (before-each
+      (spy-on 'kele--get-groupversions-for-type :and-return-value '("foo/v1")))
+    (it "returns the group-version"
+      (expect (kele--get-groupversion-arg) :to-equal "foo/v1")))
+
+  (describe "when the kind has multiple group-versions"
+    (before-each
+      (spy-on 'kele--get-groupversions-for-type :and-return-value '("foo/v1" "bar/v1")))
+    (it "prompts user for completion"
+      (spy-on 'completing-read)
+      (kele--get-groupversion-arg)
+      (expect 'completing-read :to-have-been-called))))
+
  ;;; test-kele.el ends here
