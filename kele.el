@@ -61,7 +61,7 @@
   :type 'string
   :group 'kele)
 
-(defcustom kele-proxy-ttl 60
+(defcustom kele-proxy-ttl 180
   "The default time-to-live for ephemeral kubectl proxy processes."
   :type 'integer
   :group 'kele)
