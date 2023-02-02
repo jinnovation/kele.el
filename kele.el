@@ -1428,6 +1428,21 @@ Defaults to the currently active context as set in
       value
     (kele--default-namespace-for-context (kele--get-context-arg))))
 
+(cl-defun kele--get-groupversion-arg (&optional kind)
+  (if-let* ((cmd transient-current-command)
+            (args (transient-args cmd))
+            (value (transient-arg-value "--groupversion=" args)))
+      value
+    (let ((gvs (kele--get-groupversions-for-type
+                kele--global-discovery-cache
+                kind
+                :context (kele--get-context-arg))))
+      (if (= (length gvs) 1)
+          (car gvs)
+        (completing-read (format "Desired group-version of `%s': "
+                                 kind)
+                         gvs)))))
+
 (transient-define-suffix kele-list (group-version kind context namespace)
   "List all resources of a given GROUP-VERSION and KIND.
 
@@ -1446,9 +1461,9 @@ is not namespaced, returns an error."
              'face
              'warning)))
   (interactive
-   (let* ((kind (alist-get 'kind (oref transient-current-prefix scope)))
+   (let* ((kind (kele--get-kind-arg))
           (args (transient-args transient-current-command))
-          (group-version (transient-arg-value "--groupversion=" args)))
+          (group-version (kele--get-groupversion-arg kind)))
      (list group-version kind (kele--get-context-arg) (kele--get-namespace-arg))))
 
   (-let* (((group version) (kele--groupversion-split group-version))
@@ -1474,6 +1489,13 @@ is not namespaced, returns an error."
         (setq-local tabulated-list-entries fn-entries)
         (tabulated-list-print))
       (select-window (display-buffer buf)))))
+
+(cl-defun kele--get-kind-arg ()
+  (or (and transient-current-prefix
+           (alist-get 'kind (oref transient-current-prefix scope)))
+      (completing-read "Choose a kind to work with: "
+                       (kele--get-resource-types-for-context
+                        (kele--get-context-arg)))))
 
 (transient-define-prefix kele-resource (group-versions kind)
   ["Arguments"
