@@ -1524,14 +1524,11 @@ if it's set.  Otherwise, prompts user for input."
     :command
     (lambda ()
       (interactive)
-      (-let* (((&alist 'kind kind) (oref transient-current-prefix scope))
-              (args (transient-args transient-current-command))
-              ((group version) (kele--groupversion-split (transient-arg-value "--groupversion=" args)))
-              (namespace (transient-arg-value "--namespace=" args))
-              (context (transient-arg-value "--context=" args))
+      (-let* ((kind (kele--get-kind-arg))
+              ((group version) (kele--groupversion-split (kele--get-groupversion-arg)))
               (cands (kele--fetch-resource-names group version kind
-                                                 :namespace namespace
-                                                 :context context))
+                                                 :namespace (kele--get-namespace-arg)
+                                                 :context (kele--get-context-arg)))
               (name (completing-read "Name: " (-cut kele--resources-complete <> <> <> :cands cands))))
         (kele-get kind name
                   :group group
