@@ -888,7 +888,7 @@ show the requested Kubernetes object manifest.
 
   (-let* ((ctx kele--current-resource-buffer-context)
           ((&alist 'kind kind
-                   'apiVersion apiVersion
+                   'apiVersion api-version
                    'metadata (&alist 'name name
                                      'namespace namespace))
            (kele--resource-buffer-context-resource ctx))
@@ -901,12 +901,8 @@ show the requested Kubernetes object manifest.
       (kele--render-object
        (kele--get-resource (kele--resource-buffer-context-kind ctx)
                            name
-                           :group (if (s-contains-p "/" apiVersion)
-                                      (car (s-split "/" apiVersion))
-                                    nil)
-                           :version (if (s-contains-p "/" apiVersion)
-                                        (cadr (s-split "/" apiVersion))
-                                      apiVersion)
+                           :group (car (kele--groupversion-split api-version))
+                           :version (cadr (kele--groupversion-split api-version))
                            :namespace namespace
                            :context context)
        (current-buffer)))))
