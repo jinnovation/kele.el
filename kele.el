@@ -853,7 +853,7 @@ throws an error."
 (defvar kele--get-mode-command-descriptions
   '((quit-window . "quit window")
     (kele--quit-and-kill . "quit window, killing buffer")
-    (kele--refetch . "re-fetch the resource")))
+    (kele-refetch . "re-fetch the resource")))
 
 (define-minor-mode kele-get-mode
   "Enable some Kele features in resource-viewing buffers.
@@ -867,7 +867,7 @@ show the requested Kubernetes object manifest.
   :lighter "Kele Get"
   :keymap `((,(kbd "q") . quit-window)
             (,(kbd "Q") . kele--quit-and-kill)
-            (,(kbd "U") . kele--refetch))
+            (,(kbd "U") . kele-refetch))
   (read-only-mode 1))
 
 (define-derived-mode kele-list-mode tabulated-list-mode "Kele: List"
@@ -882,12 +882,10 @@ show the requested Kubernetes object manifest.
   (tabulated-list-init-header)
   (read-only-mode 1))
 
-(defun kele--refetch ()
+(defun kele-refetch ()
   "Refetches the currently displayed resource."
-  (interactive)
-  (cl-assert kele-get-mode
-             nil
-             "`kele--refetch' is only meaningful in a `kele-get-mode' buffer; refusing to invoke")
+  (interactive nil kele-get-mode)
+
   (-let* ((ctx kele--current-resource-buffer-context)
           ((&alist 'kind kind
                    'apiVersion apiVersion
