@@ -103,6 +103,11 @@ pods."
 (define-error 'kele-ambiguous-groupversion-error
   "Found multiple group-versions associated with the given resource")
 
+(defface kele-disabled-face
+  '((t (:inherit 'font-lock-comment-face)))
+  "Face used for disabled or not-applicable values."
+  :group 'kele)
+
 (defmacro kele--with-progress (msg &rest body)
   "Execute BODY with a progress reporter using MSG.
 
@@ -1476,7 +1481,13 @@ is not namespaced, returns an error."
   (interactive
    (let* ((kind (kele--get-kind-arg))
           (group-version (kele--get-groupversion-arg kind)))
-     (list group-version kind (kele--get-context-arg) (kele--get-namespace-arg))))
+     (list group-version
+           kind
+           (kele--get-context-arg)
+           (when (kele--resource-namespaced-p kele--global-discovery-cache
+                                              group-version
+                                              kind)
+             (kele--get-namespace-arg)))))
 
   (-let* (((group version) (kele--groupversion-split group-version))
           (fn-entries (lambda ()
@@ -1490,7 +1501,14 @@ is not namespaced, returns an error."
                              (-map (lambda (resource)
                                      (-let (((&alist 'metadata (&alist 'name name 'namespace namespace)) resource)
                                             ((group version) (kele--groupversion-split api-version)))
-                                         (list name (vector name namespace group version))))))))))
+                                         (list
+                                          (list namespace name)
+                                          (vector name
+                                                  (or namespace
+                                                      (propertize "N/A" 'face 'kele-disabled-face))
+                                                  (or group
+                                                      (propertize "N/A" 'face 'kele-disabled-face))
+                                                  version))))))))))
     (let ((buf (get-buffer-create (format " *kele: %s/%s [%s(%s)]*"
                                           group-version
                                           kind
