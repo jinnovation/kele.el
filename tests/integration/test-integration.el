@@ -98,6 +98,6 @@
     (let ((buf (get-buffer " *kele: apps/v1/deployments [kind-kele-test-cluster0(kube-system)]*")))
       (expect (funcall (buffer-local-value 'tabulated-list-entries buf))
               :to-have-same-items-as
-              '(("coredns" ["coredns" "kube-system" "apps" "v1"]))))))
+              '((("kube-system" "coredns") ["coredns" "kube-system" "apps" "v1"]))))))
 
 ;;; test-integration.el ends here
