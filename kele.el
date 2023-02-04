@@ -1501,28 +1501,31 @@ is not namespaced, returns an error."
   (-let* (((group version) (kele--groupversion-split group-version))
           (fn-entries (lambda ()
                         (let* ((resource-list (kele--list-resources
-                                              group version kind
-                                              :context context
-                                              :namespace namespace))
+                                               group version kind
+                                               :context context
+                                               :namespace namespace))
                                (api-version (alist-get 'apiVersion resource-list)))
-                        (->> resource-list
-                             (alist-get 'items)
-                             (-map (lambda (resource)
-                                     (-let (((&alist 'metadata (&alist 'name name 'namespace namespace)) resource)
-                                            ((group version) (kele--groupversion-split api-version)))
+                          (->> resource-list
+                               (alist-get 'items)
+                               (-map (lambda (resource)
+                                       (-let* (((&alist 'metadata (&alist 'name name 'namespace namespace)) resource)
+                                               ((group version) (kele--groupversion-split api-version))
+                                               (id (kele--list-entry-id-create
+                                                    :context context
+                                                    :namespace namespace
+                                                    :group-version api-version
+                                                    :kind kind
+                                                    :name name)))
                                          (list
-                                          (kele--list-entry-id-create
-                                           :context context
-                                           :namespace namespace
-                                           :group-version api-version
-                                           :kind kind
-                                           :name name)
-                                          (vector name
-                                                  (or namespace
-                                                      (propertize "N/A" 'face 'kele-disabled-face))
-                                                  (or group
-                                                      (propertize "N/A" 'face 'kele-disabled-face))
-                                                  version))))))))))
+                                          id
+                                          (vector
+                                           `(,name action kele-list-get
+                                                   kele-resource-id ,id)
+                                           (or namespace
+                                               (propertize "N/A" 'face 'kele-disabled-face))
+                                           (or group
+                                               (propertize "N/A" 'face 'kele-disabled-face))
+                                           version))))))))))
     (let ((buf (get-buffer-create (format " *kele: %s/%s [%s(%s)]*"
                                           group-version
                                           kind
@@ -1534,10 +1537,10 @@ is not namespaced, returns an error."
         (tabulated-list-print))
       (select-window (display-buffer buf)))))
 
-(cl-defun kele-list-get ()
+(cl-defun kele-list-get (&optional button)
   "Call `kele-get' on entry at point."
   (interactive nil kele-list-mode)
-  (-let* ((id (tabulated-list-get-id))
+  (-let* ((id (if button (button-get button 'kele-resource-id) (tabulated-list-get-id)))
           ((group version) (kele--groupversion-split
                             (kele--list-entry-id-group-version id))))
     (kele-get (kele--list-entry-id-kind id)
