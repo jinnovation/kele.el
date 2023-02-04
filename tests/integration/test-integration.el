@@ -97,7 +97,7 @@
             " *kele: apps/v1/deployments [kind-kele-test-cluster0(kube-system)]*")
     (let* ((buf (get-buffer " *kele: apps/v1/deployments [kind-kele-test-cluster0(kube-system)]*"))
            (entries (funcall (buffer-local-value 'tabulated-list-entries buf))))
-      (expect (len entries) :to-equal 1)
+      (expect (length entries) :to-equal 1)
       (expect (caar entries) :to-equal (kele--list-entry-id-create
                                         :context "kind-kele-test-cluster0"
                                         :namespace "kube-system"
