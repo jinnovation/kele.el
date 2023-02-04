@@ -98,7 +98,7 @@
     (let ((buf (get-buffer " *kele: apps/v1/deployments [kind-kele-test-cluster0(kube-system)]*")))
       (expect (funcall (buffer-local-value 'tabulated-list-entries buf))
               :to-have-same-items-as
-              '(((kele--list-entry-id-create
+              `((,(kele--list-entry-id-create
                   :context "kind-kele-test-cluster0"
                   :namespace "kube-system"
                   :group-version "apps/v1"
