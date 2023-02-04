@@ -1536,7 +1536,7 @@ is not namespaced, returns an error."
 
 (cl-defun kele-list-get ()
   "Call `kele-get' on entry at point."
-  (interactive nil kele-get-mode)
+  (interactive nil kele-list-mode)
   (-let* ((id (tabulated-list-get-id))
           ((group version) (kele--groupversion-split
                             (kele--list-entry-id-group-version id))))
