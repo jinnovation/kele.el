@@ -95,15 +95,19 @@
     (expect (-map #'buffer-name (buffer-list))
             :to-contain
             " *kele: apps/v1/deployments [kind-kele-test-cluster0(kube-system)]*")
-    (let ((buf (get-buffer " *kele: apps/v1/deployments [kind-kele-test-cluster0(kube-system)]*")))
-      (expect (funcall (buffer-local-value 'tabulated-list-entries buf))
-              :to-have-same-items-as
-              `((,(kele--list-entry-id-create
-                  :context "kind-kele-test-cluster0"
-                  :namespace "kube-system"
-                  :group-version "apps/v1"
-                  :kind "deployments"
-                  :name "coredns")
-                 ["coredns" "kube-system" "apps" "v1"]))))))
+    (let* ((buf (get-buffer " *kele: apps/v1/deployments [kind-kele-test-cluster0(kube-system)]*"))
+           (entries (funcall (buffer-local-value 'tabulated-list-entries buf))))
+      (expect (len entries) :to-equal 1)
+      (expect (caar entries) :to-equal (kele--list-entry-id-create
+                                        :context "kind-kele-test-cluster0"
+                                        :namespace "kube-system"
+                                        :group-version "apps/v1"
+                                        :kind "deployments"
+                                        :name "coredns"))
+      (let ((col-vals (cadr entries)))
+        (expect (car (aref col-vals 0)) :to-equal "coredns")
+        (expect (aref col-vals 1) :to-equal "kube-system")
+        (expect (aref col-vals 2) :to-equal "apps")
+        (expect (aref col-vals 3) :to-equal "v1")))))
 
 ;;; test-integration.el ends here
