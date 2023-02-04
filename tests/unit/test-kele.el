@@ -609,4 +609,24 @@ metadata:
       (kele--get-groupversion-arg)
       (expect 'completing-read :to-have-been-called))))
 
+(describe "kele-list-get"
+  (it "calls `kele-get' based on the ID of the list entry at point"
+    (spy-on 'tabulated-list-get-id :and-return-value
+            (kele--list-entry-id-create
+             :context "context"
+             :namespace "namespace"
+             :group-version "group/v1"
+             :kind "kind"
+             :name "name"))
+    (spy-on 'kele-get)
+
+    (kele-list-get)
+    (expect 'kele-get :to-have-been-called-with
+            "kind"
+            "name"
+            :group "group"
+            :version "v1"
+            :context "context"
+            :namespace "namespace")))
+
  ;;; test-kele.el ends here
