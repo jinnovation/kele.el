@@ -870,6 +870,21 @@ show the requested Kubernetes object manifest.
             (,(kbd "U") . kele-refetch))
   (read-only-mode 1))
 
+(cl-defstruct (kele--list-entry-id
+               (:constructor kele--list-entry-id-create)
+               (:copier nil))
+  "ID value for entries in `kele-list-mode'."
+  context
+  namespace
+  group-version
+  kind
+  name)
+
+(defvar kele-list-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "RET") #'kele-list-get)
+    map))
+
 (define-derived-mode kele-list-mode tabulated-list-mode "Kele: List"
   "Major mode for listing multiple resources of a single kind."
   :group 'kele
@@ -1496,7 +1511,12 @@ is not namespaced, returns an error."
                                      (-let (((&alist 'metadata (&alist 'name name 'namespace namespace)) resource)
                                             ((group version) (kele--groupversion-split api-version)))
                                          (list
-                                          (list namespace name)
+                                          (kele--list-entry-id-create
+                                           :context context
+                                           :namespace namespace
+                                           :group-version api-version
+                                           :kind kind
+                                           :name name)
                                           (vector name
                                                   (or namespace
                                                       (propertize "N/A" 'face 'kele-disabled-face))
@@ -1513,6 +1533,19 @@ is not namespaced, returns an error."
         (setq-local tabulated-list-entries fn-entries)
         (tabulated-list-print))
       (select-window (display-buffer buf)))))
+
+(cl-defun kele-list-get ()
+  "Call `kele-get' on entry at point."
+  (interactive nil kele-get-mode)
+  (-let* ((id (tabulated-list-get-id))
+          ((group version) (kele--groupversion-split
+                            (kele--list-entry-id-group-version id))))
+    (kele-get (kele--list-entry-id-kind id)
+              (kele--list-entry-id-name id)
+              :group group
+              :version version
+              :context (kele--list-entry-id-context id)
+              :namespace (kele--list-entry-id-namespace id))))
 
 (cl-defun kele--get-kind-arg ()
   "Get the kind to work with.
