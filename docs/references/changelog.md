@@ -33,6 +33,7 @@ versioning][semver].
 
 - Renamed `kele-context` to `kele-config`
 - Increased the default value of `kele-proxy-ttl` from `60` to `180`
+- Binding for `kele-get` in `kele-get-mode` changed from `U` to `g`
 
 ## 0.3.0
 

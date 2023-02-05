@@ -867,7 +867,7 @@ show the requested Kubernetes object manifest.
   :lighter "Kele Get"
   :keymap `((,(kbd "q") . quit-window)
             (,(kbd "Q") . kele--quit-and-kill)
-            (,(kbd "U") . kele-refetch))
+            (,(kbd "g") . kele-refetch))
   (read-only-mode 1))
 
 (cl-defstruct (kele--list-entry-id

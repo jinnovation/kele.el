@@ -76,7 +76,7 @@ separate buffer in a table. From here, you can:
 
 ### Refreshing a resource
 
-You can press `U` in a `kele-get` buffer to re-fetch and refresh the current resource.
+You can press `g` in a `kele-get` buffer to re-fetch and refresh the current resource.
 
 ## Contexts
 
