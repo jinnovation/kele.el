@@ -104,8 +104,7 @@
                                         :group-version "apps/v1"
                                         :kind "deployments"
                                         :name "coredns"))
-      (message "%s" entries)
-      (let ((col-vals (cadr entries)))
+      (let ((col-vals (cadar entries)))
         (expect (car (aref col-vals 0)) :to-equal "coredns")
         (expect (aref col-vals 1) :to-equal "kube-system")
         (expect (aref col-vals 2) :to-equal "apps")
