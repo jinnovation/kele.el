@@ -28,6 +28,9 @@ versioning][semver].
 - Fixed a bug where force-enabling or force-disabling `kele-mode` (via either
   `(kele-mode 1)` or `(kele-mode -1)`) when `kele-mode` is already active or
   inactive (respectively) resulted in errors
+- Fixed an issue where attempting to invoke `s-k <resource name> g` sometimes
+  results in the following error: `transient-setup: Suffix
+  transient:kele-resource::command is not defined or autoloaded as a command`
 
 ### Changed
 

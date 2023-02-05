@@ -572,10 +572,28 @@ metadata:
     (it "retrieves from the suffix's arguments"
       (expect (kele--get-namespace-arg) :to-equal "foo")))
   (describe "when called outside of a Transient"
-    (before-each
-      (setq transient-current-command nil))
-    (it "retrieves the default namespace of the current context"
-      (expect (kele--get-namespace-arg) :to-equal "development-namespace"))))
+    (describe "when USE-DEFAULT is non-nil"
+      (before-each
+        (setq transient-current-command nil))
+      (it "retrieves the default namespace of the current context"
+        (expect (kele--get-namespace-arg :use-default t) :to-equal "development-namespace")))
+
+    (describe "when USE-DEFAULT is nil"
+      (describe "when GROUP-VERSION and KIND is not namespaced"
+        (before-each
+          (spy-on 'kele--resource-namespaced-p :and-return-value nil))
+        (it "returns nil"
+          (expect (kele--get-namespace-arg :group-version "apps/v1" :kind "foo")
+                  :not :to-be-truthy)))
+
+      (describe "when GROUP-VERSION and KIND are namespaced"
+        (before-each
+          (spy-on 'kele--resource-namespaced-p :and-return-value t)
+          (spy-on 'completing-read))
+        (it "prompts user for namespace selection"
+          (spy-on 'kele--get-namespaces)
+          (kele--get-namespace-arg :group-version "apps/v1" :kind "foo")
+          (expect 'completing-read :to-have-been-called))))))
 
 (describe "kele--get-kind-arg"
   (describe "when called in a Transient suffix"

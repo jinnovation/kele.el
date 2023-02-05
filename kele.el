@@ -1437,17 +1437,35 @@ Otherwise, returns the current context name from kubeconfig."
       value
     (kele-current-context-name)))
 
-(cl-defun kele--get-namespace-arg ()
+(cl-defun kele--get-namespace-arg (&key use-default group-version kind)
   "Get the value to use for Kubernetes namespace.
 
-First checks the current Transient command's arguments if set.
-Otherwise, returns the current context's default namespace from
-kubeconfig."
-  (if-let* ((cmd transient-current-command)
-            (args (transient-args cmd))
-            (value (transient-arg-value "--namespace=" args)))
-      value
-    (kele--default-namespace-for-context (kele--get-context-arg))))
+In order of priority, this function attempts the following:
+
+- If we are currently in a Transient command; if so, pull the
+  `--namespace=`' argument from it;
+
+- If USE-DEFAULT is non-nil, use the default namespace for the context argument
+  (from `kele--get-context-arg');
+
+- If the resource type specified by GROUP-VERSION and KIND is not
+  namespaced, return nil;
+
+- Otherwise, ask the user to select a namespace."
+  (let ((transient-arg-maybe (->> transient-current-command
+                                  (transient-args)
+                                  (transient-arg-value "--namespace="))))
+    (cond
+     (transient-arg-maybe transient-arg-maybe)
+     ((or (not (and group-version kind)) use-default)
+      (kele--default-namespace-for-context (kele--get-context-arg)))
+     ((not (kele--resource-namespaced-p
+            kele--global-discovery-cache
+            group-version
+            kind))
+      nil)
+     (t (completing-read "Namespace: "
+                         (kele--get-namespaces (kele--get-context-arg)))))))
 
 (cl-defun kele--get-groupversion-arg (&optional kind)
   "Get the group-version to use for a command.
@@ -1564,6 +1582,31 @@ if it's set.  Otherwise, prompts user for input."
                        (kele--get-resource-types-for-context
                         (kele--get-context-arg)))))
 
+(transient-define-suffix kele--get ()
+  :key "g"
+  :description
+  (lambda ()
+    (--> (oref transient--prefix scope)
+         (alist-get 'kind it)
+         (propertize it 'face 'warning)
+         (format "Get a single %s" it)))
+  (interactive)
+  (-let* ((kind (kele--get-kind-arg))
+          ((group version) (kele--groupversion-split (kele--get-groupversion-arg)))
+          (ns (kele--get-namespace-arg
+               :group-version (kele--get-groupversion-arg)
+               :kind kind
+               :use-default nil))
+          (cands (kele--fetch-resource-names group version kind
+                                             :namespace ns
+                                             :context (kele--get-context-arg)))
+          (name (completing-read "Name: " (-cut kele--resources-complete <> <> <> :cands cands))))
+    (kele-get kind name
+              :group group
+              :version version
+              :namespace ns
+              :context (kele--get-context-arg))))
+
 (transient-define-prefix kele-resource (group-versions kind)
   ["Arguments"
    (kele--context-infix)
@@ -1571,27 +1614,7 @@ if it's set.  Otherwise, prompts user for input."
    (kele--namespace-infix)]
 
   ["Actions"
-   ("g"
-    :command
-    (lambda ()
-      (interactive)
-      (-let* ((kind (kele--get-kind-arg))
-              ((group version) (kele--groupversion-split (kele--get-groupversion-arg)))
-              (cands (kele--fetch-resource-names group version kind
-                                                 :namespace (kele--get-namespace-arg)
-                                                 :context (kele--get-context-arg)))
-              (name (completing-read "Name: " (-cut kele--resources-complete <> <> <> :cands cands))))
-        (kele-get kind name
-                  :group group
-                  :version version
-                  :namespace namespace
-                  :context context)))
-    :description
-    (lambda ()
-      (--> (oref transient--prefix scope)
-           (alist-get 'kind it)
-           (propertize it 'face 'warning)
-           (format "Get a single %s" it))))
+   (kele--get)
    (kele-list)]
 
   (interactive (let* ((context (kele-current-context-name))
