@@ -1440,9 +1440,18 @@ Otherwise, returns the current context name from kubeconfig."
 (cl-defun kele--get-namespace-arg (&key use-default group-version kind)
   "Get the value to use for Kubernetes namespace.
 
-First checks the current Transient command's arguments if set.
-Otherwise, returns the current context's default namespace from
-kubeconfig."
+In order of priority, this function attempts the following:
+
+- If we are currently in a Transient command; if so, pull the
+  `--namespace=`' argument from it;
+
+- If USE-DEFAULT is non-nil, use the default namespace for the context argument
+  (from `kele--get-context-arg');
+
+- If the resource type specified by GROUP-VERSION and KIND is not
+  namespaced, return nil;
+
+- Otherwise, ask the user to select a namespace."
   (if-let* ((cmd transient-current-command)
             (args (transient-args cmd))
             (value (transient-arg-value "--namespace=" args)))
