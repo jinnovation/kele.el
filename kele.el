@@ -1580,14 +1580,13 @@ instead of \"pod.\""
                  ;; --groupversion changes, we short-circuit if there is
                  ;; ambiguity w.r.t. group-version
                  (unambiguous (= (length gvs) 1))
-                 (gv (car gvs))
                  (kind (alist-get 'kind (oref transient--prefix scope)))
+                 (gv (car gvs))
                  (suffixes
-                  (alist-get (intern kind)
-                             (alist-get (intern gv)
-                                        kele-resource-suffixes))))
-       (when suffixes
-         (transient-parse-suffixes transient--prefix suffixes))))]
+                  (->> kele-resource-suffixes
+                       (alist-get (intern gv))
+                       (alist-get (intern kind)))))
+       (transient-parse-suffixes transient--prefix suffixes)))]
 
   (interactive (let* ((context (kele-current-context-name))
                       (kind (completing-read
