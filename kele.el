@@ -1175,6 +1175,16 @@ This is idempotent."
     map)
   "Keymap for Kele commands.")
 
+(defvar kele-resource-suffixes
+  '((apps/v1
+     . ((deployments
+         . (("d"
+             "do something"
+             (lambda ()
+               (interactive)
+               (message "foobar"))))))))
+  "Resource-specific suffix commands.")
+
 ;;;###autoload
 (define-minor-mode kele-mode
   "Minor mode to enable listening on Kubernetes configs."
@@ -1558,9 +1568,22 @@ instead of \"pod.\""
    (kele--groupversions-infix)
    (kele--namespace-infix)]
 
-  ["Actions"
+  ["General actions"
    (kele-get)
    (kele-list)]
+
+  ["Resource-specific actions"
+   ;; FIXME: This somehow needs to update every time --groupversion changes
+   :setup-children
+   (lambda (_)
+     (let* ((gvs (alist-get 'group-versions (oref transient--prefix scope)))
+            (kind (alist-get 'kind (oref transient--prefix scope)))
+            (suffixes
+             (alist-get (intern kind)
+                        (alist-get (intern (car gvsd))
+                                   kele-resource-suffixes))))
+       (when suffixes
+           (transient-parse-suffixes transient--prefix suffixes))))]
 
   (interactive (let* ((context (kele-current-context-name))
                       (kind (completing-read
