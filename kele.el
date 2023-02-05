@@ -1538,7 +1538,10 @@ is not namespaced, returns an error."
       (select-window (display-buffer buf)))))
 
 (cl-defun kele-list-get (&optional button)
-  "Call `kele-get' on entry at point."
+  "Call `kele-get' on entry at point.
+
+If BUTTON is provided, pull the resource information from the
+  button properties.  Otherwise, get it from the list entry."
   (interactive nil kele-list-mode)
   (-let* ((id (if button (button-get button 'kele-resource-id) (tabulated-list-get-id)))
           ((group version) (kele--groupversion-split
