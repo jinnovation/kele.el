@@ -25,8 +25,8 @@ to accomplish, reach for `kele-dispatch`.
 
 ## Working with Resources
 
-`s-k r` is bound to `kele-resource`, the "prefix" command for working with
-resources in Kele.
+Interacting with resources in Kele centers around the `s-k r` prefix, which is
+bound to `kele-resource`.
 
 `kele-resource` allows you to act on specific resource kinds. With
 `kele-resource`, you can, for example:
@@ -44,10 +44,35 @@ work with, after which you can choose to **get** a specific object of that kind
 by name. If the resource is namespaced, you will also be presented with the
 option to choose the namespace to select from.
 
-| Keybinding                            | Functionality                      | Interactive function | Demo                         |
-|:--------------------------------------|------------------------------------|:---------------------|------------------------------|
-| `s-k r <kind-name> g <resource-name>` | Display a single resource          | `kele-get`           | ![](./img/kele-resource.gif) |
-| `s-k r <kind name> l`                 | List all resources of a given type | `kele-list`          | ![](./img/kele-list.png)     |
+### Getting a single resource
+
+You can get a single resource of the given kind with:
+```
+s-k r <kind name> g <resource name>`
+```
+
+This is bound to `kele-get`.
+
+![](./img/kele-resource.gif)
+
+### Listing all resources of a single kind
+
+You can list all resources of a single kind with:
+```
+s-k r <kind name> l
+```
+
+This is bound to `kele-list`.
+
+![](./img/kele-list.png)
+
+This will list all resources of the specified group-version and kind in a
+separate buffer in a table. From here, you can:
+
+- Click any of the header columns to sort the list;
+- Refresh the list with `g`;
+- Click or hit `RET` on any of the entries to display its full manifest in a
+  separate buffer.
 
 ### Refreshing a resource
 
