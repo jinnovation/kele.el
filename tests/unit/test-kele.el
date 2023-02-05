@@ -575,7 +575,7 @@ metadata:
     (before-each
       (setq transient-current-command nil))
     (it "retrieves the default namespace of the current context"
-      (expect (kele--get-namespace-arg) :to-equal "development-namespace"))))
+      (expect (kele--get-namespace-arg :use-default t) :to-equal "development-namespace"))))
 
 (describe "kele--get-kind-arg"
   (describe "when called in a Transient suffix"
