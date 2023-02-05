@@ -1014,70 +1014,6 @@ If CONTEXT is not provided, use the current context."
          (items (append (alist-get 'items resource-list) '())))
     (-map (lambda (item) (let-alist item .metadata.name)) items)))
 
-(cl-defun kele-get (kind name &key group version context namespace)
-  "Get resource KIND by NAME and display it in a buffer.
-
-KIND should be the plural form of the kind's name, e.g. \"pods\"
-instead of \"pod.\"
-
-If GROUP and VERSION are nil, the function will look up the
-possible group-versions for the resource KIND. If there is more
-than one group-version associated with the resource KIND, the
-function will signal an error.
-
-If GROUP is nil, look up KIND in the core API group.
-
-If CONTEXT is nil, use the current context.
-
-If NAMESPACE is nil and the resource KIND is namespaced, use the
-default namespace of the given CONTEXT.
-
-If NAMESPACE is provided for a non-namespaced resource KIND,
-throws an error."
-  ;; TODO (#72): Start proxy server asynchronously here; await on it right when it's
-  ;; needed
-  (interactive (let* ((ctx (kele-current-context-name))
-                      (kind (completing-read
-                             "Kind: "
-                             (kele--get-resource-types-for-context ctx :verb 'get)))
-                      (gvs (kele--get-groupversions-for-type
-                            kele--global-discovery-cache
-                            kind
-                            :context ctx))
-                      (gv (if (= (length gvs) 1)
-                              (car gvs)
-                            (completing-read (format "Desired group-version of `%s': "
-                                                     kind)
-                                             gvs)))
-                      (group (when (s-contains-p "/" gv) (car (s-split "/"
-                                                                       gv))))
-                      (version (if (s-contains-p "/" gv) (cadr (s-split "/" gv))
-                                 gv))
-                      (ns (if (not (kele--resource-namespaced-p
-                                    kele--global-discovery-cache
-                                    gv
-                                    kind
-                                    :context ctx))
-                              nil
-                            (completing-read (format "Namespace to get `%s/%s' from: "
-                                                     gv
-                                                     kind)
-                                             (kele--get-namespaces ctx)))))
-                 (list kind
-                       (completing-read
-                        "Name: "
-                        (-cut kele--resources-complete <> <> <>
-                              :cands (kele--fetch-resource-names group version kind :namespace ns :context ctx)))
-                       :group group
-                       :version version
-                       :context ctx
-                       :namespace ns)))
-  (kele--render-object (kele--get-resource kind name
-                                           :group group
-                                           :version version
-                                           :namespace namespace
-                                           :context context)))
-
 (cl-defun kele--render-object (object &optional buffer)
   "Render OBJECT in a buffer as YAML.
 
@@ -1437,7 +1373,7 @@ Otherwise, returns the current context name from kubeconfig."
       value
     (kele-current-context-name)))
 
-(cl-defun kele--get-namespace-arg (&key use-default group-version kind)
+(cl-defun kele--get-namespace-arg (&key use-default group-version kind (prompt "Namespace: "))
   "Get the value to use for Kubernetes namespace.
 
 In order of priority, this function attempts the following:
@@ -1451,7 +1387,7 @@ In order of priority, this function attempts the following:
 - If the resource type specified by GROUP-VERSION and KIND is not
   namespaced, return nil;
 
-- Otherwise, ask the user to select a namespace."
+- Otherwise, ask the user to select a namespace using PROMPT."
   (let ((transient-arg-maybe (->> transient-current-command
                                   (transient-args)
                                   (transient-arg-value "--namespace="))))
@@ -1464,7 +1400,7 @@ In order of priority, this function attempts the following:
             group-version
             kind))
       nil)
-     (t (completing-read "Namespace: "
+     (t (completing-read prompt
                          (kele--get-namespaces (kele--get-context-arg)))))))
 
 (cl-defun kele--get-groupversion-arg (&optional kind)
@@ -1561,15 +1497,12 @@ is not namespaced, returns an error."
 If BUTTON is provided, pull the resource information from the
   button properties.  Otherwise, get it from the list entry."
   (interactive nil kele-list-mode)
-  (-let* ((id (if button (button-get button 'kele-resource-id) (tabulated-list-get-id)))
-          ((group version) (kele--groupversion-split
-                            (kele--list-entry-id-group-version id))))
-    (kele-get (kele--list-entry-id-kind id)
-              (kele--list-entry-id-name id)
-              :group group
-              :version version
-              :context (kele--list-entry-id-context id)
-              :namespace (kele--list-entry-id-namespace id))))
+  (-let* ((id (if button (button-get button 'kele-resource-id) (tabulated-list-get-id))))
+    (kele-get (kele--list-entry-id-context id)
+              (kele--list-entry-id-namespace id)
+              (kele--list-entry-id-group-version id)
+              (kele--list-entry-id-kind id)
+              (kele--list-entry-id-name id))))
 
 (cl-defun kele--get-kind-arg ()
   "Get the kind to work with.
@@ -1582,7 +1515,14 @@ if it's set.  Otherwise, prompts user for input."
                        (kele--get-resource-types-for-context
                         (kele--get-context-arg)))))
 
-(transient-define-suffix kele--get ()
+(transient-define-suffix kele-get (context namespace group-version kind name)
+  "Get resource KIND by NAME and display it in a buffer.
+
+GROUP-VERSION, NAMESPACE, KIND, and CONTEXT are all used to identify the
+resource type to query for.
+
+KIND should be the plural form of the kind's name, e.g. \"pods\"
+instead of \"pod.\""
   :key "g"
   :description
   (lambda ()
@@ -1590,31 +1530,36 @@ if it's set.  Otherwise, prompts user for input."
          (alist-get 'kind it)
          (propertize it 'face 'warning)
          (format "Get a single %s" it)))
-  (interactive)
-  (-let* ((kind (kele--get-kind-arg))
-          ((group version) (kele--groupversion-split (kele--get-groupversion-arg)))
-          (ns (kele--get-namespace-arg
-               :group-version (kele--get-groupversion-arg)
-               :kind kind
-               :use-default nil))
-          (cands (kele--fetch-resource-names group version kind
-                                             :namespace ns
-                                             :context (kele--get-context-arg)))
-          (name (completing-read "Name: " (-cut kele--resources-complete <> <> <> :cands cands))))
-    (kele-get kind name
-              :group group
-              :version version
-              :namespace ns
-              :context (kele--get-context-arg))))
+  (interactive
+   (-let* ((kind (kele--get-kind-arg))
+           (gv (kele--get-groupversion-arg))
+           ((group version) (kele--groupversion-split gv))
+           (ns (kele--get-namespace-arg
+                :group-version gv
+                :kind kind
+                :use-default nil))
+           (cands (kele--fetch-resource-names group version kind
+                                              :namespace ns
+                                              :context (kele--get-context-arg)))
+           (name (completing-read "Name: " (-cut kele--resources-complete <> <>
+                                                 <> :cands cands))))
+     (list (kele--get-context-arg) ns gv kind name)))
+  (-let (((group version) (kele--groupversion-split group-version)))
+    (kele--render-object (kele--get-resource kind name
+                                             :group group
+                                             :version version
+                                             :namespace namespace
+                                             :context context))))
 
 (transient-define-prefix kele-resource (group-versions kind)
+  "Work with Kubernetes resources."
   ["Arguments"
    (kele--context-infix)
    (kele--groupversions-infix)
    (kele--namespace-infix)]
 
   ["Actions"
-   (kele--get)
+   (kele-get)
    (kele-list)]
 
   (interactive (let* ((context (kele-current-context-name))
