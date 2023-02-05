@@ -1452,19 +1452,20 @@ In order of priority, this function attempts the following:
   namespaced, return nil;
 
 - Otherwise, ask the user to select a namespace."
-  (if-let* ((cmd transient-current-command)
-            (args (transient-args cmd))
-            (value (transient-arg-value "--namespace=" args)))
-      value
-    (if (or (not (and group-version kind))
-            use-default)
-        (kele--default-namespace-for-context (kele--get-context-arg))
-      (if (not (kele--resource-namespaced-p
-                kele--global-discovery-cache
-                group-version
-                kind))
-          nil
-        (completing-read "Namespace: " (kele--get-namespaces (kele--get-context-arg)))))))
+  (let ((transient-arg-maybe (->> transient-current-command
+                                  (transient-args)
+                                  (transient-arg-value "--namespace="))))
+    (cond
+     (transient-arg-maybe transient-arg-maybe)
+     ((or (not (and group-version kind)) use-default)
+      (kele--default-namespace-for-context (kele--get-context-arg)))
+     ((not (kele--resource-namespaced-p
+            kele--global-discovery-cache
+            group-version
+            kind))
+      nil)
+     (t (completing-read "Namespace: "
+                         (kele--get-namespaces (kele--get-context-arg)))))))
 
 (cl-defun kele--get-groupversion-arg (&optional kind)
   "Get the group-version to use for a command.
