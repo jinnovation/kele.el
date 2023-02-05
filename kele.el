@@ -1573,17 +1573,21 @@ instead of \"pod.\""
    (kele-list)]
 
   ["Resource-specific actions"
-   ;; FIXME: This somehow needs to update every time --groupversion changes
    :setup-children
    (lambda (_)
-     (let* ((gvs (alist-get 'group-versions (oref transient--prefix scope)))
-            (kind (alist-get 'kind (oref transient--prefix scope)))
-            (suffixes
-             (alist-get (intern kind)
-                        (alist-get (intern (car gvsd))
-                                   kele-resource-suffixes))))
+     (when-let* ((gvs (alist-get 'group-versions (oref transient--prefix scope)))
+                 ;; Until we have a way to re-invoke the suffix group every time
+                 ;; --groupversion changes, we short-circuit if there is
+                 ;; ambiguity w.r.t. group-version
+                 (unambiguous (= (length gvs) 1))
+                 (gv (car gvs))
+                 (kind (alist-get 'kind (oref transient--prefix scope)))
+                 (suffixes
+                  (alist-get (intern kind)
+                             (alist-get (intern gv)
+                                        kele-resource-suffixes))))
        (when suffixes
-           (transient-parse-suffixes transient--prefix suffixes))))]
+         (transient-parse-suffixes transient--prefix suffixes))))]
 
   (interactive (let* ((context (kele-current-context-name))
                       (kind (completing-read
