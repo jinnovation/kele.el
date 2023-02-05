@@ -640,11 +640,6 @@ metadata:
 
     (kele-list-get)
     (expect 'kele-get :to-have-been-called-with
-            "kind"
-            "name"
-            :group "group"
-            :version "v1"
-            :context "context"
-            :namespace "namespace")))
+            "context" "namespace" "group/v1" "kind" "name")))
 
  ;;; test-kele.el ends here
