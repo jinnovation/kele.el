@@ -1532,7 +1532,7 @@ instead of \"pod.\""
          (format "Get a single %s" it)))
   (interactive
    (-let* ((kind (kele--get-kind-arg))
-           (gv (kele--get-groupversion-arg))
+           (gv (kele--get-groupversion-arg kind))
            ((group version) (kele--groupversion-split gv))
            (ns (kele--get-namespace-arg
                 :group-version gv
