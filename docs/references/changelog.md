@@ -11,6 +11,23 @@ versioning][semver].
 
 ## Unreleased
 
+## 0.4.0
+
+Lots of fun stuff in this release.
+
+Most importantly, Kele 0.4.0 introduces `kele-list` (`s-k <resource type> l`)
+and -- with it -- the ability to list all resources of a given type in tabulated
+form. Before, you could only fetch single resources. Now, with `kele-list`, you
+can create ad-hoc "overviews" of specific resource types within a given context
+and namespace; hitting Enter on any entry in this list brings up the resource's
+full manifest.
+
+Kele 0.4.0 also introduces the `kele-proxy` command palette (`s-k p`) for
+starting/stopping proxy servers for contexts. It also fleshes out the Kubeconfig
+management command palette (`s-k c`).
+
+For more details, see: [How-Tos > Usage].
+
 ### Added
 
 - Added a `kele-proxy` command prefix for managing proxy servers
@@ -19,7 +36,7 @@ versioning][semver].
 - Added a keybinding to `kele-context` for deleting a context
 - Added a keybinding to open `kele-kubeconfig-path` in a buffer
 - Added a keybinding to `kele-resource` to support listing out all resources of
-  a given type
+  a given type (`kele-list`)
 
 ### Fixed
 
@@ -58,10 +75,6 @@ To that end, this release adds the following:
 I'm optimistic that these two additions make Kele's user interface much more
 pleasant and nimble, while also giving it ample room to grow in complexity and
 scope in the coming releases.
-
-[How-Tos > Customization]:https://jonathanj.in/kele.el/how-tos/customization/
-[How-Tos > Usage]: https://jonathanj.in/kele.el/how-tos/usage/
-[Transient]: https://magit.vc/manual/transient.html
 
 ### Added
 
@@ -191,3 +204,6 @@ future enhancements.
 [progress report]: https://www.gnu.org/software/emacs/manual/html_node/elisp/Progress.html
 [k8s-el-69]: https://github.com/kubernetes-el/kubernetes-el/issues/69
 [issue]: https://github.com/kubernetes-el/kubernetes-el/issues
+[How-Tos > Customization]:https://jonathanj.in/kele.el/how-tos/customization/
+[How-Tos > Usage]: https://jonathanj.in/kele.el/how-tos/usage/
+[Transient]: https://magit.vc/manual/transient.html
