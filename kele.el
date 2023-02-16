@@ -218,6 +218,9 @@ If WAIT is non-nil, `kele--proxy-process' will wait for the proxy
 Ideally this should be an asynchronous process.  This function
 should be suitable for use as part of a file-watcher.")
 
+(cl-defgeneric kele--switch-context (new-context)
+  "Switch context to NEW-CONTEXT.")
+
 (cl-defgeneric kele--cache-start (&key bootstrap)
   "Start watching the file system.
 
@@ -234,12 +237,42 @@ bootstrapping update, e.g. `kele--cache-update'.")
 
 Key is the host name and the value is a list of all the
    APIGroupLists and APIResourceLists found in said cache.")
-   (filewatch-id
-    :documentation "The ID of the file watcher."))
+
+   (filewatch-ids
+    :documentation
+    "Alist mapping contexts to the recursive filewatch IDs."
+    :initform nil)
+
+   (cleanup-timers
+    :documentation "Alist mapping contexts to their cleanup timers."
+    :initform nil))
   "Track the Kubernetes discovery cache.
 
 A class for loading a Kubernetes discovery cache and keeping it
 in sync with the filesystem.")
+
+(cl-defmethod kele--cleanup-for-context ((cache kele--discovery-cache) context)
+  (kele--fnr-rm-watch (alist-get context (oref cache filewatch-ids) nil nil #'equal))
+  (assoc-delete-all context (oref cache contents))
+  (assoc-delete-all context (oref cache cleanup-timers)))
+
+(cl-defmethod kele--switch-context ((cache kele--discovery-cache) context)
+  "Switch CONTEXT for CACHE.
+
+This starts a cleanup timer for the previous context.  If a cleanup timer
+  current exists for the new context, cancel it."
+  (when-let ((timer (alist-get context
+                               (oref cache cleanup-timers)
+                               nil nil #'equal))
+             (cancel-timer timer)))
+  (let ((watcher (kele--fnr-add-watch
+                  (f-join kele-cache-dir "discovery"
+                          (s-replace ":" "_" (kele--get-host-for-context context)))
+                  '(change)
+                  (-partial #'kele--cache-update cache context))))
+    (add-to-list (oref cache filewatch-ids) `(,context . ,watcher)))
+  (add-to-list (oref cache cleanup-timers)
+               `(,context . ,(run-with-timer 300 nil #'kele--cleanup-discovery-for-context))))
 
 (defclass kele--kubeconfig-cache ()
   ((contents
@@ -253,6 +286,11 @@ in sync with the filesystem.")
 
 A class for loading kubeconfig contents and keeping them in sync
 with the filesystem.")
+
+(cl-defmethod kele--switch-context ((_ kele--kubeconfig-cache) context)
+  "Switch to new CONTEXT."
+  (kele--with-progress (format "Switching to use context `%s'..." context)
+    (kele-kubectl-do "config" "use-context" context)))
 
 (cl-defmethod kele--wait ((cache kele--kubeconfig-cache)
                           &key
@@ -318,14 +356,14 @@ If CONTEXT is not provided, the current context is used."
       (not (eq :false namespaced-p))
     (signal 'kele-cache-lookup-error `(,context ,group-version ,type))))
 
-(cl-defmethod kele--cache-update ((cache kele--discovery-cache) &optional _)
+(cl-defmethod kele--cache-update ((cache kele--discovery-cache) context &optional _)
   "Update CACHE with the values from `kele-cache-dir'.
 
 This is done asynchronously.  To wait on the results, pass the
 retval into `async-wait'."
   (let* ((progress-reporter (make-progress-reporter "Pulling discovery cache..."))
          (func-complete (lambda (res)
-                          (oset cache contents res)
+                          (setf (cdr (assoc context (oref cache contents))) res)
                           (progress-reporter-done progress-reporter))))
     (async-start `(lambda ()
                     (add-to-list 'load-path (file-name-directory ,(locate-library "dash")))
@@ -336,7 +374,9 @@ retval into `async-wait'."
                     (require 'json)
                     (require 'yaml)
                     ,(async-inject-variables "kele-cache-dir")
-                    (->> (f-entries (f-join kele-cache-dir "discovery"))
+                    (->> (f-entries (f-join kele-cache-dir
+                                            "discovery"
+                                            (s-replace ":" "_" (kele--get-host-for-context context))))
                          (-map (lambda (dir)
                                  (let* ((api-list-files (f-files dir
                                                                  (lambda (file)
@@ -370,18 +410,14 @@ retval into `async-wait'."
   "Start file-watch for CACHE.
 
 If BOOTSTRAP is non-nil, perform an initial read."
-  (oset cache
-        filewatch-id
-        (kele--fnr-add-watch
-         (f-join kele-cache-dir "discovery/")
-         '(change)
-         (-partial #'kele--cache-update cache)))
+  (kele--switch-context cache (kele-current-context-name))
   (when bootstrap
-    (kele--cache-update cache)))
+    (kele--cache-update cache (kele-current-context-name))))
 
 (cl-defmethod kele--cache-stop ((cache kele--discovery-cache))
   "Stop file-watch for CACHE."
-  (kele--fnr-rm-watch (oref cache filewatch-id)))
+  (dolist (watch-entry (oref cache filewatch-ids))
+    (kele--fnr-rm-watch (cadr watch-entry))))
 
 (defvar kele--enabled nil
   "Flag indicating whether Kele has already been enabled or not.
@@ -635,8 +671,8 @@ node `(elisp)Programmed Completion'."
                         'face
                         'warning)))
   (interactive (list (completing-read "Context: " #'kele--contexts-complete)))
-  (kele--with-progress (format "Switching to use context `%s'..." context)
-    (kele-kubectl-do "config" "use-context" context)))
+  (kele--switch-context kele--global-discovery-cache context)
+  (kele--switch-context kele--global-kubeconfig-cache context))
 
 (transient-define-suffix kele-context-rename (old-name new-name)
   "Rename context named OLD-NAME to NEW-NAME."
