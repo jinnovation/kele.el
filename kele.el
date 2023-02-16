@@ -236,7 +236,8 @@ bootstrapping update, e.g. `kele--cache-update'.")
     "Alist mapping contexts to the discovered APIs.
 
 Key is the host name and the value is a list of all the
-   APIGroupLists and APIResourceLists found in said cache.")
+   APIGroupLists and APIResourceLists found in said cache."
+    :initform nil)
 
    (filewatch-ids
     :documentation
@@ -245,11 +246,21 @@ Key is the host name and the value is a list of all the
 
    (cleanup-timers
     :documentation "Alist mapping contexts to their cleanup timers."
+    :initform nil)
+   (current-context
     :initform nil))
   "Track the Kubernetes discovery cache.
 
 A class for loading a Kubernetes discovery cache and keeping it
 in sync with the filesystem.")
+
+(defun kele--get-host-for-context (&optional context)
+  "Get host for CONTEXT."
+  (let* ((server (let-alist (kele--context-cluster (or context (kele-current-context-name)))
+                   .cluster.server))
+         (host (url-host (url-generic-parse-url server)))
+         (port (url-portspec (url-generic-parse-url server))))
+    (s-concat host (if port (format ":%s" port) ""))))
 
 (cl-defmethod kele--cleanup-for-context ((cache kele--discovery-cache) context)
   (kele--fnr-rm-watch (alist-get context (oref cache filewatch-ids) nil nil #'equal))
@@ -265,14 +276,24 @@ This starts a cleanup timer for the previous context.  If a cleanup timer
                                (oref cache cleanup-timers)
                                nil nil #'equal))
              (cancel-timer timer)))
-  (let ((watcher (kele--fnr-add-watch
-                  (f-join kele-cache-dir "discovery"
-                          (s-replace ":" "_" (kele--get-host-for-context context)))
-                  '(change)
-                  (-partial #'kele--cache-update cache context))))
-    (add-to-list (oref cache filewatch-ids) `(,context . ,watcher)))
-  (add-to-list (oref cache cleanup-timers)
-               `(,context . ,(run-with-timer 300 nil #'kele--cleanup-discovery-for-context))))
+
+  (let* ((watcher (kele--fnr-add-watch
+                   (f-join kele-cache-dir "discovery"
+                           (s-replace ":" "_" (kele--get-host-for-context context)))
+                   '(change)
+                   (-partial #'kele--cache-update cache context)))
+         (new-val `(,context . ,watcher)))
+    (if (oref cache filewatch-ids)
+        (oset cache filewatch-ids (cons new-val (oref cache filewatch-ids)))
+      (oset cache filewatch-ids `(,new-val))))
+
+  (when-let* ((old-context (oref cache current-context))
+              (entry `(,old-context
+                       . ,(run-with-timer 300 nil #'kele--cleanup-for-context old-context))))
+    (if (oref cache cleanup-timers)
+        (add-to-list (oref cache cleanup-timers) (list entry))
+      (oset cache cleanup-timers (list entry))))
+  (oset cache current-context context))
 
 (defclass kele--kubeconfig-cache ()
   ((contents
@@ -307,14 +328,6 @@ MSG is the progress reporting message to display."
     (kele--with-progress msg
       (kele--retry (lambda () (not (oref cache update-in-progress)))
                    :count count :wait wait :timeout timeout))))
-
-(defun kele--get-host-for-context (&optional context)
-  "Get host for CONTEXT."
-  (let* ((server (let-alist (kele--context-cluster (or context (kele-current-context-name)))
-                   .cluster.server))
-         (host (url-host (url-generic-parse-url server)))
-         (port (url-portspec (url-generic-parse-url server))))
-    (s-concat host (if port (format ":%s" port) ""))))
 
 (cl-defmethod kele--get-resource-lists-for-context ((cache kele--discovery-cache)
                                                     &optional context)
@@ -363,7 +376,9 @@ This is done asynchronously.  To wait on the results, pass the
 retval into `async-wait'."
   (let* ((progress-reporter (make-progress-reporter "Pulling discovery cache..."))
          (func-complete (lambda (res)
-                          (setf (cdr (assoc context (oref cache contents))) res)
+                          (if (not (oref cache contents))
+                              (oset cache contents (list res))
+                            (add-to-list (oref cache contents) res))
                           (progress-reporter-done progress-reporter))))
     (async-start `(lambda ()
                     (add-to-list 'load-path (file-name-directory ,(locate-library "dash")))
@@ -374,9 +389,11 @@ retval into `async-wait'."
                     (require 'json)
                     (require 'yaml)
                     ,(async-inject-variables "kele-cache-dir")
-                    (->> (f-entries (f-join kele-cache-dir
-                                            "discovery"
-                                            (s-replace ":" "_" (kele--get-host-for-context context))))
+                    (->> (list (f-join kele-cache-dir
+                                       "discovery"
+                                       ;; FIXME: This effectively hard-codes the
+                                       ;; context at time of def'n
+                                       (s-replace ":" "_" ,(kele--get-host-for-context context))))
                          (-map (lambda (dir)
                                  (let* ((api-list-files (f-files dir
                                                                  (lambda (file)
@@ -1178,6 +1195,7 @@ This is idempotent."
     (setq kele--enabled t)
     ;; FIXME: Update the watcher when `kele-kubeconfig-path' changes.
     (kele--cache-start kele--global-kubeconfig-cache :bootstrap t)
+
     ;; FIXME: Update the watcher when `kele-cache-dir' changes.
     (kele--cache-start kele--global-discovery-cache :bootstrap t)
 
