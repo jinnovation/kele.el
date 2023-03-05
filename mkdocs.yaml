@@ -18,6 +18,10 @@ nav:
       - explanations/design.md
   - References:
       - references/changelog.md
+
+  - Designs:
+      - designs/index.md
+      - designs/kubeconfig-cache.md
   - contributing.md
 
 theme:
