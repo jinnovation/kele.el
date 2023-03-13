@@ -29,7 +29,8 @@ at a set interval, as dictated by `kele-discovery-refresh-interval`.
 
 !!! info "Why?"
 
-    See [`kele-01`](../adrs/01-timer-based-discovery-cache.md)
+    We elect not to use file-watchers for the discovery cache due to the risk of completely exhausting the file
+    descriptors Emacs can use. For more details, see [`kele-01`](../adrs/01-timer-based-discovery-cache.md).
 
 [file watches]: https://www.gnu.org/software/emacs/manual/html_node/elisp/File-Notifications.html
 [async]: https://github.com/jwiegley/emacs-async/
