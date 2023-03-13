@@ -91,6 +91,12 @@ pods."
   :type '(alist :key-type symbol :value-type 'integer)
   :group 'kele)
 
+(defcustom kele-discovery-refresh-interval
+  600
+  "Default interval for polling clusters' discovery cache."
+  :type 'integer
+  :group 'kele)
+
 ;; TODO (#80): Display in the `kele-get-mode' header what fields were filtered out
 (defcustom kele-filtered-fields '((metadata managedFields)
                                   (metadata annotations kubectl.kubernetes.io/last-applied-configuration))
@@ -1655,12 +1661,6 @@ The `scope' is the current context name."
    ("P" kele-proxy-toggle :description "Start/stop proxy server for...")]
   (interactive)
   (transient-setup 'kele-proxy nil nil :scope (kele-current-context-name)))
-
-(defcustom kele-discovery-refresh-interval
-  600
-  "Default interval for polling clusters' discovery cache."
-  :type 'integer
-  :group 'kele)
 
 (provide 'kele)
 
