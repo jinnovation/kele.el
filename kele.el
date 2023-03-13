@@ -34,8 +34,6 @@
 (require 'url-parse)
 (require 'yaml)
 
-(require 'kele-fnr)
-
 (declare-function yaml-mode "yaml-mode")
 
 (defgroup kele nil
