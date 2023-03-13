@@ -21,7 +21,7 @@ nav:
 
   - Designs:
       - designs/index.md
-      - designs/kubeconfig-cache.md
+      - designs/kache.md
   - contributing.md
 
 theme:
