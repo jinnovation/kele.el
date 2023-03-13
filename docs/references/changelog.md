@@ -11,6 +11,14 @@ versioning][semver].
 
 ## Unreleased
 
+### Fixed
+
+- Fixed an issue where Kele can exhaust the number of file descriptors available for Emacs to use.
+
+### Changed
+
+- Discovery cache polling is now timer-based instead of "dynamic," i.e. in response to filesystem changes.
+
 ## 0.4.0
 
 Lots of fun stuff in this release.
