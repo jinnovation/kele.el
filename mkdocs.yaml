@@ -16,12 +16,10 @@ nav:
   - Explanations:
       - explanations/comparisons.md
       - explanations/design.md
-  - References:
-      - references/changelog.md
-
-  - Designs:
-      - designs/index.md
-      - designs/kache.md
+  - ADRs:
+    - adrs/00-template.md
+    - adrs/01-timer-based-discovery-cache.md
+  - references/changelog.md
   - contributing.md
 
 theme:
