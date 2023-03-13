@@ -53,5 +53,21 @@ the `kele-get` result buffer's keybindings.
 (setq kele-get-show-instructions nil)
 ```
 
+## Customizing cache behavior
+
+Kele provides a handful of customization variables with which you can influence [cache
+behavior](../explanations/design.md#caches).
+
+### Change the discovery cache polling interval
+
+If you'd like Kele to poll the discovery cache more or less frequently than the default, set
+`kele-discovery-refresh-interval`, then disable and re-enable `kele-mode`.
+
+```emacs-lisp
+(setq kele-discovery-refresh-interval)
+(kele-mode -1)
+(kele-mode +1)
+```
+
 [managed-fields]: https://kubernetes.io/docs/reference/using-api/server-side-apply/#field-management
 [last-applied-config]: https://kubernetes.io/docs/tasks/manage-kubernetes-objects/declarative-config/#how-to-create-objects
