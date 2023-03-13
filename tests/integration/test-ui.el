@@ -14,7 +14,7 @@
 
     (before-all
       (async-wait (kele--cache-update kele--global-discovery-cache))
-      (async-wait (kele--cache-update kele--global-kubeconfig-cache)))
+      (async-wait (kele--cache-update kele--global-kache)))
 
     (describe "prefix buffer contents"
       (before-all
