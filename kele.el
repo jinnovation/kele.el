@@ -34,8 +34,6 @@
 (require 'url-parse)
 (require 'yaml)
 
-(require 'kele-fnr)
-
 (declare-function yaml-mode "yaml-mode")
 
 (defgroup kele nil
@@ -89,6 +87,12 @@ used for cache time-to-live for that resource.  Otherwise,
 Keys are the singular form of the resource name, e.g. \"pod\" for
 pods."
   :type '(alist :key-type symbol :value-type 'integer)
+  :group 'kele)
+
+(defcustom kele-discovery-refresh-interval
+  600
+  "Default interval for polling clusters' discovery cache."
+  :type 'integer
   :group 'kele)
 
 ;; TODO (#80): Display in the `kele-get-mode' header what fields were filtered out
@@ -234,8 +238,8 @@ bootstrapping update, e.g. `kele--cache-update'.")
 
 Key is the host name and the value is a list of all the
    APIGroupLists and APIResourceLists found in said cache.")
-   (filewatch-id
-    :documentation "The ID of the file watcher."))
+   (timer
+    :documentation "The timer process for polling the filesystem."))
   "Track the Kubernetes discovery cache.
 
 A class for loading a Kubernetes discovery cache and keeping it
@@ -341,25 +345,21 @@ retval into `async-wait'."
   "Start file-watch for CACHE.
 
 If BOOTSTRAP is non-nil, perform an initial read."
-  (oset cache
-        filewatch-id
-        (kele--fnr-add-watch
-         (f-join kele-cache-dir "discovery/")
-         '(change)
-         (-partial #'kele--cache-update cache)))
-  (when bootstrap
-    (kele--cache-update cache)))
+  (oset cache timer
+        (run-with-timer
+         (if bootstrap 0 kele-discovery-refresh-interval)
+         kele-discovery-refresh-interval
+         (-partial #'kele--cache-update cache))))
 
 (cl-defmethod kele--cache-stop ((cache kele--discovery-cache))
-  "Stop file-watch for CACHE."
-  (kele--fnr-rm-watch (oref cache filewatch-id)))
+  "Stop polling for CACHE."
+  (cancel-timer (oref cache timer)))
 
 (defvar kele--enabled nil
   "Flag indicating whether Kele has already been enabled or not.
 
 This is separate from `kele-mode' to ensure that activating
 `kele-mode' is idempotent.")
-
 
 (defclass kele--kache ()
   ((discovery-contents
@@ -1659,12 +1659,6 @@ The `scope' is the current context name."
    ("P" kele-proxy-toggle :description "Start/stop proxy server for...")]
   (interactive)
   (transient-setup 'kele-proxy nil nil :scope (kele-current-context-name)))
-
-(defcustom kele-discovery-refresh-interval
-  600
-  "Default interval for polling clusters' discovery cache."
-  :type 'integer
-  :group 'kele)
 
 (provide 'kele)
 

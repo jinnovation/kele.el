@@ -22,10 +22,7 @@ nav:
   - references/changelog.md
   - ADRs:
     - references/adrs/index.md
-
-- Designs:
-  - designs/index.md
-  - designs/kache.md
+    - adrs/01-timer-based-discovery-cache.md
 - contributing.md
 
 theme:

@@ -1,17 +1,10 @@
-# design-00: Kele Cache
+# adr-01: Timer-based discovery-cache caching
 
-!!! info "Status"
+## Status
 
-    WIP
+Implemented in [#150](https://github.com/jinnovation/kele.el/pull/150).
 
-This document outlines the design of the **"Kele Cache"**, aka the "K-cache" or the "kache."
-
-The kache brokers access to the Kubeconfig and the discovery cache. It is designed for:
-
-- Minimal memory overhead;
-- Minimal query overhead.
-
-## Status Quo
+## Context
 
 As of 2023-03-05, Kele uses a naive set of two separate caches:
 
@@ -61,39 +54,15 @@ integration-testing for this very package is enough for me to hit the limit. Doi
 filesystem discovery cache directories corresponding to these transient Kind clusters On top of being annoying, this is
 also a fundamentally unreasonable workaround; what happens if a user simply **has that many clusters to maintain**?
 
-### Lack of coupling between kubeconfig and discovery caches
+## Decision
 
-The most obvious way to reduce the discovery cache's file-descriptor overhead is to have it watch only the files within
-the filesystem discovery cache that are "relevant" to a user at any given time. These happen to be: the files
-corresponding to the user's current kubeconfig context. Such a design requires coupling the kubeconfig and discovery
-caches and their sync "policies" in a way that cannot be implemented robustly under the current approach, where these
-two caches are entirely independent entities.
+The simplest and "stupidest" solution to this problem is to make caching of the filesystem discovery cache timer-based
+rather than filewatch-based.
 
-## Solution
+## Consequences
 
-The solution is simple. We combine the kubeconfig and discovery caches, to form a combined cache that we call the **Kele
-cache**, or the **kache**. At the same time, we make the discovery cache timer-based by default.
-
-We create a new variable, `kele-discovery-default-refresh-interval` that dictates the default rate at which Kele
-re-pulls the filesystem discovery cache.
-
-We keep the file-watch on kubeconfig as before. In addition to existing logic, we add the following subroutines to the
-kubeconfig update hook:
-
-1. For each cluster in the new kubeconfig, we add timer-watches on the corresponding entries in the filesystem discovery
-   cache;
-2. For each existing timer-watch, if the corresponding cluster is no longer present in the new kubeconfig, we cancel it.
-
-Unfortunately, this design represents, to an extent, a "regression" of sorts in the functionality of the discovery
-cache, as now the contents thereof are not guaranteed to be fully up-to-date with those of the filesystem dicovery
-cache. We decide that this is safe, as the set of group-version-kinds present in a cluster are unlikely to change
-**that** frequently. This is consistent with `kubectl`'s own refresh policy for the filesystem discovery cache, which
-refills the cache every ten minutes -- and lazily, at that, i.e. on the next user invocation of `kubectl` after the
-ten-minute mark.
-
-## Scope
-
-We decide not to implement the following at this time:
-
-- Per-cluster interval overrides, e.g. "I'd like to poll the discovery cache for `123.456.789.0` every 60 seconds and
-  every other cluster 600 seconds"
+This approach represents, to an extent, a "regression" of sorts in the functionality of the discovery cache, as now the
+contents thereof are not guaranteed to be fully up-to-date with those of the filesystem dicovery cache. We decide that
+this is safe, as the set of group-version-kinds present in a cluster are unlikely to change **that** frequently. This is
+consistent with `kubectl`'s own refresh policy for the filesystem discovery cache, which refills the cache every ten
+minutes -- and lazily, at that, i.e. on the next user invocation of `kubectl` after the ten-minute mark.
