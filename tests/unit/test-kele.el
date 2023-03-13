@@ -324,15 +324,13 @@
   (describe "kele--cache-start"
     (before-each
       (setq cache (kele--discovery-cache))
-      (spy-on 'kele--fnr-add-watch :and-return-value :fnotify-id)
       (spy-on 'kele--cache-update)
+      (spy-on 'run-with-timer :and-return-value :timer)
       (kele--cache-start cache :bootstrap t))
 
-    (describe "when :bootstrap t"
-      (it "performs an initial update"
-        (expect 'kele--cache-update :to-have-been-called-with cache)))
-    (it "sets the filewatch field"
-      (expect (oref cache filewatch-id) :to-equal :fnotify-id)))
+    (it "sets the timer"
+      (expect (oref cache timer) :to-equal :timer)))
+
   (describe "kele--get-groupversions-for-type"
     (before-each
       (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
