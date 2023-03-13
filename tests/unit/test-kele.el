@@ -65,19 +65,19 @@
 (describe "kele-current-context-name"
   (it "returns the correct current-context value"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
-    (async-wait (kele--cache-update kele--global-kubeconfig-cache))
+    (async-wait (kele--cache-update kele--global-kache))
     (expect (kele-current-context-name) :to-equal "development")))
 
 (describe "kele--context-annotate"
   (it "returns the proper annotation text"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
-    (async-wait (kele--cache-update kele--global-kubeconfig-cache))
+    (async-wait (kele--cache-update kele--global-kache))
     (expect (kele--context-annotate "development") :to-equal " (development-cluster, https://123.456.789.0:9999, Proxy OFF)")))
 
 (describe "kele-context-names"
   (it "returns the correct cluster names"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
-    (async-wait (kele--cache-update kele--global-kubeconfig-cache))
+    (async-wait (kele--cache-update kele--global-kache))
 
     (expect (kele-context-names) :to-equal '("development" "no-namespace"))))
 
@@ -93,7 +93,7 @@
 (describe "kele-current-namespace"
   (before-each
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
-    (async-wait (kele--cache-update kele--global-kubeconfig-cache)))
+    (async-wait (kele--cache-update kele--global-kache)))
   (it "returns the default namespace for the current cluster"
     (spy-on 'kele-current-context-name :and-return-value "development")
     (expect (kele-current-namespace) :to-equal "development-namespace"))
@@ -104,14 +104,14 @@
 (describe "kele--get-host-for-context"
   (it "returns the correct value"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
-    (async-wait (kele--cache-update kele--global-kubeconfig-cache))
+    (async-wait (kele--cache-update kele--global-kache))
     (expect (kele--get-host-for-context "development") :to-equal "123.456.789.0:9999")
     (expect (kele--get-host-for-context "no-namespace") :to-equal "111.111.111.111")))
 
 (describe "kele--context-cluster-name"
   (it "returns the correct cluster"
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
-    (async-wait (kele--cache-update kele--global-kubeconfig-cache))
+    (async-wait (kele--cache-update kele--global-kache))
     (expect (kele--context-cluster-name "development") :to-equal "development-cluster")))
 
 (describe "kele--retry"
@@ -305,11 +305,11 @@
                 "services/status"
                 "ambiguousthings")))))
 
-(describe "kele--kubeconfig-cache"
+(describe "kele--kache"
   :var (cache)
   (describe "kele--cache-start"
     (before-each
-      (setq cache (kele--kubeconfig-cache))
+      (setq cache (kele--kache))
       (spy-on 'file-notify-add-watch :and-return-value :fnotify-id)
       (spy-on 'kele--cache-update)
       (kele--cache-start cache :bootstrap t))
@@ -317,7 +317,7 @@
       (it "performs an initial update"
         (expect 'kele--cache-update :to-have-been-called-with cache)))
     (it "sets the filewatch field"
-      (expect (oref cache filewatch-id) :to-equal :fnotify-id))))
+      (expect (oref cache kubeconfig-watch-id) :to-equal :fnotify-id))))
 
 (describe "kele--discovery-cache"
   :var (cache)
@@ -428,7 +428,7 @@ metadata:
     (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
     (async-wait (kele--cache-update kele--global-discovery-cache))
-    (async-wait (kele--cache-update kele--global-kubeconfig-cache)))
+    (async-wait (kele--cache-update kele--global-kache)))
 
   (describe "when resource is not namespaced"
     (it "errors when namespace is provided anyway"
@@ -564,7 +564,7 @@ metadata:
 (describe "kele--get-namespace-arg"
   (before-all
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
-    (async-wait (kele--cache-update kele--global-kubeconfig-cache)))
+    (async-wait (kele--cache-update kele--global-kache)))
   (describe "when called in a Transient suffix"
     (before-each
       (setq transient-current-command t)
