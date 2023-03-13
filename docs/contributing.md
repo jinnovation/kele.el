@@ -25,6 +25,12 @@ tutorials, usage instructions, etc.
 We [keep a changelog] for Kele. Any change that is user-facing should be called
 out in the changelog.
 
+### Architecture Decision Records (ADRs)
+
+We use [architecture decision records (ADRs)](./references/adrs/index.md) in Kele **very sparingly**. Not every design
+decision made warrants an ADR of its own. As a contributor, you may be asked to write an ADR for your contribution, but
+only if it materially impacts Kele's user-facing behavior.
+
 ## Testing
 
 We use [Buttercup] to write tests.
