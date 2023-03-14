@@ -245,6 +245,35 @@ Key is the host name and the value is a list of all the
 A class for loading a Kubernetes discovery cache and keeping it
 in sync with the filesystem.")
 
+(defclass kele--kubeconfig-cache ()
+  ((contents
+    :documentation "The loaded kubeconfig contents.")
+   (filewatch-id
+    :documentation "The ID of the file watcher.")
+   (update-in-progress
+    :documentation "Flag denoting whether an update is in progress."
+    :initform nil))
+  "Track the kubeconfig cache.
+
+A class for loading kubeconfig contents and keeping them in sync
+with the filesystem.")
+
+(cl-defmethod kele--wait ((cache kele--kubeconfig-cache)
+                          &key
+                          (count 10)
+                          (wait 1)
+                          (timeout 100)
+                          (msg "Waiting for kubeconfig update to finish..."))
+  "Wait for CACHE to finish updating.
+
+COUNT, WAIT, and TIMEOUT are as defined in `kele--retry'.
+
+MSG is the progress reporting message to display."
+  (when (oref cache update-in-progress)
+    (kele--with-progress msg
+      (kele--retry (lambda () (not (oref cache update-in-progress)))
+                   :count count :wait wait :timeout timeout))))
+
 (defun kele--get-host-for-context (&optional context)
   "Get host for CONTEXT."
   (let* ((server (let-alist (kele--context-cluster (or context (kele-current-context-name)))
@@ -360,54 +389,24 @@ If BOOTSTRAP is non-nil, perform an initial read."
 
 This is separate from `kele-mode' to ensure that activating
 `kele-mode' is idempotent.")
+(defvar kele--global-kubeconfig-cache (kele--kubeconfig-cache))
+(defvar kele--global-discovery-cache (kele--discovery-cache))
 
-(defclass kele--kache ()
-  ((discovery-contents
-    :documentation
-    "Alist mapping contexts to the discovered APIs.
+(cl-defmethod kele--cache-stop ((cache kele--kubeconfig-cache))
+  "Stop watching `kele-kubeconfig-path' for contents to write to CACHE."
+  (file-notify-rm-watch (oref cache filewatch-id)))
 
-Key is the host name and the value is a list of all the
-   APIGroupLists and APIResourceLists found in said cache.")
-
-   (kubeconfig-contents
-    :documentation "The loaded kubeconfig contents.")
-
-   (update-in-progress
-    :documentation "Flag denoting whether a kubeconfig update is in progress."
-    :initform nil)
-
-   (discovery-refresh-interval
-    :documentation
-    "Interval at which a given clsuters' discovery cache should be
-    polled from the filesystem.
-
-Generally, this should be the same as
-`kele-discovery-refresh-interval'.")
-
-   (kubeconfig-watch-id
-    :documentation
-    "The ID of the watcher on the kubeconfig.")
-
-   (cluster-timers
-    :documentation
-    "Alist mapping cluster addresses to their polling timer processes."))
-  "A joint kubeconfig + discovery cache.
-
-`kele--kache' (the \"kache\") attaches a file-watcher to the file at
-kubeconfig-path and creates timer-based update hooks to the corresponding
-sub-directories in the discovery-cache-path according to ")
-
-(cl-defmethod kele--kubeconfig-update ((kache kele--kache) &optional _)
-  "Read the kubeconfig file for KACHE.
+(cl-defmethod kele--cache-update ((cache kele--kubeconfig-cache) &optional _)
+  "Update CACHE with the values from `kele-kubeconfig-path'.
 
 This is done asynchronously.  To wait on the results, pass the
 retval into `async-wait'."
-(let* ((progress-reporter (make-progress-reporter "Pulling kubeconfig contents..."))
+  (let* ((progress-reporter (make-progress-reporter "Pulling kubeconfig contents..."))
          (func-complete (lambda (config)
-                          (oset kache kubeconfig-contents config)
-                          (oset kache update-in-progress nil)
+                          (oset cache contents config)
+                          (oset cache update-in-progress nil)
                           (progress-reporter-done progress-reporter))))
-    (oset kache update-in-progress t)
+    (oset cache update-in-progress t)
     (async-start `(lambda ()
                     ;; TODO: How to just do all of these in one fell swoop?
                     (add-to-list 'load-path (file-name-directory ,(locate-library "yaml")))
@@ -422,54 +421,19 @@ retval into `async-wait'."
                                        :sequence-type 'list))
                  func-complete)))
 
-(cl-defmethod kele--cache-update ((kache kele--kache) &optional _)
-  "Update the KACHE.
+(cl-defmethod kele--cache-start ((cache kele--kubeconfig-cache) &key bootstrap)
+  "Start watching `kele-kubeconfig-path' for CACHE.
 
-This reads the kubeconfig contents and starts/stops per-cluster
-discovery cache poll timers according to what's present in the
-kubeconfig file.
-
-This is done asynchronously.  To wait on the results, pass the
-retval into `async-wait'."
-  (kele--kubeconfig-update kache))
-
-(cl-defmethod kele--cache-stop ((kache kele--kache))
-  "Stop watching `kele-kubeconfig-path' for contents to write to KACHE."
-  (file-notify-rm-watch (oref kache kubeconfig-watch-id)))
-
-(cl-defmethod kele--cache-start ((kache kele--kache) &key bootstrap)
-  "Start the KACHE.
-
-Start watching the kubeconfig and start timers for each clusters'
-  respective entries in the discovery cache.
-
-BOOTSTRAP is ignored."
-  (oset kache kubeconfig-watch-id
+If BOOTSTRAP is non-nil, will perform an initial load of the
+contents."
+  (oset cache
+        filewatch-id
         (file-notify-add-watch
          kele-kubeconfig-path
          '(change)
-         (-partial #'kele--kubeconfig-update kache)))
+         (-partial #'kele--cache-update cache)))
   (when bootstrap
-    (kele--cache-update kache)))
-
-(cl-defmethod kele--wait ((cache kele--kache)
-                          &key
-                          (count 10)
-                          (wait 1)
-                          (timeout 100)
-                          (msg "Waiting for kubeconfig update to finish..."))
-  "Wait for CACHE to finish updating.
-
-COUNT, WAIT, and TIMEOUT are as defined in `kele--retry'.
-
-MSG is the progress reporting message to display."
-  (when (oref cache update-in-progress)
-    (kele--with-progress msg
-      (kele--retry (lambda () (not (oref cache update-in-progress)))
-                   :count count :wait wait :timeout timeout))))
-
-(defvar kele--global-kache (kele--kache))
-(defvar kele--global-discovery-cache (kele--discovery-cache))
+    (kele--cache-update cache)))
 
 (defvar kele--context-proxy-ledger nil
   "An alist mapping contexts to their corresponding proxy processes.
@@ -516,15 +480,15 @@ configuration, e.g. via `kubectl config'.
 If WAIT is non-nil, does not wait for any current update process
 to complete.  Returned value may not be up to date."
   (when wait
-    (kele--wait kele--global-kache))
-  (alist-get 'current-context (oref kele--global-kache kubeconfig-contents)))
+    (kele--wait kele--global-kubeconfig-cache))
+  (alist-get 'current-context (oref kele--global-kubeconfig-cache contents)))
 
 (defun kele--default-namespace-for-context (context)
   "Get the defualt namespace for CONTEXT."
   (-if-let* (((&alist 'context (&alist 'namespace namespace))
               (-first (lambda (elem)
                         (string= (alist-get 'name elem) context))
-                      (alist-get 'contexts (oref kele--global-kache kubeconfig-contents)))))
+                      (alist-get 'contexts (oref kele--global-kubeconfig-cache contents)))))
       namespace))
 
 (cl-defun kele-current-namespace (&key (wait t))
@@ -552,18 +516,18 @@ to complete.  Returned value may not be up to date."
   "Get the names of all known contexts."
   (-map
    (lambda (elem) (alist-get 'name elem))
-   (alist-get 'contexts (oref kele--global-kache kubeconfig-contents))))
+   (alist-get 'contexts (oref kele--global-kubeconfig-cache contents))))
 
 (defun kele--context-cluster (context-name)
   "Get the cluster metadata for the context named CONTEXT-NAME."
   (-first (lambda (elem) (string= (alist-get 'name elem)
                                   (kele--context-cluster-name context-name)))
-          (alist-get 'clusters (oref kele--global-kache kubeconfig-contents))))
+          (alist-get 'clusters (oref kele--global-kubeconfig-cache contents))))
 
 (defun kele--context-cluster-name (context-name)
   "Get the name of the cluster of the context named CONTEXT-NAME."
   (if-let ((context (-first (lambda (elem) (string= (alist-get 'name elem) context-name))
-                            (alist-get 'contexts (oref kele--global-kache kubeconfig-contents)))))
+                            (alist-get 'contexts (oref kele--global-kubeconfig-cache contents)))))
       (alist-get 'cluster (alist-get 'context context))
     (error "Could not find context of name %s" context-name)))
 
@@ -571,11 +535,11 @@ to complete.  Returned value may not be up to date."
   "Return annotation text for the context named CONTEXT-NAME."
   (let* ((context (-first (lambda (elem)
                             (string= (alist-get 'name elem) context-name))
-                          (alist-get 'contexts (oref kele--global-kache kubeconfig-contents))))
+                          (alist-get 'contexts (oref kele--global-kubeconfig-cache contents))))
          (cluster-name (or (alist-get 'cluster (alist-get 'context context)) ""))
          (cluster (-first (lambda (elem)
                             (string= (alist-get 'name elem) cluster-name))
-                          (-concat (alist-get 'clusters (oref kele--global-kache kubeconfig-contents)) '())))
+                          (-concat (alist-get 'clusters (oref kele--global-kubeconfig-cache contents)) '())))
          (server (or (alist-get 'server (alist-get 'cluster cluster)) ""))
          (proxy-active-p (assoc (intern context-name) kele--context-proxy-ledger))
          (proxy-status (if proxy-active-p
@@ -1178,7 +1142,7 @@ This is idempotent."
   (unless kele--enabled
     (setq kele--enabled t)
     ;; FIXME: Update the watcher when `kele-kubeconfig-path' changes.
-    (kele--cache-start kele--global-kache :bootstrap t)
+    (kele--cache-start kele--global-kubeconfig-cache :bootstrap t)
     ;; FIXME: Update the watcher when `kele-cache-dir' changes.
     (kele--cache-start kele--global-discovery-cache :bootstrap t)
 
@@ -1193,7 +1157,7 @@ This is idempotent."
 This is idempotent."
   (unless (not kele--enabled)
     (setq kele--enabled nil)
-    (kele--cache-stop kele--global-kache)
+    (kele--cache-stop kele--global-kubeconfig-cache)
     (kele--cache-stop kele--global-discovery-cache)
     (kele--teardown-embark-maybe)
     (if (featurep 'awesome-tray)

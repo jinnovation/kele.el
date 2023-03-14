@@ -15,7 +15,7 @@
     (it "switches context properly"
       (kele-context-switch "kind-kele-test-cluster0")
       (kele-namespace-switch-for-context "kind-kele-test-cluster0" "kube-public")
-      (async-wait (kele--cache-update kele--global-kache))
+      (async-wait (kele--cache-update kele--global-kubeconfig-cache))
       (expect (kele-current-namespace) :to-equal "kube-public"))))
 
 (describe "kele--fetch-resource-names"
@@ -50,7 +50,7 @@
 
   (it "retrieves the resource as an alist"
     (async-wait (kele--cache-update kele--global-discovery-cache))
-    (async-wait (kele--cache-update kele--global-kache))
+    (async-wait (kele--cache-update kele--global-kubeconfig-cache))
     (setq retval (kele--get-resource "deployments" "coredns"
                                                 :group "apps"
                                                 :version "v1"
@@ -62,7 +62,7 @@
 
   (it "returns an error if the resource is nonsense or does not exist"
     (async-wait (kele--cache-update kele--global-discovery-cache))
-    (async-wait (kele--cache-update kele--global-kache))
+    (async-wait (kele--cache-update kele--global-kubeconfig-cache))
     (expect (kele--get-resource "salaries" "mine"
                                            :group "hello"
                                            :version "v1"
@@ -78,7 +78,7 @@
 (describe "kele-get"
   (it "fetches the resource"
     (async-wait (kele--cache-update kele--global-discovery-cache))
-    (async-wait (kele--cache-update kele--global-kache))
+    (async-wait (kele--cache-update kele--global-kubeconfig-cache))
     (with-simulated-input
         "deployments RET kube-system RET coredns RET"
       (call-interactively #'kele-get))
@@ -89,7 +89,7 @@
 (describe "kele-list"
   (before-all
     (async-wait (kele--cache-update kele--global-discovery-cache))
-    (async-wait (kele--cache-update kele--global-kache)))
+    (async-wait (kele--cache-update kele--global-kubeconfig-cache)))
   (it "lists all resources of the given type"
     (kele-list "apps/v1" "deployments" "kind-kele-test-cluster0" "kube-system")
     (expect (-map #'buffer-name (buffer-list))
