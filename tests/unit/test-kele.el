@@ -143,16 +143,16 @@
               '((proc . fake-proc)
                 (timer . nil)
                 (port . 9999)))
-      (expect (assoc "foobar" (oref kele--global-proxy-manager procs) :to-equal '("foobar" . 'fake-proc)))
-      (expect (assoc "foobar" (oref kele--global-proxy-manager timers) :to-equal nil))
+      (expect (assoc "foobar" (oref kele--global-proxy-manager procs)) :to-equal '("foobar" . fake-proc))
+      (expect (assoc "foobar" (oref kele--global-proxy-manager timers)) :to-equal nil)
       (expect 'cancel-timer :not :to-have-been-called)))
 
   (describe "when ephemeral is non-nil"
     (it "adds an entry with a timer"
       (kele-proxy-start "foobar" :port 9999)
 
-      (expect (assoc "foobar" (oref kele--global-proxy-manager procs) :to-equal '("foobar" . 'fake-proc)))
-      (expect (assoc "foobar" (oref kele--global-proxy-manager timers) :to-equal '("foobar" . 'fake-timer))))))
+      (expect (assoc "foobar" (oref kele--global-proxy-manager procs)) :to-equal '("foobar" . fake-proc))
+      (expect (assoc "foobar" (oref kele--global-proxy-manager timers)) :to-equal '("foobar" . fake-timer)))))
 
 (describe "kele--ensure-proxy"
   (before-each
