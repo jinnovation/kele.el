@@ -131,7 +131,9 @@
 (describe "kele-proxy-start"
   (before-each
     (spy-on 'kele--proxy-process :and-return-value 'fake-proc)
+    (spy-on 'proxy-get :and-return-value 'fake-proc)
     (spy-on 'run-with-timer :and-return-value 'fake-timer)
+    (spy-on 'cancel-timer)
     (setq kele--global-proxy-manager (kele--proxy-manager)))
 
   (describe "when ephemeral is nil"
@@ -142,7 +144,8 @@
                 (timer . nil)
                 (port . 9999)))
       (expect (assoc "foobar" (oref kele--global-proxy-manager procs) :to-equal '("foobar" . 'fake-proc)))
-      (expect (assoc "foobar" (oref kele--global-proxy-manager timers) :to-equal nil))))
+      (expect (assoc "foobar" (oref kele--global-proxy-manager timers) :to-equal nil))
+      (expect 'cancel-timer :not :to-have-been-called)))
 
   (describe "when ephemeral is non-nil"
     (it "adds an entry with a timer"
