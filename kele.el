@@ -674,8 +674,11 @@ Returns the proxy process."
    context))
 
 (cl-defun kele--ensure-proxy (context)
-  "Return a proxy process for CONTEXT, creating one if needed."
-  (kele-proxy-start context))
+  "Return a proxy process for CONTEXT, creating one if needed.
+
+Returns the port of the proxy process."
+  (kele-proxy-start context)
+  (cdr (assoc context (oref kele--global-proxy-manager ports))))
 
 (defvar kele--context-resources nil
   "An alist mapping contexts to their cached resources.
@@ -791,7 +794,7 @@ throws an error."
             (url-all (concat url-gv "/"
                              (if namespace (format "namespaces/%s/" namespace) "")
                              url-res))
-            ((&alist 'port port) (kele--ensure-proxy context))
+            (port (kele--ensure-proxy context))
             (url (format "http://localhost:%s/%s" port url-all)))
       (condition-case err
           (kele--resource-container-create
@@ -947,8 +950,8 @@ If CONTEXT is not provided, use the current context."
                    kind)))
     (signal 'user-error '()))
 
-  (-if-let* (((&alist 'port port) (kele--ensure-proxy
-                                   (or context (kele-current-context-name))))
+  (-if-let* ((port (kele--ensure-proxy
+                    (or context (kele-current-context-name))))
              (url (format "http://localhost:%s/%s/%s"
                           port
                           (if group
