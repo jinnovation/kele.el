@@ -753,14 +753,16 @@ after a certain amount of time.
 
 If PORT is nil, a random port will be chosen.
 
-Returns the proxy process."
+Returns an alist with keys `proc', `timer', and `port'."
   (interactive (list (completing-read "Start proxy for context: " #'kele--contexts-complete)
                      :port nil
                      :ephemeral t))
   ;; TODO: Throw error if proxy already active for context
   (kele--with-progress (format "Starting proxy server process for `%s'..." context)
     (proxy-start kele--global-proxy-manager context :port port :ephemeral ephemeral)
-    (proxy-get kele--global-proxy-manager context :wait t)))
+    (list (cons 'proc (proxy-get kele--global-proxy-manager context :wait t))
+          (cons 'timer (cdr (assoc context (oref kele--global-proxy-manager timers))))
+          (cons 'port port))))
 
 (defun kele-proxy-toggle (context)
   "Start or stop proxy server process for CONTEXT."
