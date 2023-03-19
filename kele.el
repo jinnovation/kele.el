@@ -521,11 +521,11 @@ If no process active for CONTEXT, this function is a no-op and
 returns nil."
   (-when-let ((&alist context proc) (oref manager procs))
     (kele--kill-process-quietly proc)
-    (assoc-delete-all context (oref manager procs))
-    (assoc-delete-all context (oref manager ports))
+    (oset manager procs (assoc-delete-all context (oref manager procs)))
+    (oset manager ports (assoc-delete-all context (oref manager ports)))
     (-when-let ((&alist context timer) (oref manager timers))
       (cancel-timer timer)
-      (assoc-delete-all context (oref manager timers))))
+      (oset manager timers (assoc-delete-all context (oref manager timers)))))
   (message (format "[kele] Stopped proxy for context `%s'" context)))
 
 (cl-defmethod proxy-active-p ((manager kele--proxy-manager)
