@@ -444,18 +444,18 @@ PROCESS is the process itself.
 
 PORT is the port the process is running on.
 
-TIMER, if non-nil, is the cleanup timer.
-
-URL is the interpolated base URL of the proxy server, including the PORT."
+TIMER, if non-nil, is the cleanup timer."
   process
   port
-  timer
-  url)
+  timer)
+
+(cl-defmethod kele--url ((proxy kele--proxy-record))
+  (format "http://localhost:%s" (kele--proxy-record-port proxy)))
 
 (cl-defmethod ready-p ((proxy kele--proxy-record))
   "Return non-nil if the PROXY is ready for requests."
-  (let ((ready-addr (format "%s/readyz" (kele--proxy-record-url proxy)))
-        (live-addr (format "%s/livez" (kele--proxy-record-url proxy))))
+  (let ((ready-addr (format "%s/readyz" (kele--url proxy)))
+        (live-addr (format "%s/livez" (kele--url proxy))))
     (when-let* ((resp-ready (plz 'get ready-addr :as 'response))
                 (resp-live (plz 'get live-addr :as 'response))
                 (status-ready (plz-response-status resp-ready))
@@ -463,23 +463,10 @@ URL is the interpolated base URL of the proxy server, including the PORT."
       (and (= 200 status-ready) (= 200 status-live)))))
 
 (defclass kele--proxy-manager ()
-  ((procs
+  ((records
     :documentation
-    "Alist of context names to proxy processes."
-    :initarg :procs
-    :type list
-    :initform nil)
-   (timers
-    :documentation
-    "Alist of context names to timer objects that terminate and clean up the
-  proxy processes."
-    :initarg :timers
-    :type list
-    :initform nil)
-   (ports
-    :documentation
-    "Alist of context names to the corresponding proxy's port."
-    :initarg :ports
+    "Alist of context names to `kele--proxy-record' objects."
+    :initarg :records
     :type list
     :initform nil))
   "Manage proxy server processes.")
@@ -498,25 +485,20 @@ Returns the proxy process.
 
 If CONTEXT already has a proxy process active, this function returns the
 existing process *regardless of the value of PORT*."
-  (-if-let ((&alist context proc) (oref manager procs))
-      proc
+  (-if-let ((&alist context record) (oref manager records))
+      record
     (kele--with-progress (format "Starting proxy server process for `%s'..."
                                  context)
       (let* ((selected-port (or port (kele--random-port)))
-             (proc (kele--proxy-process context :port selected-port :wait nil))
-             (cleanup (when ephemeral
-                        (run-with-timer kele-proxy-ttl nil (-partial #'proxy-stop
-                                                                     manager
-                                                                     context)))))
-        (oset manager procs (cons `(,context . ,proc) (oref manager procs)))
-        (oset manager ports (cons `(,context . ,selected-port) (oref manager ports)))
-        (when cleanup
-          (oset manager timers (cons `(,context . ,cleanup) (oref manager timers))))
-        (kele--proxy-record-create
-         :process proc
-         :timer cleanup
-         :port port
-         :url (format "http://localhost:%s" (number-to-string port)))))))
+             (record (kele--proxy-record-create
+                      :process (kele--proxy-process context :port selected-port :wait nil)
+                      :timer (when ephemeral
+                               (run-with-timer kele-proxy-ttl nil (-partial #'proxy-stop
+                                                                            manager
+                                                                            context)))
+                      :port selected-port)))
+        (oset manager records (cons `(,context . ,record) (oref manager records)))
+        record))))
 
 (cl-defmethod proxy-get ((manager kele--proxy-manager)
                          context
@@ -528,15 +510,10 @@ If WAIT is non-nil, polls the liveliness and health endpoints for
 
 This function assumes that the proxy process has already been started.  It will
   not start a proxy server if one has not already been started."
-  (-when-let* (((&alist context proc) (oref manager procs))
-               ((&alist context port) (oref manager ports))
-               (proxy (kele--proxy-record-create
-                       :process proc
-                       :port port
-                       :url (format "http://localhost:%s" (number-to-string port)))))
+  (-when-let ((&alist context record) (oref manager records))
     (when wait
-      (kele--retry (-partial #'ready-p proxy) :wait 2 :count 10))
-    proxy))
+      (kele--retry (-partial #'ready-p record) :wait 2 :count 10))
+    record))
 
 (cl-defmethod proxy-stop ((manager kele--proxy-manager)
                           context)
@@ -544,23 +521,20 @@ This function assumes that the proxy process has already been started.  It will
 
 If no process active for CONTEXT, this function is a no-op and
 returns nil."
-  (-when-let ((&alist context proc) (oref manager procs))
-    (kele--kill-process-quietly proc)
-    (oset manager procs (assoc-delete-all context (oref manager procs)))
-    (oset manager ports (assoc-delete-all context (oref manager ports)))
-    (-when-let ((&alist context timer) (oref manager timers))
-      (cancel-timer timer)
-      (oset manager timers (assoc-delete-all context (oref manager timers)))))
+  (-when-let ((&alist context record) (oref manager records))
+    (kele--kill-process-quietly (kele--proxy-record-process record))
+    (when (kele--proxy-record-timer record)
+      (cancel-timer (kele--proxy-record-timer record)))
+    (oset manager records (assoc-delete-all context (oref manager records))))
   (message (format "[kele] Stopped proxy for context `%s'" context)))
 
 (cl-defmethod proxy-active-p ((manager kele--proxy-manager)
                               context)
   "Return non-nil if a proxy serve is active for CONTEXT in MANAGER."
-  (when-let (res (assoc context (oref manager procs)))
+  (when-let (res (assoc context (oref manager records)))
     (cdr res)))
 
 (defvar kele--global-proxy-manager (kele--proxy-manager))
-
 
 (cl-defun kele--get-resource-types-for-context (context-name &key verb)
   "Retrieve the names of all resource types for CONTEXT-NAME.
@@ -785,10 +759,7 @@ existing process *regardless of the value of PORT*."
   (interactive (list (completing-read "Start proxy for context: " #'kele--contexts-complete)
                      :port nil
                      :ephemeral t))
-  (proxy-start kele--global-proxy-manager context :port port :ephemeral ephemeral)
-  (list (cons 'proc (proxy-get kele--global-proxy-manager context :wait nil))
-        (cons 'timer (cdr (assoc context (oref kele--global-proxy-manager timers))))
-        (cons 'port port)))
+  (proxy-start kele--global-proxy-manager context :port port :ephemeral ephemeral))
 
 (defun kele-proxy-toggle (context)
   "Start or stop proxy server process for CONTEXT."
@@ -800,13 +771,6 @@ existing process *regardless of the value of PORT*."
        #'kele-proxy-stop
      #'kele-proxy-start)
    context))
-
-(cl-defun kele--ensure-proxy (context)
-  "Return a proxy process for CONTEXT, creating one if needed.
-
-Returns the port of the proxy process."
-  (kele-proxy-start context)
-  (cdr (assoc context (oref kele--global-proxy-manager ports))))
 
 (defvar kele--context-resources nil
   "An alist mapping contexts to their cached resources.
@@ -922,7 +886,7 @@ throws an error."
             (url-all (concat url-gv "/"
                              (if namespace (format "namespaces/%s/" namespace) "")
                              url-res))
-            (port (kele--ensure-proxy context))
+            (port (kele--proxy-record-port (proxy-start kele--global-proxy-manager context)))
             (url (format "http://localhost:%s/%s" port url-all)))
       (condition-case err
           (kele--resource-container-create
@@ -1078,8 +1042,9 @@ If CONTEXT is not provided, use the current context."
                    kind)))
     (signal 'user-error '()))
 
-  (-if-let* ((port (kele--ensure-proxy
-                    (or context (kele-current-context-name))))
+  (-if-let* ((port (->> (or context (kele-current-context-name))
+                        (proxy-start kele--global-proxy-manager)
+                        (kele--proxy-record-port)))
              (url (format "http://localhost:%s/%s/%s"
                           port
                           (if group
