@@ -435,24 +435,6 @@ contents."
   (when bootstrap
     (kele--cache-update cache)))
 
-(defvar kele--context-proxy-ledger nil
-  "An alist mapping contexts to their corresponding proxy processes.
-
-Keys are context names.  Values are alists with the keys `proc',
-`timer', and `port'.  If nil, there is no active proxy for that
-context.
-
-The values at each are as follows:
-
-  - The value at `proc' is the kubectl proxy process;
-
-  - `timer' is a timer object that terminates the proxy and
-    cleans up the proxy process.  If nil, the proxy process will
-    not be automatically cleaned up and it is user responsibility
-    to do so;
-
-  - `port' is the port that the proxy was opened on.")
-
 (cl-defun kele--get-resource-types-for-context (context-name &key verb)
   "Retrieve the names of all resource types for CONTEXT-NAME.
 
@@ -541,8 +523,7 @@ to complete.  Returned value may not be up to date."
                             (string= (alist-get 'name elem) cluster-name))
                           (-concat (alist-get 'clusters (oref kele--global-kubeconfig-cache contents)) '())))
          (server (or (alist-get 'server (alist-get 'cluster cluster)) ""))
-         (proxy-active-p (assoc (intern context-name) kele--context-proxy-ledger))
-         (proxy-status (if proxy-active-p
+         (proxy-status (if (proxy-active-p kele--global-proxy-manager context-name)
                            (propertize "Proxy ON" 'face 'warning)
                          (propertize "Proxy OFF" 'face 'shadow))))
     (format " %s%s, %s, %s%s"
@@ -647,7 +628,7 @@ node `(elisp)Programmed Completion'."
                                       #'kele--contexts-complete
                                       nil t nil nil (kele-current-context-name))
                      (read-from-minibuffer "Rename to: ")))
-  ;; TODO: This needs to update `kele--context-proxy-ledger' as well.
+  ;; TODO: This needs to update `kele--global-proxy-manager' as well.
   (kele-kubectl-do "config" "rename-context" old-name new-name))
 
 (transient-define-suffix kele-context-delete (context)
@@ -660,12 +641,7 @@ node `(elisp)Programmed Completion'."
 (cl-defun kele-proxy-stop (context)
   "Clean up the proxy for CONTEXT."
   (interactive (list (completing-read "Stop proxy for context: " #'kele--contexts-complete)))
-  (-let (((&alist 'proc proc 'timer timer) (alist-get (intern context) kele--context-proxy-ledger)))
-    (kele--kill-process-quietly proc)
-    (when timer (cancel-timer timer)))
-  (setq kele--context-proxy-ledger (assoc-delete-all (intern context)
-                                                     kele--context-proxy-ledger))
-  (message (format "[kele] Stopped proxy for context `%s'" context)))
+  (proxy-stop kele--global-proxy-manager context))
 
 (cl-defun kele-proxy-start (context &key port (ephemeral t))
   "Start a proxy process for CONTEXT at PORT.
@@ -681,21 +657,12 @@ Returns the proxy process."
                      :ephemeral t))
   ;; TODO: Throw error if proxy already active for context
   (kele--with-progress (format "Starting proxy server process for `%s'..." context)
-    (let* ((selected-port (or port (kele--random-port)))
-           (key (intern context))
-           (proc (kele--proxy-process context :port selected-port))
-           (cleanup (when ephemeral
-                      (run-with-timer kele-proxy-ttl nil #'kele-proxy-stop context)))
-           ;; TODO: Define a struct for this
-           (entry `((proc . ,proc)
-                    (timer . ,cleanup)
-                    (port . ,selected-port))))
-      (add-to-list 'kele--context-proxy-ledger `(,key . ,entry))
-      entry)))
+    (proxy-start kele--global-proxy-manager context :port port :ephemeral ephemeral)
+    (proxy-get kele--global-proxy-manager context :wait t)))
 
 (defun kele--proxy-enabled-p (context)
   "Return non-nil if proxy server process active for CONTEXT."
-  (alist-get (intern context) kele--context-proxy-ledger))
+  (proxy-active-p kele--global-proxy-manager context))
 
 (defun kele-proxy-toggle (context)
   "Start or stop proxy server process for CONTEXT."
@@ -708,9 +675,7 @@ Returns the proxy process."
 
 (cl-defun kele--ensure-proxy (context)
   "Return a proxy process for CONTEXT, creating one if needed."
-  (if-let* ((entry (alist-get (intern context) kele--context-proxy-ledger)))
-      entry
-    (kele-proxy-start context)))
+  (kele-proxy-start context))
 
 (defvar kele--context-resources nil
   "An alist mapping contexts to their cached resources.
@@ -1654,17 +1619,19 @@ Returns the proxy process.
 
 If CONTEXT already has a proxy process active, this function returns the
 existing process *regardless of the value of PORT*."
-  (let* ((selected-port (or port (kele--random-port)))
-         (proc (kele--proxy-process context :port selected-port :wait nil))
-         (cleanup (when ephemeral
-                    (run-with-timer kele-proxy-ttl nil (-partial #'proxy-stop
-                                                                 manager
-                                                                 context)))))
-    (add-to-list (oref manager procs) `(,context . ,proc))
-    (add-to-list (oref manager ports) `(,context . ,selected-port))
-    (when cleanup
-      (add-to-list (oref manager timers) `(,context . ,cleanup)))
-    proc))
+  (-if-let ((&alist context proc) (oref manager procs))
+      proc
+    (let* ((selected-port (or port (kele--random-port)))
+           (proc (kele--proxy-process context :port selected-port :wait nil))
+           (cleanup (when ephemeral
+                      (run-with-timer kele-proxy-ttl nil (-partial #'proxy-stop
+                                                                   manager
+                                                                   context)))))
+      (add-to-list (oref manager procs) `(,context . ,proc))
+      (add-to-list (oref manager ports) `(,context . ,selected-port))
+      (when cleanup
+        (add-to-list (oref manager timers) `(,context . ,cleanup)))
+      proc)))
 
 (cl-defmethod proxy-get ((manager kele--proxy-manager)
                          context
@@ -1706,7 +1673,8 @@ returns nil."
     (assoc-delete-all context (oref manager ports))
     (-when-let ((&alist context timer) (oref manager timers))
       (cancel-timer timer)
-      (assoc-delete-all context (oref manager timers)))))
+      (assoc-delete-all context (oref manager timers))))
+  (message (format "[kele] Stopped proxy for context `%s'" context)))
 
 (cl-defmethod proxy-active-p ((manager kele--proxy-manager)
                               context)
