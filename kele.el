@@ -1624,6 +1624,97 @@ The `scope' is the current context name."
   (interactive)
   (transient-setup 'kele-proxy nil nil :scope (kele-current-context-name)))
 
+(defclass kele--proxy-manager ()
+  ((procs
+    :documentation
+    "Alist of context names to proxy processes."
+    :initform nil)
+   (timers
+    :documentation
+    "Alist of context names to timer objects that terminate and clean up the
+  proxy processes."
+    :initform nil)
+   (ports
+    :documentation
+    "Alist of context names to the corresponding proxy's port."
+    :initform nil))
+  "Manage proxy server processes.")
+
+(cl-defmethod proxy-start ((manager kele--proxy-manager)
+                           context
+                           &key port (ephemeral t))
+  "Start a proxy process within MANAGER for CONTEXT at PORT.
+
+If EPHEMERAL is non-nil, the proxy process will be cleaned up
+after a certain amount of time.
+
+If PORT is nil, a random port will be chosen.
+
+Returns the proxy process.
+
+If CONTEXT already has a proxy process active, this function returns the
+existing process *regardless of the value of PORT*."
+  (let* ((selected-port (or port (kele--random-port)))
+         (proc (kele--proxy-process context :port selected-port :wait nil))
+         (cleanup (when ephemeral
+                    (run-with-timer kele-proxy-ttl nil (-partial #'proxy-stop
+                                                                 manager
+                                                                 context)))))
+    (add-to-list (oref manager procs) `(,context . ,proc))
+    (add-to-list (oref manager ports) `(,context . ,selected-port))
+    (when cleanup
+      (add-to-list (oref manager timers) `(,context . ,cleanup)))
+    proc))
+
+(cl-defmethod proxy-get ((manager kele--proxy-manager)
+                         context
+                         &key (wait t))
+  "Retrieve the proxy process from MANAGER for CONTEXT.
+
+If WAIT is non-nil, polls the liveliness and health endpoints for
+  the proxy server until they respond successfully.
+
+This function assumes that the proxy process has already been started.  It will
+  not start a proxy server if one has not already been started."
+  (-when-let* (((&alist context proc) (oref manager procs))
+               ((&alist context port) (oref manager ports))
+               (s-port (number-to-string port))
+               (ready-addr (format "http://localhost:%s/readyz" s-port))
+               (live-addr (format "http://localhost:%s/livez" s-port)))
+    (when wait
+      (kele--retry (lambda ()
+                     ;; /readyz and /livez can sometimes return nil, maybe when
+                     ;; the proxy is just starting up. Add retries for these.
+                     (when-let* ((resp-ready (plz 'get ready-addr :as 'response))
+                                 (resp-live (plz 'get live-addr :as 'response))
+                                 (status-ready (plz-response-status resp-ready))
+                                 (status-live (plz-response-status resp-live)))
+                       (and (= 200 status-ready) (= 200 status-live))))
+                   :wait 2
+                   :count 10))
+    proc))
+
+(cl-defmethod proxy-stop ((manager kele--proxy-manager)
+                          context)
+  "Stop the proxy process in MANAGER for CONTEXT.
+
+If no process active for CONTEXT, this function is a no-op and
+returns nil."
+  (-when-let ((&alist context proc) (oref manager procs))
+    (kele--kill-process-quietly proc)
+    (assoc-delete-all context (oref manager procs))
+    (assoc-delete-all context (oref manager ports))
+    (-when-let ((&alist context timer) (oref manager timers))
+      (cancel-timer timer)
+      (assoc-delete-all context (oref manager timers)))))
+
+(cl-defmethod proxy-active-p ((manager kele--proxy-manager)
+                              context)
+  "Return non-nil if a proxy serve is active for CONTEXT in MANAGER."
+  (assoc context (oref manager procs)))
+
+(defvar kele--global-proxy-manager (kele--proxy-manager))
+
 (provide 'kele)
 
 ;;; kele.el ends here
