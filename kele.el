@@ -479,10 +479,10 @@ existing process *regardless of the value of PORT*."
                       (run-with-timer kele-proxy-ttl nil (-partial #'proxy-stop
                                                                    manager
                                                                    context)))))
-      (add-to-list (oref manager procs) `(,context . ,proc))
-      (add-to-list (oref manager ports) `(,context . ,selected-port))
+      (oset manager procs (cons `(,context . ,proc) (oref manager procs)))
+      (oset manager ports (cons `(,context . ,selected-port) (oref manager ports)))
       (when cleanup
-        (add-to-list (oref manager timers) `(,context . ,cleanup)))
+        (oset manager timers (cons `(,context . ,cleanup) (oref manager timers))))
       proc)))
 
 (cl-defmethod proxy-get ((manager kele--proxy-manager)
