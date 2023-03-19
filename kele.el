@@ -1042,10 +1042,9 @@ If CONTEXT is not provided, use the current context."
                    kind)))
     (signal 'user-error '()))
 
-  (-if-let* ((ctx (or context (kele-current-context-name)))
-             (port (->> ctx
-                        (proxy-start kele--global-proxy-manager)
-                        (kele--proxy-record-port)))
+  (-if-let* ((port (kele--proxy-record-port
+                    (proxy-start kele--global-proxy-manager
+                                 (or context (kele-current-context-name)))))
              (url (format "http://localhost:%s/%s/%s"
                           port
                           (if group
