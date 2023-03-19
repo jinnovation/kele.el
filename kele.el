@@ -1045,6 +1045,7 @@ If CONTEXT is not provided, use the current context."
   (-if-let* ((port (->> (or context (kele-current-context-name))
                         (proxy-start kele--global-proxy-manager)
                         (kele--proxy-record-port)))
+             (_ (proxy-get kele--global-proxy-manager))
              (url (format "http://localhost:%s/%s/%s"
                           port
                           (if group
