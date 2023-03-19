@@ -760,7 +760,7 @@ Returns an alist with keys `proc', `timer', and `port'."
   ;; TODO: Throw error if proxy already active for context
   (kele--with-progress (format "Starting proxy server process for `%s'..." context)
     (proxy-start kele--global-proxy-manager context :port port :ephemeral ephemeral)
-    (list (cons 'proc (proxy-get kele--global-proxy-manager context :wait t))
+    (list (cons 'proc (proxy-get kele--global-proxy-manager context :wait nil))
           (cons 'timer (cdr (assoc context (oref kele--global-proxy-manager timers))))
           (cons 'port port))))
 
