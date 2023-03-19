@@ -473,17 +473,19 @@ If CONTEXT already has a proxy process active, this function returns the
 existing process *regardless of the value of PORT*."
   (-if-let ((&alist context proc) (oref manager procs))
       proc
-    (let* ((selected-port (or port (kele--random-port)))
-           (proc (kele--proxy-process context :port selected-port :wait nil))
-           (cleanup (when ephemeral
-                      (run-with-timer kele-proxy-ttl nil (-partial #'proxy-stop
-                                                                   manager
-                                                                   context)))))
-      (oset manager procs (cons `(,context . ,proc) (oref manager procs)))
-      (oset manager ports (cons `(,context . ,selected-port) (oref manager ports)))
-      (when cleanup
-        (oset manager timers (cons `(,context . ,cleanup) (oref manager timers))))
-      proc)))
+    (kele--with-progress (format "Starting proxy server process for `%s'..."
+                                 context)
+      (let* ((selected-port (or port (kele--random-port)))
+             (proc (kele--proxy-process context :port selected-port :wait nil))
+             (cleanup (when ephemeral
+                        (run-with-timer kele-proxy-ttl nil (-partial #'proxy-stop
+                                                                     manager
+                                                                     context)))))
+        (oset manager procs (cons `(,context . ,proc) (oref manager procs)))
+        (oset manager ports (cons `(,context . ,selected-port) (oref manager ports)))
+        (when cleanup
+          (oset manager timers (cons `(,context . ,cleanup) (oref manager timers))))
+        proc))))
 
 (cl-defmethod proxy-get ((manager kele--proxy-manager)
                          context
@@ -753,16 +755,17 @@ after a certain amount of time.
 
 If PORT is nil, a random port will be chosen.
 
-Returns an alist with keys `proc', `timer', and `port'."
+Returns an alist with keys `proc', `timer', and `port'.
+
+If CONTEXT already has a proxy process active, this function returns the
+existing process *regardless of the value of PORT*."
   (interactive (list (completing-read "Start proxy for context: " #'kele--contexts-complete)
                      :port nil
                      :ephemeral t))
-  ;; TODO: Throw error if proxy already active for context
-  (kele--with-progress (format "Starting proxy server process for `%s'..." context)
-    (proxy-start kele--global-proxy-manager context :port port :ephemeral ephemeral)
-    (list (cons 'proc (proxy-get kele--global-proxy-manager context :wait nil))
-          (cons 'timer (cdr (assoc context (oref kele--global-proxy-manager timers))))
-          (cons 'port port))))
+  (proxy-start kele--global-proxy-manager context :port port :ephemeral ephemeral)
+  (list (cons 'proc (proxy-get kele--global-proxy-manager context :wait nil))
+        (cons 'timer (cdr (assoc context (oref kele--global-proxy-manager timers))))
+        (cons 'port port)))
 
 (defun kele-proxy-toggle (context)
   "Start or stop proxy server process for CONTEXT."
@@ -1414,6 +1417,7 @@ Defaults to the currently active context as set in
 `kele-kubeconfig-path'."
   :class 'kele--transient-infix
   :fn (lambda (scope value)
+        (proxy-start kele--global-proxy-manager value)
         (setf (cdr (assoc 'context scope)) value))
   :resettees '("--namespace=")
   :prompt "Context: "
@@ -1643,7 +1647,9 @@ instead of \"pod.\""
                             kind
                             :context context)))
                  (list gvs kind)))
-  ;; TODO: `proxy-start' for the selected context
+  (proxy-start kele--global-proxy-manager (kele-current-context-name))
+  ;; TODO: Can we make proxy-start non-ephemeral and simply terminate the proxy
+  ;; server when the transient exits?
   (transient-setup 'kele-resource nil nil :scope `((group-versions . ,group-versions)
                                                    (kind . ,kind)
                                                    (context . ,(kele-current-context-name)))))
