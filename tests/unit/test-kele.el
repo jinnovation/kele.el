@@ -419,7 +419,7 @@ metadata:
 (describe "kele--get-resource"
   (before-each
     (spy-on 'plz)
-    (spy-on 'kele--ensure-proxy :and-return-value '((port . 9999)))
+    (spy-on 'kele--ensure-proxy :and-return-value 9999)
     (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
     (async-wait (kele--cache-update kele--global-discovery-cache))
