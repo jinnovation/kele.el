@@ -1042,7 +1042,8 @@ If CONTEXT is not provided, use the current context."
                    kind)))
     (signal 'user-error '()))
 
-  (-if-let* ((port (->> (or context (kele-current-context-name))
+  (-if-let* ((ctx (or context (kele-current-context-name)))
+             (port (->> ctx
                         (proxy-start kele--global-proxy-manager)
                         (kele--proxy-record-port)))
              (url (format "http://localhost:%s/%s/%s"
@@ -1053,7 +1054,7 @@ If CONTEXT is not provided, use the current context."
                           kind))
 
              ;; Block on proxy readiness
-             (proxy (proxy-get kele--global-proxy-manager))
+             (proxy (proxy-get kele--global-proxy-manager ctx))
 
              (data (kele--retry (lambda () (plz 'get url :as #'json-read))))
              (filtered-items (->> (append  (alist-get 'items data) '())
