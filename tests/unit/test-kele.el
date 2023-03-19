@@ -159,20 +159,15 @@
 (describe "kele--ensure-proxy"
   (before-each
     (spy-on 'kele-proxy-start)
-    (setq kele--context-proxy-ledger nil))
-  (describe "when proxy present"
-    (before-each
-      (add-to-list 'kele--context-proxy-ledger '(foobar . ((proc . fake-proc)
-                                                           (timer . fake-timer)
-                                                           (port . 9999)))))
-    (it "returns the ledger entry"
-      (expect (kele--ensure-proxy "foobar") :to-equal '((proc . fake-proc)
-                                                        (timer . fake-timer)
-                                                        (port . 9999)))))
-  (describe "when proxy not already present"
-    (it "creates the proxy"
-      (kele--ensure-proxy "foobar")
-      (expect 'kele-proxy-start :to-have-been-called-with "foobar"))))
+    (setq kele--global-proxy-manager (kele--proxy-manager
+                                      :ports '(("context-a" . 9999)))))
+
+  (it "calls `kele-proxy-start' unconditionally"
+    (kele--ensure-proxy "context-a")
+    (expect 'kele-proxy-start :to-have-been-called-with "context-a"))
+
+  (it "returns the port"
+    (expect (kele--ensure-proxy "context-a") :to-equal 9999)))
 
 (describe "kele--clear-namespaces-for-context"
   (before-each
