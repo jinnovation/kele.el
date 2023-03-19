@@ -755,17 +755,15 @@ Returns the proxy process."
     (proxy-start kele--global-proxy-manager context :port port :ephemeral ephemeral)
     (proxy-get kele--global-proxy-manager context :wait t)))
 
-(defun kele--proxy-enabled-p (context)
-  "Return non-nil if proxy server process active for CONTEXT."
-  (proxy-active-p kele--global-proxy-manager context))
-
 (defun kele-proxy-toggle (context)
   "Start or stop proxy server process for CONTEXT."
   (interactive (list (completing-read
                       "Start/stop proxy for context: "
                       #'kele--contexts-complete)))
   (funcall
-   (if (kele--proxy-enabled-p context) #'kele-proxy-stop #'kele-proxy-start)
+   (if (proxy-active-p kele--global-proxy-manager context)
+       #'kele-proxy-stop
+     #'kele-proxy-start)
    context))
 
 (cl-defun kele--ensure-proxy (context)
@@ -1653,7 +1651,9 @@ instead of \"pod.\""
   :description
   (lambda ()
     (format "%s proxy server for %s"
-            (if (kele--proxy-enabled-p (oref transient--prefix scope))
+            (if (proxy-active-p
+                 kele--global-proxy-manager
+                 (oref transient--prefix scope))
                 "Disable"
               "Enable")
             (propertize (oref transient--prefix scope) 'face
