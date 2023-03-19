@@ -435,6 +435,33 @@ contents."
   (when bootstrap
     (kele--cache-update cache)))
 
+(cl-defstruct (kele--proxy-record
+               (:constructor kele--proxy-record-create)
+               (:copier nil))
+  "Record of a proxy server process.
+
+PROCESS is the process itself.
+
+PORT is the port the process is running on.
+
+TIMER, if non-nil, is the cleanup timer.
+
+URL is the interpolated base URL of the proxy server, including the PORT."
+  process
+  port
+  timer
+  url)
+
+(cl-defmethod ready-p ((proxy kele--proxy-record))
+  "Return non-nil if the PROXY is ready for requests."
+  (let ((ready-addr (format "%s/readyz" (kele--proxy-record-url proxy)))
+        (live-addr (format "%s/livez" (kele--proxy-record-url proxy))))
+    (when-let* ((resp-ready (plz 'get ready-addr :as 'response))
+                (resp-live (plz 'get live-addr :as 'response))
+                (status-ready (plz-response-status resp-ready))
+                (status-live (plz-response-status resp-live)))
+      (and (= 200 status-ready) (= 200 status-live)))))
+
 (defclass kele--proxy-manager ()
   ((procs
     :documentation
@@ -485,7 +512,11 @@ existing process *regardless of the value of PORT*."
         (oset manager ports (cons `(,context . ,selected-port) (oref manager ports)))
         (when cleanup
           (oset manager timers (cons `(,context . ,cleanup) (oref manager timers))))
-        proc))))
+        (kele--proxy-record-create
+         :process proc
+         :timer cleanup
+         :port port
+         :url (format "http://localhost:%s" (number-to-string port)))))))
 
 (cl-defmethod proxy-get ((manager kele--proxy-manager)
                          context
@@ -499,21 +530,13 @@ This function assumes that the proxy process has already been started.  It will
   not start a proxy server if one has not already been started."
   (-when-let* (((&alist context proc) (oref manager procs))
                ((&alist context port) (oref manager ports))
-               (s-port (number-to-string port))
-               (ready-addr (format "http://localhost:%s/readyz" s-port))
-               (live-addr (format "http://localhost:%s/livez" s-port)))
+               (proxy (kele--proxy-record-create
+                       :process proc
+                       :port port
+                       :url (format "http://localhost:%s" (number-to-string port)))))
     (when wait
-      (kele--retry (lambda ()
-                     ;; /readyz and /livez can sometimes return nil, maybe when
-                     ;; the proxy is just starting up. Add retries for these.
-                     (when-let* ((resp-ready (plz 'get ready-addr :as 'response))
-                                 (resp-live (plz 'get live-addr :as 'response))
-                                 (status-ready (plz-response-status resp-ready))
-                                 (status-live (plz-response-status resp-live)))
-                       (and (= 200 status-ready) (= 200 status-live))))
-                   :wait 2
-                   :count 10))
-    proc))
+      (kele--retry (-partial #'ready-p proxy) :wait 2 :count 10))
+    proxy))
 
 (cl-defmethod proxy-stop ((manager kele--proxy-manager)
                           context)
