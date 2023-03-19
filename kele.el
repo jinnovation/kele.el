@@ -439,15 +439,21 @@ contents."
   ((procs
     :documentation
     "Alist of context names to proxy processes."
+    :initarg :procs
+    :type list
     :initform nil)
    (timers
     :documentation
     "Alist of context names to timer objects that terminate and clean up the
   proxy processes."
+    :initarg :timers
+    :type list
     :initform nil)
    (ports
     :documentation
     "Alist of context names to the corresponding proxy's port."
+    :initarg :ports
+    :type list
     :initform nil))
   "Manage proxy server processes.")
 
@@ -525,7 +531,8 @@ returns nil."
 (cl-defmethod proxy-active-p ((manager kele--proxy-manager)
                               context)
   "Return non-nil if a proxy serve is active for CONTEXT in MANAGER."
-  (assoc context (oref manager procs)))
+  (when-let (res (assoc context (oref manager procs)))
+    (cdr res)))
 
 (defvar kele--global-proxy-manager (kele--proxy-manager))
 
