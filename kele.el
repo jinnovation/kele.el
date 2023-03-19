@@ -1045,13 +1045,16 @@ If CONTEXT is not provided, use the current context."
   (-if-let* ((port (->> (or context (kele-current-context-name))
                         (proxy-start kele--global-proxy-manager)
                         (kele--proxy-record-port)))
-             (_ (proxy-get kele--global-proxy-manager))
              (url (format "http://localhost:%s/%s/%s"
                           port
                           (if group
                               (format "apis/%s/%s" group version)
                             (format "api/%s" version))
                           kind))
+
+             ;; Block on proxy readiness
+             (proxy (proxy-get kele--global-proxy-manager))
+
              (data (kele--retry (lambda () (plz 'get url :as #'json-read))))
              (filtered-items (->> (append  (alist-get 'items data) '())
                                   (-filter (lambda (item)
