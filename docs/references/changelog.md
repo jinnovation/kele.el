@@ -11,6 +11,10 @@ versioning][semver].
 
 ## Unreleased
 
+### Changed
+
+- Bumped dependency `plz` from `0.3` to `0.4`
+
 ## 0.4.1
 
 ### Fixed
