@@ -11,6 +11,8 @@ versioning][semver].
 
 ## Unreleased
 
+## 0.4.1
+
 ### Fixed
 
 - Fixed an issue where Kele can exhaust the number of file descriptors available for Emacs to use.
