@@ -1042,29 +1042,27 @@ If CONTEXT is not provided, use the current context."
                    kind)))
     (signal 'user-error '()))
 
-  (-if-let* ((ctx (or context (kele-current-context-name)))
-             (port (kele--proxy-record-port
-                    (proxy-start kele--global-proxy-manager ctx)))
-             (url (format "http://localhost:%s/%s/%s"
-                          port
-                          (if group
-                              (format "apis/%s/%s" group version)
-                            (format "api/%s" version))
-                          kind))
-
-             ;; Block on proxy readiness
-             (proxy (proxy-get kele--global-proxy-manager ctx))
-
-             (data (kele--retry (lambda () (plz 'get url :as #'json-read))))
-             (filtered-items (->> (append  (alist-get 'items data) '())
-                                  (-filter (lambda (item)
-                                             (if (not namespace) t
-                                               (let-alist item
-                                                 (equal .metadata.namespace namespace))))))))
-      (progn
-        (setf (cdr (assoc 'items data)) filtered-items)
-        data)
-    (signal 'error (format "Failed to fetch %s/%s/%s" group version kind))))
+  (let* ((ctx (or (kele-current-context-name)))
+         (port (kele--proxy-record-port
+                (proxy-start kele--global-proxy-manager ctx)))
+         (url (format "http://localhost:%s/%s/%s"
+                      port
+                      (if group
+                          (format "apis/%s/%s" group version)
+                        (format "api/%s" version))
+                      kind)))
+    ;; Block on proxy readiness
+    (proxy-get kele--global-proxy-manager ctx :wait t)
+    (if-let* ((data (kele--retry (lambda () (plz 'get url :as #'json-read))))
+              (filtered-items (->> (append  (alist-get 'items data) '())
+                                   (-filter (lambda (item)
+                                              (if (not namespace) t
+                                                (let-alist item
+                                                  (equal .metadata.namespace namespace))))))))
+        (progn
+          (setf (cdr (assoc 'items data)) filtered-items)
+          data)
+      (signal 'error (format "Failed to fetch %s/%s/%s" group version kind)))))
 
 (cl-defun kele--fetch-resource-names (group version kind &key namespace context)
   "Fetch names of resources belonging to GROUP, VERSION, and KIND.
