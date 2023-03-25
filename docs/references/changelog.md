@@ -14,6 +14,8 @@ versioning][semver].
 ### Fixed
 
 - Fixed an issue where Kele can exhaust the number of file descriptors available for Emacs to use.
+- Fixed an issue where command families that require proxy servers, e.g. `kele-resource`, result in false-positive
+  timeout errors when starting up the proxy server.
 
 ### Changed
 

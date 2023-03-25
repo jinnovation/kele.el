@@ -36,17 +36,23 @@
   (it "returns the retval of the last evaluated sexp"
     (expect (kele--with-progress "foobar" (= 1 1)) :to-equal t)))
 
-(describe "kele--proxy-enabled-p"
-  (before-each
-    (setq kele--context-proxy-ledger '((foo . bar)
-                                       (baz . nil))))
+(describe "kele--proxy-manager"
+  :var (manager)
 
-  (it "evals to non-nil if context present in `kele--context-proxy-ledger'"
-    (expect (kele--proxy-enabled-p "foo") :to-be-truthy))
+  (describe "proxy-active-p"
+    (before-each
+      (setq manager
+            (kele--proxy-manager
+             :records (list (cons "context-a" (kele--proxy-record-create
+                                               :process :fake-proc))
+                            (cons "context-b" nil)))))
 
-  (it "evals to nil if context not present in `kele--context-proxy-ledger'"
-    (expect (kele--proxy-enabled-p "qux") :not :to-be-truthy)
-    (expect (kele--proxy-enabled-p "baz") :not :to-be-truthy)))
+    (it "evals to non-nil if context present"
+      (expect (proxy-active-p manager "context-a") :to-be-truthy))
+
+    (it "evals to nil if context not present"
+      (expect (proxy-active-p manager "other-context") :not :to-be-truthy)
+      (expect (proxy-active-p manager "context-b") :not :to-be-truthy))))
 
 (describe "kele-status-simple"
   (it "renders with context and namespace"
@@ -127,48 +133,37 @@
 (describe "kele-proxy-start"
   (before-each
     (spy-on 'kele--proxy-process :and-return-value 'fake-proc)
+    (spy-on 'proxy-get :and-return-value 'fake-proc)
     (spy-on 'run-with-timer :and-return-value 'fake-timer)
-    (setq kele--context-proxy-ledger nil))
+    (spy-on 'cancel-timer)
+    (setq kele--global-proxy-manager (kele--proxy-manager)))
 
   (describe "when ephemeral is nil"
     (it "adds an entry with no timer"
       (expect (kele-proxy-start "foobar" :port 9999 :ephemeral nil)
               :to-equal
-              '((proc . fake-proc)
-                (timer . nil)
-                (port . 9999)))
-      (expect (alist-get 'foobar kele--context-proxy-ledger)
+              (kele--proxy-record-create
+               :process 'fake-proc
+               :timer nil
+               :port 9999))
+      (expect (assoc "foobar" (oref kele--global-proxy-manager records))
               :to-equal
-              '((proc . fake-proc)
-                (timer . nil)
-                (port . 9999)))))
+              `("foobar" . ,(kele--proxy-record-create
+                             :process 'fake-proc
+                             :timer nil
+                             :port 9999)))
+      (expect 'cancel-timer :not :to-have-been-called)))
 
   (describe "when ephemeral is non-nil"
     (it "adds an entry with a timer"
       (kele-proxy-start "foobar" :port 9999)
-      (expect (alist-get 'foobar kele--context-proxy-ledger)
-              :to-equal
-              '((proc . fake-proc)
-                (timer . fake-timer)
-                (port . 9999))))))
 
-(describe "kele--ensure-proxy"
-  (before-each
-    (spy-on 'kele-proxy-start)
-    (setq kele--context-proxy-ledger nil))
-  (describe "when proxy present"
-    (before-each
-      (add-to-list 'kele--context-proxy-ledger '(foobar . ((proc . fake-proc)
-                                                           (timer . fake-timer)
-                                                           (port . 9999)))))
-    (it "returns the ledger entry"
-      (expect (kele--ensure-proxy "foobar") :to-equal '((proc . fake-proc)
-                                                        (timer . fake-timer)
-                                                        (port . 9999)))))
-  (describe "when proxy not already present"
-    (it "creates the proxy"
-      (kele--ensure-proxy "foobar")
-      (expect 'kele-proxy-start :to-have-been-called-with "foobar"))))
+      (expect (assoc "foobar" (oref kele--global-proxy-manager records))
+              :to-equal
+              `("foobar" .,(kele--proxy-record-create
+                            :process 'fake-proc
+                            :timer 'fake-timer
+                            :port 9999))))))
 
 (describe "kele--clear-namespaces-for-context"
   (before-each
@@ -422,7 +417,10 @@ metadata:
 (describe "kele--get-resource"
   (before-each
     (spy-on 'plz)
-    (spy-on 'kele--ensure-proxy :and-return-value '((port . 9999)))
+    (spy-on 'proxy-start
+            :and-return-value
+            (kele--proxy-record-create
+             :port 9999))
     (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
     (async-wait (kele--cache-update kele--global-discovery-cache))
