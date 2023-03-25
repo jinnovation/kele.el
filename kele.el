@@ -453,11 +453,13 @@ TIMER, if non-nil, is the cleanup timer."
   (format "http://localhost:%s" (kele--proxy-record-port proxy)))
 
 (cl-defmethod ready-p ((proxy kele--proxy-record))
-  "Return non-nil if the PROXY is ready for requests."
+  "Return non-nil if the PROXY is ready for requests.
+
+Returns nil on any curl error."
   (let ((ready-addr (format "%s/readyz" (kele--url proxy)))
         (live-addr (format "%s/livez" (kele--url proxy))))
-    (when-let* ((resp-ready (plz 'get ready-addr :as 'response))
-                (resp-live (plz 'get live-addr :as 'response))
+    (when-let* ((resp-ready (plz 'get ready-addr :as 'response :else 'ignore))
+                (resp-live (plz 'get live-addr :as 'response :else 'ignore))
                 (status-ready (plz-response-status resp-ready))
                 (status-live (plz-response-status resp-live)))
       (and (= 200 status-ready) (= 200 status-live)))))
