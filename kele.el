@@ -1576,7 +1576,9 @@ First checks if the kind is set in the current Transient prefix,
 if it's set.  Otherwise, prompts user for input."
   (or (and transient-current-prefix
            (alist-get 'kind (oref transient-current-prefix scope)))
-      (completing-read "Choose a kind to work with: "
+      (completing-read (format
+                        "Choose a kind to work with (context: `%s'): "
+                        (kele--get-context-arg))
                        (kele--get-resource-types-for-context
                         (kele--get-context-arg)))))
 
@@ -1629,7 +1631,7 @@ instead of \"pod.\""
 
   (interactive (let* ((context (kele-current-context-name))
                       (kind (completing-read
-                             "Choose a kind to work with: "
+                             (format "Choose a kind to work with (context: `%s'): " context)
                              (kele--get-resource-types-for-context
                               context)))
                       (gvs (kele--get-groupversions-for-type
