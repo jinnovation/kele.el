@@ -16,7 +16,7 @@ keybinding **prefix** for all of Kele's keybindings.
 To bind, say, `s-k` as the keybinding prefix:
 
 ```emacs-lisp
-(define-key kele-mode-map (kbd "s-k") 'kele-command-map)
+(define-key kele-mode-map (kbd "s-k") kele-command-map)
 ```
 
 Now you can use, for example, `s-k c` to access [context-related
