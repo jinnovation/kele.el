@@ -1618,6 +1618,49 @@ instead of \"pod.\""
                                              :namespace namespace
                                              :context context))))
 
+(transient-define-suffix kele-edit (context namespace group-version kind name)
+  "Edit resource KIND by NAME.
+
+GROUP-VERSION, NAMESPACE, KIND, and CONTEXT are all used to identify the
+resource type to query for.
+
+KIND should be the plural form of the kind's name, e.g. \"pods\"
+instead of \"pod.\""
+  :key "e"
+  :description
+  (lambda ()
+    (--> (oref transient--prefix scope)
+         (alist-get 'kind it)
+         (propertize it 'face 'warning)
+         (format "Edit %s" it)))
+  (interactive
+   (-let* ((kind (kele--get-kind-arg))
+           (gv (kele--get-groupversion-arg kind))
+           ((group version) (kele--groupversion-split gv))
+           (ns (kele--get-namespace-arg
+                :group-version gv
+                :kind kind
+                :use-default nil))
+           (cands (kele--fetch-resource-names group version kind
+                                              :namespace ns
+                                              :context (kele--get-context-arg)))
+           (name (completing-read "Name: " (-cut kele--resources-complete <> <>
+                                                 <> :cands cands))))
+     (list (kele--get-context-arg) ns gv kind name)))
+  (-let (((group version) (kele--groupversion-split group-version)))
+    ;; FIXME: doesn't seem to work
+    (kele-kubectl-do
+     "edit"
+     "--context" context
+     "--namespace" namespace
+     (format "%s\.%s%s/%s"
+             kind
+             version
+             (if group (format ".%s" group) "")
+             name))))
+
+;; (kele-kubectl-do "edit" "deployments" "mysql")
+
 (transient-define-prefix kele-resource (group-versions kind)
   "Work with Kubernetes resources."
   ["Arguments"
@@ -1627,6 +1670,7 @@ instead of \"pod.\""
 
   ["Actions"
    (kele-get)
+   (kele-edit)
    (kele-list)]
 
   (interactive (let* ((context (kele-current-context-name))
