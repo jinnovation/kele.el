@@ -1648,8 +1648,10 @@ instead of \"pod.\""
                                                  <> :cands cands))))
      (list (kele--get-context-arg) ns gv kind name)))
   (-let (((group version) (kele--groupversion-split group-version)))
-    ;; FIXME: doesn't seem to work
-    (kele-kubectl-do
+    ;; FIXME: can we do this *without* hard-coding emacsclient...? or requiring
+    ;; emacsclient at all...?
+    (with-environment-variables (("EDITOR" "emacsclient"))
+      (kele-kubectl-do
      "edit"
      "--context" context
      "--namespace" namespace
@@ -1657,9 +1659,7 @@ instead of \"pod.\""
              kind
              version
              (if group (format ".%s" group) "")
-             name))))
-
-;; (kele-kubectl-do "edit" "deployments" "mysql")
+             name)))))
 
 (transient-define-prefix kele-resource (group-versions kind)
   "Work with Kubernetes resources."
