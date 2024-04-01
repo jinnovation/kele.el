@@ -530,7 +530,23 @@ metadata:
       (it "does nothing"
         (kele-mode 1)
         (expect 'kele--cache-start :not :to-have-been-called)
-        (expect 'kele--setup-embark-maybe :not :to-have-been-called))))
+        (expect 'kele--setup-embark-maybe :not :to-have-been-called)))
+    (describe "when `kele-kubectl-executable' not found"
+      (before-each
+        (spy-on 'executable-find
+                :and-call-fake
+                (lambda (exec)
+                  (not (string-equal exec kele-kubectl-executable)))))
+      (it "throws error"
+        (expect (kele-mode 1) :to-throw 'error)))
+    (describe "when `kele-kubeconfig-path' does not exist"
+      (before-each
+        (spy-on 'file-exists-p
+                :and-call-fake
+                (lambda (f)
+                  (not (string-equal f kele-kubeconfig-path)))))
+      (it "throws error"
+        (expect (kele-mode 1) :to-throw 'error))))
   (describe "disabling"
     (describe "when `kele--enabled' is nil"
       (before-each
