@@ -438,7 +438,7 @@ metadata:
               :not :to-throw)
       (expect 'plz :to-have-been-called-with
               'get
-              "http://localhost:9999/api/v1/nodes/my-node"
+              "http://127.0.0.1:9999/api/v1/nodes/my-node"
               :as #'json-read)))
 
   (describe "when GROUP and VERSION not specified"
@@ -447,7 +447,7 @@ metadata:
         (kele--get-resource "resourcequotas" "my-rq" :namespace "foobar")
         (expect 'plz :to-have-been-called-with
                 'get
-                "http://localhost:9999/api/v1/namespaces/foobar/resourcequotas/my-rq"
+                "http://127.0.0.1:9999/api/v1/namespaces/foobar/resourcequotas/my-rq"
                 :as #'json-read)))
 
     (describe "when multiple group-versions exist for the same resource type"
