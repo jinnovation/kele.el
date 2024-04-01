@@ -154,7 +154,7 @@ Returns the retval of FN."
 (cl-defun kele--proxy-process (context &key port (wait t) (read-only t))
   "Create a new kubectl proxy process for CONTEXT.
 
-The proxy will be opened at PORT (localhost:PORT).  If PORT is
+The proxy will be opened at PORT (127.0.0.1:PORT).  If PORT is
   nil, a random port will be chosen.  It is the caller's
   responsibility to ensure that the port is not occupied.
 
@@ -186,8 +186,8 @@ If WAIT is non-nil, `kele--proxy-process' will wait for the proxy
                   (when (zerop (process-exit-status proc))
                     (message "Successfully terminated process: %s" proc-name)
                     (kele--kill-process-quietly proc)))))
-         (ready-addr (format "http://localhost:%s/readyz" s-port))
-         (live-addr (format "http://localhost:%s/livez" s-port)))
+         (ready-addr (format "http://127.0.0.1:%s/readyz" s-port))
+         (live-addr (format "http://127.0.0.1:%s/livez" s-port)))
     (when wait
       ;; Give the proxy process some time to spin up, so that curl doesn't
       ;; return error code 7 which to request.el is a "peculiar error"
@@ -448,7 +448,7 @@ TIMER, if non-nil, is the cleanup timer."
   timer)
 
 (cl-defmethod kele--url ((proxy kele--proxy-record))
-  (format "http://localhost:%s" (kele--proxy-record-port proxy)))
+  (format "http://127.0.0.1:%s" (kele--proxy-record-port proxy)))
 
 (cl-defmethod ready-p ((proxy kele--proxy-record))
   "Return non-nil if the PROXY is ready for requests.
@@ -887,7 +887,7 @@ throws an error."
                              (if namespace (format "namespaces/%s/" namespace) "")
                              url-res))
             (port (kele--proxy-record-port (proxy-start kele--global-proxy-manager context)))
-            (url (format "http://localhost:%s/%s" port url-all)))
+            (url (format "http://127.0.0.1:%s/%s" port url-all)))
       (condition-case err
           (kele--resource-container-create
            :resource (kele--retry (lambda () (plz 'get url :as #'json-read)))
@@ -1045,7 +1045,7 @@ If CONTEXT is not provided, use the current context."
   (let* ((ctx (or context (kele-current-context-name)))
          (port (kele--proxy-record-port
                 (proxy-start kele--global-proxy-manager ctx)))
-         (url (format "http://localhost:%s/%s/%s"
+         (url (format "http://127.0.0.1:%s/%s/%s"
                       port
                       (if group
                           (format "apis/%s/%s" group version)
