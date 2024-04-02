@@ -1198,10 +1198,23 @@ Only populated if Embark is installed.")
       (dolist (entry kele--embark-keymap-entries)
         (delete entry embark-keymap-alist)))))
 
+(defun kele--precheck ()
+  "Return an error if `kele-mode' is not ready to be enabled.
+
+Ensures various preconditions are met,
+e.g. `kele-kubectl-executable' is actually present."
+
+  (when (not (executable-find kele-kubectl-executable))
+    (error "`%s' not found on PATH" kele-kubectl-executable))
+
+  (when (not (file-exists-p kele-kubeconfig-path))
+    (error "`%s' does not exist; set up kubectl properly and try again" kele-kubeconfig-path)))
+
 (defun kele--enable ()
   "Enables Kele functionality.
 
 This is idempotent."
+  (kele--precheck)
   (unless kele--enabled
     (setq kele--enabled t)
     ;; FIXME: Update the watcher when `kele-kubeconfig-path' changes.

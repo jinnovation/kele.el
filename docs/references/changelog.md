@@ -11,6 +11,11 @@ versioning][semver].
 
 ## Unreleased
 
+### Fixed
+
+- Fixed a bug where `kele-mode` errors out when the kubeconfig file does not
+  exist yet
+
 ### Changed
 
 - Bumped dependency `plz` from `0.3` to `0.4`
