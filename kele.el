@@ -8,7 +8,7 @@
 ;; Homepage: https://github.com/jinnovation/kele.el
 ;; Keywords: kubernetes tools
 ;; SPDX-License-Identifier: Apache-2.0
-;; Package-Requires: ((emacs "28.1") (async "1.9.7") (dash "2.19.1") (f "0.20.0") (ht "2.3") (plz "0.4") (s "1.13.0") (yaml "0.5.1"))
+;; Package-Requires: ((emacs "28.1") (async "1.9.7") (dash "2.19.1") (f "0.20.0") (ht "2.3") (plz "0.7.3") (s "1.13.0") (yaml "0.5.1"))
 
 ;;; Commentary:
 
@@ -456,11 +456,13 @@ TIMER, if non-nil, is the cleanup timer."
 Returns nil on any curl error."
   (let ((ready-addr (format "%s/readyz" (kele--url proxy)))
         (live-addr (format "%s/livez" (kele--url proxy))))
-    (when-let* ((resp-ready (plz 'get ready-addr :as 'response :else 'ignore))
-                (resp-live (plz 'get live-addr :as 'response :else 'ignore))
-                (status-ready (plz-response-status resp-ready))
-                (status-live (plz-response-status resp-live)))
-      (and (= 200 status-ready) (= 200 status-live)))))
+    (condition-case _err
+        (when-let* ((resp-ready (plz 'get ready-addr :as 'response :else 'ignore))
+                    (resp-live (plz 'get live-addr :as 'response :else 'ignore))
+                    (status-ready (plz-response-status resp-ready))
+                    (status-live (plz-response-status resp-live)))
+          (and (= 200 status-ready) (= 200 status-live)))
+      (error nil))))
 
 (defclass kele--proxy-manager ()
   ((records
@@ -1040,7 +1042,7 @@ If CONTEXT is not provided, use the current context."
                    kele--global-discovery-cache
                    (kele--groupversion-string group version)
                    kind)))
-    (signal 'user-error '()))
+    (user-error "Attempted to fetch un-namespaced resource `%s' as namespaced" kind))
 
   (let* ((ctx (or context (kele-current-context-name)))
          (port (kele--proxy-record-port

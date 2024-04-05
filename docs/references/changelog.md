@@ -15,10 +15,12 @@ versioning][semver].
 
 - Fixed a bug where `kele-mode` errors out when the kubeconfig file does not
   exist yet
+- Fixed a bug where `curl` errors are not properly caught, resulting in attempts
+  to query the kubectl proxy server before it is ready
 
 ### Changed
 
-- Bumped dependency `plz` from `0.3` to `0.4`
+- Bumped dependency `plz` from `0.3` to `0.7.3`
 
 ## 0.4.1
 
