@@ -1042,7 +1042,7 @@ If CONTEXT is not provided, use the current context."
                    kele--global-discovery-cache
                    (kele--groupversion-string group version)
                    kind)))
-    (user-error "Attempted to fetch un-namespaced resource as namespaced"))
+    (user-error "Attempted to fetch un-namespaced resource `%s' as namespaced" kind))
 
   (let* ((ctx (or context (kele-current-context-name)))
          (port (kele--proxy-record-port
