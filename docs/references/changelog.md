@@ -11,6 +11,8 @@ versioning][semver].
 
 ## Unreleased
 
+## 0.4.2
+
 ### Fixed
 
 - Fixed a bug where `kele-mode` errors out when the kubeconfig file does not
