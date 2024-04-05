@@ -1040,6 +1040,7 @@ If CONTEXT is not provided, use the current context."
                    kele--global-discovery-cache
                    (kele--groupversion-string group version)
                    kind)))
+    (message "foobar")
     (signal 'user-error '()))
 
   (let* ((ctx (or context (kele-current-context-name)))
@@ -1053,6 +1054,7 @@ If CONTEXT is not provided, use the current context."
                       kind)))
     ;; Block on proxy readiness
     (proxy-get kele--global-proxy-manager ctx :wait t)
+    (message "Querying %s" url)
     (if-let* ((data (kele--retry (lambda () (plz 'get url :as #'json-read))))
               (filtered-items (->> (append  (alist-get 'items data) '())
                                    (-filter (lambda (item)
