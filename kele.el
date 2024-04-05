@@ -455,15 +455,12 @@ TIMER, if non-nil, is the cleanup timer."
 
 Returns nil on any curl error."
   (let ((ready-addr (format "%s/readyz" (kele--url proxy)))
-        (live-addr (format "%s/livez" (kele--url proxy)))
-        (err))
-    (when-let* ((resp-ready (plz 'get ready-addr :as 'response
-                              :else (lambda (e) (setf err e))))
-                (resp-live (plz 'get live-addr :as 'response :else
-                             (lambda (e) (setf err e))))
+        (live-addr (format "%s/livez" (kele--url proxy))))
+    (when-let* ((resp-ready (plz 'get ready-addr :as 'response :else 'ignore))
+                (resp-live (plz 'get live-addr :as 'response :else 'ignore))
                 (status-ready (plz-response-status resp-ready))
                 (status-live (plz-response-status resp-live)))
-      (and (not (plz-error-p err)) (= 200 status-ready) (= 200 status-live)))))
+      (and (= 200 status-ready) (= 200 status-live)))))
 
 (defclass kele--proxy-manager ()
   ((records
