@@ -456,7 +456,7 @@ TIMER, if non-nil, is the cleanup timer."
 Returns nil on any curl error."
   (let ((ready-addr (format "%s/readyz" (kele--url proxy)))
         (live-addr (format "%s/livez" (kele--url proxy))))
-    (condition-case err
+    (condition-case _err
         (when-let* ((resp-ready (plz 'get ready-addr :as 'response))
                     (resp-live (plz 'get live-addr :as 'response))
                     (status-ready (plz-response-status resp-ready))
