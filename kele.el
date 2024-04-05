@@ -1040,8 +1040,7 @@ If CONTEXT is not provided, use the current context."
                    kele--global-discovery-cache
                    (kele--groupversion-string group version)
                    kind)))
-    (message "foobar")
-    (signal 'user-error '()))
+    (user-error "Attempted to fetch un-namespaced resource as namespaced"))
 
   (let* ((ctx (or context (kele-current-context-name)))
          (port (kele--proxy-record-port
