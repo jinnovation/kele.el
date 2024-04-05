@@ -1052,9 +1052,9 @@ If CONTEXT is not provided, use the current context."
                           (format "apis/%s/%s" group version)
                         (format "api/%s" version))
                       kind)))
+    (message "Querying %s" url)
     ;; Block on proxy readiness
     (proxy-get kele--global-proxy-manager ctx :wait t)
-    (message "Querying %s" url)
     (if-let* ((data (kele--retry (lambda () (plz 'get url :as #'json-read))))
               (filtered-items (->> (append  (alist-get 'items data) '())
                                    (-filter (lambda (item)
