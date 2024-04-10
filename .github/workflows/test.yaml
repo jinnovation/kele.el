@@ -81,6 +81,7 @@ jobs:
       - name: Upload coverage
         if: steps.install.outcome == 'success' && steps.install.conclusion == 'success'
         uses: codecov/codecov-action@v2
+        continue-on-error: true
         with:
           env_vars: EMACS_VERSION
           files: ./coverage/unit/lcov-buttercup.info,./coverage/integration/lcov-buttercup.info
