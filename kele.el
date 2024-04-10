@@ -1709,7 +1709,8 @@ The `scope' is the current context name."
   "Return text to display for help echo."
   (let* ((ns (kele-current-namespace))
          (msgs (list (format "Current context: %s" (kele-current-context-name)))))
-    (if ns (add-to-list 'msgs (format "Current namespace: %s" ns)))
+    (if ns
+        (setq msgs (append msgs (list (format "Current namespace: %s" ns)))))
     (string-join msgs "\n")))
 
 (provide 'kele)
