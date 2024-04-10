@@ -93,6 +93,9 @@ pods."
   :type 'integer
   :group 'kele)
 
+(defvar kele--discovery-last-refresh-time nil
+  "Timestamp of last successful poll of the discovery cache.")
+
 ;; TODO (#80): Display in the `kele-get-mode' header what fields were filtered out
 (defcustom kele-filtered-fields '((metadata managedFields)
                                   (metadata annotations kubectl.kubernetes.io/last-applied-configuration))
@@ -328,7 +331,8 @@ retval into `async-wait'."
   (let* ((progress-reporter (make-progress-reporter "Pulling discovery cache..."))
          (func-complete (lambda (res)
                           (oset cache contents res)
-                          (progress-reporter-done progress-reporter))))
+                          (progress-reporter-done progress-reporter)
+                          (setq kele--discovery-last-refresh-time (current-time)))))
     (async-start `(lambda ()
                     (add-to-list 'load-path (file-name-directory ,(locate-library "dash")))
                     (add-to-list 'load-path (file-name-directory ,(locate-library "f")))
@@ -1703,7 +1707,6 @@ The `scope' is the current context name."
   (transient-setup 'kele-proxy nil nil :scope (kele-current-context-name)))
 
 ;; TODO: Show:
-;; - Time of last discovery cache sync
 ;; - Active proxy servers
 (defun kele--help-echo ()
   "Return text to display for help echo."
@@ -1711,6 +1714,8 @@ The `scope' is the current context name."
          (msgs (list (format "Current context: %s" (kele-current-context-name)))))
     (if ns
         (setq msgs (append msgs (list (format "Current namespace: %s" ns)))))
+    (setq msgs (append msgs (list (format "Discovery cache last polled: %s"
+                                          (format-time-string "%F %T" kele--discovery-last-refresh-time)))))
     (string-join msgs "\n")))
 
 (provide 'kele)
