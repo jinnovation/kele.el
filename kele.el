@@ -1702,6 +1702,16 @@ The `scope' is the current context name."
   (interactive)
   (transient-setup 'kele-proxy nil nil :scope (kele-current-context-name)))
 
+;; TODO: Show:
+;; - Time of last discovery cache sync
+;; - Active proxy servers
+(defun kele--help-echo ()
+  "Return text to display for help echo."
+  (let* ((ns (kele-current-namespace))
+         (msgs (list (format "Current context: %s" (kele-current-context-name)))))
+    (if ns (add-to-list 'msgs (format "Current namespace: %s" ns)))
+    (string-join msgs "\n")))
+
 (provide 'kele)
 
 ;;; kele.el ends here
