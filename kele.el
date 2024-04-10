@@ -595,8 +595,6 @@ to complete.  Returned value may not be up to date."
                    (concat ctx (if ns (concat "(" ns ")") "")))))
     (concat "k8s:" status)))
 
-(defconst kele--awesome-tray-module '("kele" . (kele-status-simple nil)))
-
 (defun kele-context-names ()
   "Get the names of all known contexts."
   (-map
@@ -1224,10 +1222,7 @@ This is idempotent."
     ;; FIXME: Update the watcher when `kele-cache-dir' changes.
     (kele--cache-start kele--global-discovery-cache :bootstrap t)
 
-    (kele--setup-embark-maybe)
-    (if (featurep 'awesome-tray)
-        (with-suppressed-warnings ((free-vars awesome-tray-module-alist))
-          (add-to-list 'awesome-tray-module-alist kele--awesome-tray-module)))))
+    (kele--setup-embark-maybe)))
 
 (defun kele--disable ()
   "Disable Kele functionality.
@@ -1237,10 +1232,7 @@ This is idempotent."
     (setq kele--enabled nil)
     (kele--cache-stop kele--global-kubeconfig-cache)
     (kele--cache-stop kele--global-discovery-cache)
-    (kele--teardown-embark-maybe)
-    (if (featurep 'awesome-tray)
-        (with-suppressed-warnings ((free-vars awesome-tray-module-alist))
-          (delete kele--awesome-tray-module awesome-tray-module-alist)))))
+    (kele--teardown-embark-maybe)))
 
 (defvar kele-mode-map (make-sparse-keymap)
   "Keymap for Kele mode.")

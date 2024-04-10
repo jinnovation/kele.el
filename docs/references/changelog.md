@@ -24,6 +24,10 @@ versioning][semver].
 
 - Bumped dependency `plz` from `0.3` to `0.7.3`
 
+### Removed
+
+- Removed integration with [`awesome-tray`](https://github.com/manateelazycat/awesome-tray)
+
 ## 0.4.1
 
 ### Fixed
