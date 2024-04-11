@@ -13,8 +13,10 @@ versioning][semver].
 
 ### Added
 
-- [Menu bar] integration. Now you can access common tasks via the **Kubernetes**
-  section on the menu bar
+- **[Menu bar] integration**. Now you can access common tasks via the
+  **Kubernetes** section on the menu bar
+- Added ability to switch contexts from within the menu bar; available contexts
+  are shown as a sub-menu
 
 ## 0.4.2
 

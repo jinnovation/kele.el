@@ -1226,6 +1226,8 @@ This is idempotent."
     ;; FIXME: Update the watcher when `kele-cache-dir' changes.
     (kele--cache-start kele--global-discovery-cache :bootstrap t)
 
+    (add-hook 'menu-bar-update-hook 'kele--update-contexts-menu)
+
     (kele--setup-embark-maybe)))
 
 (defun kele--disable ()
@@ -1236,6 +1238,8 @@ This is idempotent."
     (setq kele--enabled nil)
     (kele--cache-stop kele--global-kubeconfig-cache)
     (kele--cache-stop kele--global-discovery-cache)
+
+    (remove-hook 'menu-bar-update-hook 'kele--update-contexts-menu)
     (kele--teardown-embark-maybe)))
 
 (defvar kele-mode-map (make-sparse-keymap)
@@ -1724,11 +1728,25 @@ The `scope' is the current context name."
 Similar to `kele-dispatch'."
    '("Kubernetes"
      ("Configuration"
-      ;; TODO: Make this a menu where user can select from the available contexts
-      ["Switch context" kele-context-switch]
+
+      ;; placeholder for dynamic fill-in (see `kele--update-contexts-menu')
+      ["Switch context to..." nil]
+
       ["Switch namespace for current context" kele-namespace-switch-for-current-context]
       "---"
       ["Find config file" kele-find-kubeconfig])))
+
+(defun kele--update-contexts-menu ()
+  "Fill in the context-switch sub-menu with candidate contexts."
+  (easy-menu-add-item
+   kele-menu-map
+   '("Configuration")
+   (append '("Switch context to...")
+           (mapcar (lambda (ctx)
+                     (vector ctx (lambda ()
+                                   (interactive)
+                                   (kele-context-switch ctx))))
+                   (kele-context-names)))))
 
 (provide 'kele)
 
