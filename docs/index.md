@@ -26,19 +26,6 @@ With Kele, you can:
 See [How-Tos > Usage](./how-tos/usage.md) for more details on what's possible
 with Kele.
 
-!!! warning
-
-    Kele is in **very** early stages of development. As of 2024/04/11, it is
-    usable (I use it everyday for my day job!) but there are rough edges.
-
-    Do give things a try and I'd appreciate [issues for any bugs or rough
-    edges](https://github.com/jinnovation/kele.el/issues) that you might come
-    across.
-
-    Thanks!
-
-    -- @jinnovation
-
 ![](./img/demo.gif)
 ![](./img/menu-bar.png)
 
