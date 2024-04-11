@@ -1718,6 +1718,18 @@ The `scope' is the current context name."
                                           (format-time-string "%F %T" kele--discovery-last-refresh-time)))))
     (string-join msgs "\n")))
 
+(easy-menu-define kele-menu-map kele-mode-map
+  "Menu for Kubernetes management.
+
+Similar to `kele-dispatch'."
+   '("Kubernetes"
+     ("Configuration"
+      ;; TODO: Make this a menu where user can select from the available contexts
+      ["Switch context" kele-context-switch]
+      ["Switch namespace for current context" kele-namespace-switch-for-current-context]
+      "---"
+      ["Find config file" kele-find-kubeconfig])))
+
 (provide 'kele)
 
 ;;; kele.el ends here
