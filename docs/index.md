@@ -20,6 +20,7 @@ With Kele, you can:
   resource](./how-tos/usage.md#working-with-resources);
 - [List collections of resources](./how-tos/usage.md#working-with-resources);
 - Start and stop [proxy servers](./how-tos/usage.md#managing-proxy-servers);
+- Use the menu bar to perform basic cluster/config management;
 - And more! :sunglasses:
 
 See [How-Tos > Usage](./how-tos/usage.md) for more details on what's possible
@@ -27,7 +28,7 @@ with Kele.
 
 !!! warning
 
-    Kele is in **very** early stages of development. As of 2023/01/26, it is
+    Kele is in **very** early stages of development. As of 2024/04/11, it is
     usable (I use it everyday for my day job!) but there are rough edges.
 
     Do give things a try and I'd appreciate [issues for any bugs or rough
@@ -39,6 +40,7 @@ with Kele.
     -- @jinnovation
 
 ![](./img/demo.gif)
+![](./img/menu-bar.png)
 
 !!! tip
 

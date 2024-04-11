@@ -11,6 +11,11 @@ versioning][semver].
 
 ## Unreleased
 
+### Added
+
+- [Menu bar] integration. Now you can access common tasks via the **Kubernetes**
+  section on the menu bar
+
 ## 0.4.2
 
 ### Fixed
@@ -236,3 +241,4 @@ future enhancements.
 [How-Tos > Customization]:https://jonathanj.in/kele.el/how-tos/customization/
 [How-Tos > Usage]: https://jonathanj.in/kele.el/how-tos/usage/
 [Transient]: https://magit.vc/manual/transient.html
+[Menu bar]: https://www.gnu.org/software/emacs/manual/html_node/emacs/Menu-Bar.html
