@@ -725,6 +725,7 @@ node `(elisp)Programmed Completion'."
   (kele--with-progress (format "Switching to use context `%s'..." context)
     (kele-kubectl-do "config" "use-context" context)))
 
+;; TODO(#176): Update `kele--namespace-cache'
 (transient-define-suffix kele-context-rename (old-name new-name)
   "Rename context named OLD-NAME to NEW-NAME."
   :key "r"
@@ -733,9 +734,10 @@ node `(elisp)Programmed Completion'."
                                       #'kele--contexts-complete
                                       nil t nil nil (kele-current-context-name))
                      (read-from-minibuffer "Rename to: ")))
-  ;; TODO: This needs to update `kele--global-proxy-manager' as well.
+  ;; TODO(#176): This needs to update `kele--global-proxy-manager' as well.
   (kele-kubectl-do "config" "rename-context" old-name new-name))
 
+;; TODO(#176): Update `kele--namespace-cache'
 (transient-define-suffix kele-context-delete (context)
   :key "d"
   :description "Delete a context"
@@ -781,21 +783,21 @@ existing process *regardless of the value of PORT*."
 
 Values are: (RESOURCE-NAME . (list RESOURCE)).")
 
-(defvar kele--context-namespaces nil
+(defvar kele--namespaces-cache nil
   "An alist mapping contexts to their constituent namespaces.
 
 If value is nil, the namespaces need to be fetched directly.")
 
 (defun kele--clear-namespaces-for-context (context)
   "Clear the stored namespaces for CONTEXT."
-  (setq kele--context-namespaces
-        (assoc-delete-all (intern context) kele--context-namespaces)))
+  (setq kele--namespaces-cache
+        (assoc-delete-all (intern context) kele--namespaces-cache)))
 
 (defun kele--get-namespaces (context)
   "Get namespaces for CONTEXT.
 
 If not cached, will fetch and cache the namespaces."
-  (if-let ((namespaces (alist-get (intern context) kele--context-namespaces)))
+  (if-let ((namespaces (alist-get (intern context) kele--namespaces-cache)))
       namespaces
     (apply #'kele--cache-namespaces context
            (kele--fetch-resource-names nil "v1" "namespaces" :context context))))
@@ -813,7 +815,7 @@ The cache has a TTL as defined by
 `kele-resource-default-refresh-interval'.
 
 Returns the passed-in list of namespaces."
-  (add-to-list 'kele--context-namespaces `(,(intern context) . ,namespace-names))
+  (add-to-list 'kele--namespaces-cache `(,(intern context) . ,namespace-names))
   (run-with-timer
    (kele--get-cache-ttl-for-resource 'namespace)
    nil

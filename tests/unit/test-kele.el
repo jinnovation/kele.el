@@ -167,20 +167,20 @@
 
 (describe "kele--clear-namespaces-for-context"
   (before-each
-    (setq kele--context-namespaces '((foo . ("n1" "n2" "n3")))))
+    (setq kele--namespaces-cache '((foo . ("n1" "n2" "n3")))))
   (describe "when context is present in cache"
     (it "deletes the entry"
       (kele--clear-namespaces-for-context "foo")
-      (expect kele--context-namespaces :to-equal nil))))
+      (expect kele--namespaces-cache :to-equal nil))))
 
 (describe "kele--cache-namespaces"
   (before-each
     (spy-on 'run-with-timer)
-    (setq kele--context-namespaces nil))
+    (setq kele--namespaces-cache nil))
 
   (it "adds namespaces correctly"
     (kele--cache-namespaces "foobar" "n0" "n1" "n2")
-    (expect (alist-get 'foobar kele--context-namespaces)
+    (expect (alist-get 'foobar kele--namespaces-cache)
             :to-equal
             '("n0" "n1" "n2"))
     (expect 'run-with-timer :to-have-been-called))
