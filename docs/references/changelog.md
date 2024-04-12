@@ -32,6 +32,8 @@ versioning][semver].
 - Changed the default cache expiration time for namespaces from 600 seconds to
   **never**, since the set of namespaces in a cluster rarely if ever change. You
   can use `kele-cache-namespaces` to force-refresh them as needed.
+- Namespace selection now checks whether or not you have permission to list
+  namespaces from the cluster and falls back to verbatim string when you don't
 
 ## 0.4.2
 
