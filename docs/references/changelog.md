@@ -18,6 +18,11 @@ versioning][semver].
 - Added ability to switch contexts from within the menu bar; available contexts
   are shown as a sub-menu
 
+### Fixed
+
+- Fixed a bug where a proxy server is sometimes initialized on a privileged
+  port, resulting in TCP `permission denied` errors
+
 ## 0.4.2
 
 ### Fixed

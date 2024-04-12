@@ -148,7 +148,7 @@ Returns the retval of FN."
       (ignore-errors (delete-process proc))
       (ignore-errors (kill-buffer buf)))))
 
-(defconst kele--random-port-range '(1000 9000))
+(defconst kele--random-port-range '(3000 9000))
 
 (defun kele--random-port ()
   "Return a random integer within `kele--random-port-range'."
