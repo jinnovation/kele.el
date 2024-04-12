@@ -1751,7 +1751,8 @@ Similar to `kele-dispatch'."
 
 (defun kele--update-contexts-menu ()
   "Fill in the context-switch sub-menu with candidate contexts."
-  (let ((ctx-current (kele-current-context-name :wait nil)))
+  (let ((ctx-current (kele-current-context-name :wait nil))
+        (ns-current (kele-current-namespace :wait nil)))
     (easy-menu-add-item
      kele-menu-map
      '("Configuration")
@@ -1763,10 +1764,8 @@ Similar to `kele-dispatch'."
                                  (kele-namespace-switch-for-context ctx-current ns))
                                :help (format "Switch to namespace `%s' for context `%s'" ns ctx-current)
                                :style 'radio
-                               :enable (not (string-equal ns
-                                                          (kele-current-namespace)))
-                               :selected (string-equal ns
-                                                       (kele-current-namespace))))
+                               :enable (not (string-equal ns ns-current))
+                               :selected (string-equal ns ns-current)))
                      (kele--get-namespaces ctx-current))))
     (easy-menu-add-item
      kele-menu-map
