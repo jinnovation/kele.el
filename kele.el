@@ -827,7 +827,6 @@ The cache has a TTL as defined by
 Returns the passed-in list of namespaces."
   (add-to-list 'kele--namespaces-cache `(,(intern context) . ,namespace-names))
   (let ((ttl (kele--get-cache-ttl-for-resource 'namespace)))
-    ;; TODO: Test :never
     (when (and ttl (not (eq ttl :never)))
       (run-with-timer
        (kele--get-cache-ttl-for-resource 'namespace)
