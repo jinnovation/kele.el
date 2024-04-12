@@ -835,15 +835,6 @@ Returns the passed-in list of namespaces."
        context)))
   namespace-names)
 
-(cl-defun kele-cache-namespaces (&optional context)
-  "Cache namespaces for CONTEXT.
-
-If CONTEXT not provided, uses the current context."
-  (interactive (list (completing-read "Context: " #'kele--contexts-complete)))
-  (let* ((ctx (or context (kele-current-context-name)))
-         (namespaces (kele--get-namespaces ctx :cache nil)))
-    (apply 'kele--cache-namespaces ctx namespaces)))
-
 (cl-defstruct (kele--resource-container
                (:constructor kele--resource-container-create)
                (:copier nil))
