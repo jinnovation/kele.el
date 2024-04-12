@@ -1617,6 +1617,7 @@ if it's set.  Otherwise, prompts user for input."
                        (kele--get-resource-types-for-context
                         (kele--get-context-arg)))))
 
+;; TODO: Disable if user does not have permission to get the given resource
 (transient-define-suffix kele-get (context namespace group-version kind name)
   "Get resource KIND by NAME and display it in a buffer.
 
@@ -1626,13 +1627,6 @@ resource type to query for.
 KIND should be the plural form of the kind's name, e.g. \"pods\"
 instead of \"pod.\""
   :key "g"
-  ;; TODO: Disable if user does not have permission to get the given resource
-  ;; :if (lambda ()
-  ;;       (kele--can-i :resource kind
-  ;;                    :group (-let (((group version) (kele--groupversion-split
-  ;;                                                    group-version)))
-  ;;                             group)
-  ;;                    :verb 'get))
   :description
   (lambda ()
     (--> (oref transient--prefix scope)
