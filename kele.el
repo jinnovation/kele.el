@@ -643,6 +643,26 @@ to complete.  Returned value may not be up to date."
             proxy-status
             (propertize ")" 'face 'completions-annotations))))
 
+(cl-defun kele--namespaces-complete (&key context prompt initial-input history)
+  "Complete input for namespaces in CONTEXT using PROMPT.
+
+If user does not have permission to list namespaces, simply
+prompt user for verbatim string.
+
+If CONTEXT is not provided, use the current context."
+  (let ((ctx (or context (kele-current-context-name))))
+    (completing-read
+     (or prompt (format "Namespace (%s): " ctx))
+     (when (kele--can-i
+            :resource "namespaces"
+            :group "core"
+            :verb 'list
+            :context ctx)
+       (-cut kele--resources-complete <> <> <>
+             :cands (kele--get-namespaces ctx)
+             :category 'kele-namespace))
+     nil t initial-input history)))
+
 (cl-defun kele--resources-complete (str pred action &key cands category)
   "Complete input for selection of resources.
 
@@ -659,12 +679,7 @@ as."
 (defun kele-namespace-switch-for-context (context namespace)
   "Switch to NAMESPACE for CONTEXT."
   (interactive (let ((context (completing-read "Context: " #'kele--contexts-complete)))
-                 (list context
-                       (completing-read (format "Namespace (%s): " context)
-                                        (-cut kele--resources-complete <> <> <>
-                                              :cands (kele--get-namespaces
-                                                      context)
-                                              :category 'kele-namespace)))))
+                 (list context (kele--namespaces-complete :context context))))
   (kele-kubectl-do "config" "set-context" context "--namespace" namespace))
 
 (transient-define-suffix kele-namespace-switch-for-current-context (namespace)
@@ -681,11 +696,7 @@ as."
                  (oref transient--prefix scope)
                (kele-current-context-name))))
      (list
-      (completing-read
-       (format "Namespace (%s): " ctx)
-       (-cut kele--resources-complete <> <> <>
-             :cands (kele--get-namespaces ctx)
-             :category 'kele-namespace)))))
+      (kele--namespaces-complete :context ctx))))
   (kele-namespace-switch-for-context
    (if (and transient--prefix
             (slot-boundp transient--prefix 'scope))
@@ -1080,6 +1091,7 @@ If CONTEXT is not provided, use the current context."
         (progn
           (setf (cdr (assoc 'items data)) filtered-items)
           data)
+      ;; FIXME: This might send false error if filtered-items ends up being empty
       (signal 'error (format "Failed to fetch %s/%s/%s" group version kind)))))
 
 (cl-defun kele--fetch-resource-names (group version kind &key namespace context)
@@ -1287,12 +1299,11 @@ Assumes that the current Transient prefix's :scope is an alist w/ `context' key.
   ;; value.  If not present (or the scope is not an alist or the scope is not
   ;; defined), default to current context.
   (if-let ((context (alist-get 'context (oref transient--prefix scope))))
-      (completing-read
-       prompt
-       (-cut kele--resources-complete <> <> <>
-             :cands (kele--get-namespaces context)
-             :category 'kele-namespace)
-       nil t initial-input history)
+      (kele--namespaces-complete
+       :context context
+       :prompt prompt
+       :initial-input initial-input
+       :history history)
     (error "Unexpected nil context in `%s'" (oref transient--prefix command))))
 
 (defclass kele--transient-scope-mutator (transient-option)
@@ -1611,6 +1622,7 @@ if it's set.  Otherwise, prompts user for input."
                        (kele--get-resource-types-for-context
                         (kele--get-context-arg)))))
 
+;; TODO: Disable if user does not have permission to get the given resource
 (transient-define-suffix kele-get (context namespace group-version kind name)
   "Get resource KIND by NAME and display it in a buffer.
 
@@ -1782,7 +1794,7 @@ Similar to `kele-dispatch'."
                                :selected (string-equal ctx ctx-current)))
                      (kele-context-names))))))
 
-(cl-defun kele--mk-self-subject-access-review (&key resource group (verb 'get))
+(cl-defun kele--mk-self-subject-access-review (&key resource group (verb 'get) version)
   "Stub out a SelfSubjectAccessReview for GROUP, RESOURCE, and VERB.
 
 Return the resulting SelfSubjectAccessReview in alist form."
@@ -1790,6 +1802,7 @@ Return the resulting SelfSubjectAccessReview in alist form."
     (kind . "SelfSubjectAccessReview")
     (spec . ((resourceAttributes . ((group . ,group)
                                     (resource . ,resource)
+                                    (version . ,(or version "*"))
                                     (verb . ,(symbol-name verb))))))))
 
 
