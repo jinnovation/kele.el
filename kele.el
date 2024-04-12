@@ -643,8 +643,8 @@ to complete.  Returned value may not be up to date."
             proxy-status
             (propertize ")" 'face 'completions-annotations))))
 
-(cl-defun kele--namespaces-complete (&optional context)
-  "Complete input for namespaces.
+(cl-defun kele--namespaces-complete (&key prompt context)
+  "Complete input for namespaces in CONTEXT using PROMPT.
 
 If user does not have permission to list namespaces, simply
 prompt user for verbatim string.
@@ -652,7 +652,7 @@ prompt user for verbatim string.
 If CONTEXT is not provided, use the current context."
   (let ((ctx (or context (kele-current-context-name))))
     (completing-read
-     (format "Namespace (%s): " ctx)
+     (or prompt (format "Namespace (%s): " ctx))
      (when (kele--can-i
             :resource "namespaces"
             :group "core"
@@ -678,7 +678,7 @@ as."
 (defun kele-namespace-switch-for-context (context namespace)
   "Switch to NAMESPACE for CONTEXT."
   (interactive (let ((context (completing-read "Context: " #'kele--contexts-complete)))
-                 (list context (kele--namespaces-complete context))))
+                 (list context (kele--namespaces-complete :context context))))
   (kele-kubectl-do "config" "set-context" context "--namespace" namespace))
 
 (transient-define-suffix kele-namespace-switch-for-current-context (namespace)
@@ -695,7 +695,7 @@ as."
                  (oref transient--prefix scope)
                (kele-current-context-name))))
      (list
-      (kele--namespaces-complete ctx))))
+      (kele--namespaces-complete :context ctx))))
   (kele-namespace-switch-for-context
    (if (and transient--prefix
             (slot-boundp transient--prefix 'scope))
@@ -1298,7 +1298,7 @@ Assumes that the current Transient prefix's :scope is an alist w/ `context' key.
   ;; value.  If not present (or the scope is not an alist or the scope is not
   ;; defined), default to current context.
   (if-let ((context (alist-get 'context (oref transient--prefix scope))))
-      (kele--namespaces-complete context)
+      (kele--namespaces-complete :context context :prompt prompt)
     (error "Unexpected nil context in `%s'" (oref transient--prefix command))))
 
 (defclass kele--transient-scope-mutator (transient-option)
