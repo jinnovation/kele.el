@@ -1757,6 +1757,7 @@ Similar to `kele-dispatch'."
                                  (kele-context-switch ctx))
                                :help (format "Switch to context `%s'" ctx)
                                :style 'radio
+                               :enable (not (string-equal ctx ctx-current))
                                :selected (string-equal ctx ctx-current)))
                      (kele-context-names))))))
 
