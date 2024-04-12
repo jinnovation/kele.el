@@ -176,7 +176,15 @@
 (describe "kele--cache-namespaces"
   (before-each
     (spy-on 'run-with-timer)
-    (setq kele--namespaces-cache nil))
+    (setq kele--namespaces-cache nil)
+    (setq kele-resource-refresh-overrides nil))
+
+  (describe "when resource's cache TTL is set to :never"
+    (before-each
+      (setq kele-resource-refresh-overrides '((namespace . :never))))
+    (it "does not create a timer"
+      (kele--cache-namespaces "foobar" "n0")
+      (expect 'run-with-timer :not :to-have-been-called)))
 
   (it "adds namespaces correctly"
     (kele--cache-namespaces "foobar" "n0" "n1" "n2")
@@ -191,14 +199,16 @@
 (describe "resource caching"
   (before-each
     (setq kele-resource-default-refresh-interval 60)
-    (setq kele-resource-refresh-overrides '((foo . 999))))
+    (setq kele-resource-refresh-overrides '((foo . 999)
+                                            (bar . :never))))
 
   (describe "when a resource has a TTL override"
     (it "uses the override value"
+      (expect (kele--get-cache-ttl-for-resource 'bar) :to-equal :never)
       (expect (kele--get-cache-ttl-for-resource 'foo) :to-equal 999)))
   (describe "when a resource has no TTL override"
     (it "uses the default value"
-      (expect (kele--get-cache-ttl-for-resource 'bar) :to-equal 60))))
+      (expect (kele--get-cache-ttl-for-resource 'qux) :to-equal 60))))
 
 (describe "kele--cache-update (kele--discovery-cache)"
   (describe "the retval"
