@@ -75,7 +75,7 @@ its cached values are wiped afther this many seconds."
   :type 'integer
   :group 'kele)
 
-(defcustom kele-resource-refresh-overrides '((namespace . 600))
+(defcustom kele-resource-refresh-overrides '((namespace . :never))
   "Resource-specific cache time-to-live overrides.
 
 If a resource is listed here, the corresponding value will be
@@ -834,6 +834,15 @@ Returns the passed-in list of namespaces."
        #'kele--clear-namespaces-for-context
        context)))
   namespace-names)
+
+(cl-defun kele-cache-namespaces (&optional context)
+  "Cache namespaces for CONTEXT.
+
+If CONTEXT not provided, uses the current context."
+  (interactive (list (completing-read "Context: " #'kele--contexts-complete)))
+  (let* ((ctx (or context (kele-current-context-name)))
+         (namespaces (kele--get-namespaces ctx :cache nil)))
+    (apply 'kele--cache-namespaces ctx namespaces)))
 
 (cl-defstruct (kele--resource-container
                (:constructor kele--resource-container-create)

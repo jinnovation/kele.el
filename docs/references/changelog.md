@@ -25,6 +25,12 @@ versioning][semver].
 - Fixed a bug where a proxy server is sometimes initialized on a privileged
   port, resulting in TCP `permission denied` errors
 
+### Changed
+
+- Changed the default cache expiration time for namespaces from 600 seconds to
+  **never**, since the set of namespaces in a cluster rarely if ever change. You
+  can use `kele-cache-namespaces` to force-refresh them as needed.
+
 ## 0.4.2
 
 ### Fixed
