@@ -58,6 +58,44 @@ the `kele-get` result buffer's keybindings.
 Kele provides a handful of customization variables with which you can influence [cache
 behavior](../explanations/design.md#caches).
 
+### Changing resource caching expiration time
+
+!!! note
+
+    Currently only namespace names are cached.
+
+Kele caches certain resource names upon fetching. This speeds up subsequent
+queries drastically.
+
+These cached values have a expiration time, after which the cached values are
+erased.
+
+You can change the default refresh interval with
+`kele-resource-default-refresh-interval`. For example, a value of `60` means
+that all cached values are erased 60 seconds after creation.
+
+### Changing resource-specific caching expiration time
+
+For some resources, you might expect the set of names in the cluster to change
+more or less frequently than others. Some you might, for all intents and
+purposes, assume **never** change.
+
+You can set resource-specific cache expirations with
+`kele-resource-refresh-overrides`. For example, the following will set cached
+names for Pods to expire after 600 seconds:
+
+```emacs-lisp
+(setq kele-resource-refresh-overrides '((pod . 600)))
+```
+
+You can **also** set the special value `:never`, in which case the cached values
+are **never** automatically erased once they're written. For example, the
+following will set cached names for Namespaces to never expire:
+
+```emacs-lisp
+(setq kele-resource-refresh-overrides '((namespace . :never)))
+```
+
 ### Change the discovery cache polling interval
 
 If you'd like Kele to poll the discovery cache more or less frequently than the default, set
