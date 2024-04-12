@@ -1738,15 +1738,20 @@ Similar to `kele-dispatch'."
 
 (defun kele--update-contexts-menu ()
   "Fill in the context-switch sub-menu with candidate contexts."
-  (easy-menu-add-item
-   kele-menu-map
-   '("Configuration")
-   (append '("Switch context to...")
-           (mapcar (lambda (ctx)
-                     (vector ctx (lambda ()
-                                   (interactive)
-                                   (kele-context-switch ctx))))
-                   (kele-context-names)))))
+  (let ((ctx-current (kele-current-context-name :wait nil)))
+    (easy-menu-add-item
+     kele-menu-map
+     '("Configuration")
+     (append '("Switch context to...")
+             (mapcar (lambda (ctx)
+                       (vector ctx
+                               (lambda ()
+                                 (interactive)
+                                 (kele-context-switch ctx))
+                               :help (format "Switch to context `%s'" ctx)
+                               :style 'radio
+                               :selected (string-equal ctx ctx-current)))
+                     (kele-context-names))))))
 
 (provide 'kele)
 
