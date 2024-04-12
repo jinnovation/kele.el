@@ -82,9 +82,14 @@ If a resource is listed here, the corresponding value will be
 used for cache time-to-live for that resource.  Otherwise,
 `kele-resource-default-refresh-interval' is used.
 
+If the value is :never, then the resource will be cached once and
+then never expired.
+
 Keys are the singular form of the resource name, e.g. \"pod\" for
 pods."
-  :type '(alist :key-type symbol :value-type 'integer)
+  :type '(alist :key-type symbol :value-type (radio
+                                              (integer :tag "Expiration duration in seconds")
+                                              (const :tag "Never expire once cached" :never)))
   :group 'kele)
 
 (defcustom kele-discovery-refresh-interval
@@ -821,11 +826,14 @@ The cache has a TTL as defined by
 
 Returns the passed-in list of namespaces."
   (add-to-list 'kele--namespaces-cache `(,(intern context) . ,namespace-names))
-  (run-with-timer
-   (kele--get-cache-ttl-for-resource 'namespace)
-   nil
-   #'kele--clear-namespaces-for-context
-   context)
+  (let ((ttl (kele--get-cache-ttl-for-resource 'namespace)))
+    ;; TODO: Test :never
+    (when (and ttl (not (eq ttl :never)))
+      (run-with-timer
+       (kele--get-cache-ttl-for-resource 'namespace)
+       nil
+       #'kele--clear-namespaces-for-context
+       context)))
   namespace-names)
 
 (cl-defstruct (kele--resource-container

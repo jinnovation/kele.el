@@ -17,6 +17,8 @@ versioning][semver].
   **Kubernetes** section on the menu bar
 - Added ability to switch contexts from within the menu bar; available contexts
   are shown as a sub-menu
+- Added ability to specify that cached names of a specific resource should never
+  expire
 
 ### Fixed
 
