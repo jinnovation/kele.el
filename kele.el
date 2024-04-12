@@ -1782,6 +1782,41 @@ Similar to `kele-dispatch'."
                                :selected (string-equal ctx ctx-current)))
                      (kele-context-names))))))
 
+(cl-defun kele--mk-self-subject-access-review (&key resource group (verb 'get))
+  "Stub out a SelfSubjectAccessReview for GROUP, RESOURCE, and VERB.
+
+Return the resulting SelfSubjectAccessReview in alist form."
+  `((apiVersion . "authorization.k8s.io/v1")
+    (kind . "SelfSubjectAccessReview")
+    (spec . ((resourceAttributes . ((group . ,group)
+                                    (resource . ,resource)
+                                    (verb . ,(symbol-name verb))))))))
+
+
+(cl-defun kele--can-i (&key resource group (verb 'get) context)
+  "Return whether or not user can perform VERB on RESOURCE in GROUP.
+
+If CONTEXT is not provided, uses current context."
+  (let* ((ctx (or context (kele-current-context-name)))
+         (port (kele--proxy-record-port (proxy-start kele--global-proxy-manager
+                                                     ctx)))
+         (url (string-join (list (format "http://localhost:%s" port)
+                                 "apis"
+                                 "authorization.k8s.io"
+                                 "v1"
+                                 "selfsubjectaccessreviews")
+                           "/")))
+    (--> (plz
+           'post
+           url
+           :headers '(("Content-Type" . "application/json"))
+           :body (json-encode (kele--mk-self-subject-access-review
+                               :resource resource
+                               :group group
+                               :verb verb))
+           :as #'json-read)
+         (-let (((&alist 'status (&alist 'allowed allowed)) it))
+           allowed))))
 (provide 'kele)
 
 ;;; kele.el ends here
