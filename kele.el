@@ -75,7 +75,7 @@ its cached values are wiped afther this many seconds."
   :type 'integer
   :group 'kele)
 
-(defcustom kele-resource-refresh-overrides '((namespace . 600))
+(defcustom kele-resource-refresh-overrides '((namespace . :never))
   "Resource-specific cache time-to-live overrides.
 
 If a resource is listed here, the corresponding value will be
@@ -1745,14 +1745,28 @@ Similar to `kele-dispatch'."
 
       ;; placeholder for dynamic fill-in (see `kele--update-contexts-menu')
       ["Switch context to..." nil]
-
-      ["Switch namespace for current context" kele-namespace-switch-for-current-context]
+      ["Switch namespace for current context to..." nil]
       "---"
       ["Find config file" kele-find-kubeconfig])))
 
 (defun kele--update-contexts-menu ()
   "Fill in the context-switch sub-menu with candidate contexts."
-  (let ((ctx-current (kele-current-context-name :wait nil)))
+  (let ((ctx-current (kele-current-context-name :wait nil))
+        (ns-current (kele-current-namespace :wait nil)))
+    (easy-menu-add-item
+     kele-menu-map
+     '("Configuration")
+     (append '("Switch namespace for current context to...")
+             (mapcar (lambda (ns)
+                       (vector ns
+                               (lambda ()
+                                 (interactive)
+                                 (kele-namespace-switch-for-context ctx-current ns))
+                               :help (format "Switch to namespace `%s' for context `%s'" ns ctx-current)
+                               :style 'radio
+                               :enable (not (string-equal ns ns-current))
+                               :selected (string-equal ns ns-current)))
+                     (kele--get-namespaces ctx-current))))
     (easy-menu-add-item
      kele-menu-map
      '("Configuration")

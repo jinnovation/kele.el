@@ -17,6 +17,8 @@ versioning][semver].
   **Kubernetes** section on the menu bar
 - Added ability to switch contexts from within the menu bar; available contexts
   are shown as a sub-menu
+- Added ability to switch the default namespace of the current context from
+  within the menu bar; available namespaces are shown as a sub-menu
 - Added ability to specify that cached names of a specific resource should never
   expire
 
@@ -24,6 +26,12 @@ versioning][semver].
 
 - Fixed a bug where a proxy server is sometimes initialized on a privileged
   port, resulting in TCP `permission denied` errors
+
+### Changed
+
+- Changed the default cache expiration time for namespaces from 600 seconds to
+  **never**, since the set of namespaces in a cluster rarely if ever change. You
+  can use `kele-cache-namespaces` to force-refresh them as needed.
 
 ## 0.4.2
 
