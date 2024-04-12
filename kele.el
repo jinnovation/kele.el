@@ -643,7 +643,7 @@ to complete.  Returned value may not be up to date."
             proxy-status
             (propertize ")" 'face 'completions-annotations))))
 
-(cl-defun kele--namespaces-complete (&key prompt context)
+(cl-defun kele--namespaces-complete (&key context prompt initial-input history)
   "Complete input for namespaces in CONTEXT using PROMPT.
 
 If user does not have permission to list namespaces, simply
@@ -660,7 +660,8 @@ If CONTEXT is not provided, use the current context."
             :context ctx)
        (-cut kele--resources-complete <> <> <>
              :cands (kele--get-namespaces ctx)
-             :category 'kele-namespace)))))
+             :category 'kele-namespace))
+     nil t initial-input history)))
 
 (cl-defun kele--resources-complete (str pred action &key cands category)
   "Complete input for selection of resources.
@@ -1298,7 +1299,11 @@ Assumes that the current Transient prefix's :scope is an alist w/ `context' key.
   ;; value.  If not present (or the scope is not an alist or the scope is not
   ;; defined), default to current context.
   (if-let ((context (alist-get 'context (oref transient--prefix scope))))
-      (kele--namespaces-complete :context context :prompt prompt)
+      (kele--namespaces-complete
+       :context context
+       :prompt prompt
+       :initial-input initial-input
+       :history history)
     (error "Unexpected nil context in `%s'" (oref transient--prefix command))))
 
 (defclass kele--transient-scope-mutator (transient-option)
