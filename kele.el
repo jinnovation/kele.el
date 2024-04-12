@@ -793,14 +793,19 @@ If value is nil, the namespaces need to be fetched directly.")
   (setq kele--namespaces-cache
         (assoc-delete-all (intern context) kele--namespaces-cache)))
 
-(defun kele--get-namespaces (context)
+;; TODO: test :cache nil
+(cl-defun kele--get-namespaces (context &key (cache t))
   "Get namespaces for CONTEXT.
 
-If not cached, will fetch and cache the namespaces."
-  (if-let ((namespaces (alist-get (intern context) kele--namespaces-cache)))
-      namespaces
-    (apply #'kele--cache-namespaces context
-           (kele--fetch-resource-names nil "v1" "namespaces" :context context))))
+If the namespaces are cached, return the cached value.
+
+If CACHE is non-nil, cache the fetched namespaces."
+  (if-let ((cached-namespaces (alist-get (intern context) kele--namespaces-cache)))
+      cached-namespaces
+    (let ((namespaces (kele--fetch-resource-names nil "v1" "namespaces" :context context)))
+      (if cache
+          (apply #'kele--cache-namespaces context namespaces)
+        namespaces))))
 
 (defun kele--get-cache-ttl-for-resource (resource)
   "Get the cache TTL for RESOURCE."
