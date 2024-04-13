@@ -21,6 +21,8 @@ With Kele, you can:
 - [List collections of resources](./how-tos/usage.md#working-with-resources);
 - Start and stop [proxy servers](./how-tos/usage.md#managing-proxy-servers);
 - Use the menu bar to perform basic cluster/config management;
+- Add an [interactive modeline indicator](./how-tos/integrations.md#doom-modeline) with
+  [`doom-modeline`](https://seagle0128.github.io/doom-modeline/);
 - And more! :sunglasses:
 
 See [How-Tos > Usage](./how-tos/usage.md) for more details on what's possible
@@ -28,6 +30,7 @@ with Kele.
 
 ![](./img/demo.gif)
 ![](./img/menu-bar.png)
+![](./img/doom-modeline.png)
 
 !!! tip
 
