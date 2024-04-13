@@ -37,6 +37,10 @@ theme:
   - navigation.top
   custom_dir: mkdocs_overrides
 
+extra:
+  analytics:
+    provider: custom
+
 markdown_extensions:
 - abbr
 - admonition
