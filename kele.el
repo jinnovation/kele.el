@@ -1756,8 +1756,14 @@ Similar to `kele-dispatch'."
      ("Configuration"
 
       ;; placeholder for dynamic fill-in (see `kele--update-contexts-menu')
-      ["Switch context to..." nil]
-      ["Switch namespace for current context to..." nil]
+      ["Switch context to..."
+       nil
+       :help "Waiting for kubeconfig sync to complete..."
+       :enable nil]
+      ["Switch namespace for current context to..."
+       nil
+       :help "Waiting for kubeconfig sync to complete..."
+       :enable nil]
       "---"
       ["Find config file"
        kele-find-kubeconfig
