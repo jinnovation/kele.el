@@ -1248,13 +1248,18 @@ This is idempotent."
   (unless kele--enabled
     (setq kele--enabled t)
     ;; FIXME: Update the watcher when `kele-kubeconfig-path' changes.
-    (kele--cache-start kele--global-kubeconfig-cache :bootstrap t)
-    ;; FIXME: Update the watcher when `kele-cache-dir' changes.
-    (kele--cache-start kele--global-discovery-cache :bootstrap t)
+    (let ((kubeconfig-future (kele--cache-start
+                              kele--global-kubeconfig-cache
+                              :bootstrap t)))
+      ;; FIXME: Update the watcher when `kele-cache-dir' changes.
+      (kele--cache-start kele--global-discovery-cache :bootstrap t)
 
-    (add-hook 'menu-bar-update-hook 'kele--update-contexts-menu)
+      (kele--setup-embark-maybe)
 
-    (kele--setup-embark-maybe)))
+      ;; menu bar update requires kubeconfig cache to be populated, so we wait
+      ;; for the sync to complete here
+      (async-wait kubeconfig-future)
+      (add-hook 'menu-bar-update-hook 'kele--update-contexts-menu))))
 
 (defun kele--disable ()
   "Disable Kele functionality.
