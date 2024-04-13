@@ -1759,7 +1759,9 @@ Similar to `kele-dispatch'."
       ["Switch context to..." nil]
       ["Switch namespace for current context to..." nil]
       "---"
-      ["Find config file" kele-find-kubeconfig])))
+      ["Find config file"
+       kele-find-kubeconfig
+       :help "Open the active kubeconfig file in a buffer"])))
 
 (defun kele--update-contexts-menu ()
   "Fill in the context-switch sub-menu with candidate contexts."
