@@ -578,7 +578,7 @@ to complete.  Returned value may not be up to date."
   (alist-get 'current-context (oref kele--global-kubeconfig-cache contents)))
 
 (defun kele--default-namespace-for-context (context)
-  "Get the defualt namespace for CONTEXT."
+  "Get the default namespace for CONTEXT."
   (-if-let* (((&alist 'context (&alist 'namespace namespace))
               (-first (lambda (elem)
                         (string= (alist-get 'name elem) context))
