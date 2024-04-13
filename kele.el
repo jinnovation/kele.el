@@ -1821,6 +1821,8 @@ If CONTEXT is not provided, uses current context."
                                  "v1"
                                  "selfsubjectaccessreviews")
                            "/")))
+    ;; Block on proxy readiness
+    (proxy-get kele--global-proxy-manager ctx :wait t)
     (--> (plz
            'post
            url
