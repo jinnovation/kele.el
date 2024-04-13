@@ -1807,7 +1807,11 @@ Similar to `kele-dispatch'."
                                :selected (string-equal ctx ctx-current)))
                      (kele-context-names))))))
 
-(cl-defun kele--mk-self-subject-access-review (&key resource group (verb 'get) version)
+(cl-defun kele--mk-self-subject-access-review
+    (&key resource
+          (group "*")
+          (verb 'get)
+          (version "*"))
   "Stub out a SelfSubjectAccessReview for GROUP, RESOURCE, and VERB.
 
 Return the resulting SelfSubjectAccessReview in alist form."
@@ -1815,7 +1819,7 @@ Return the resulting SelfSubjectAccessReview in alist form."
     (kind . "SelfSubjectAccessReview")
     (spec . ((resourceAttributes . ((group . ,group)
                                     (resource . ,resource)
-                                    (version . ,(or version "*"))
+                                    (version . ,version)
                                     (verb . ,(symbol-name verb))))))))
 
 
