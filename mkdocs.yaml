@@ -35,6 +35,7 @@ theme:
   - navigation.tabs
   - navigation.tabs.sticky
   - navigation.top
+  custom_dir: mkdocs_overrides
 
 markdown_extensions:
 - abbr
