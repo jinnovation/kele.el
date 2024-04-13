@@ -11,6 +11,8 @@ versioning][semver].
 
 ## Unreleased
 
+## 0.5.0
+
 ### Added
 
 - **[Menu bar] integration**. Now you can access common tasks via the
