@@ -8,7 +8,7 @@
 ;; Homepage: https://github.com/jinnovation/kele.el
 ;; Keywords: kubernetes tools
 ;; SPDX-License-Identifier: Apache-2.0
-;; Package-Requires: ((emacs "28.1") (async "1.9.7") (dash "2.19.1") (f "0.20.0") (ht "2.3") (plz "0.7.3") (s "1.13.0") (yaml "0.5.1"))
+;; Package-Requires: ((emacs "28.1") (async "1.9.7") (dash "2.19.1") (f "0.20.0") (ht "2.3") memoize (plz "0.7.3") (s "1.13.0") (yaml "0.5.1"))
 
 ;;; Commentary:
 
@@ -25,6 +25,7 @@
 (require 'filenotify)
 (require 'ht)
 (require 'json)
+(require 'memoize)
 (require 'plz)
 (require 's)
 (require 'subr-x)
@@ -1544,13 +1545,17 @@ If NAMESPACE is provided, use it.  Otherwise, use the default
 namespace for the context.  If NAMESPACE is provided and the KIND
 is not namespaced, returns an error."
   :key "l"
+  :inapt-if-not
+  ;; TODO(#185): Make this account for group + version as well
+  (lambda ()
+    (let-alist (oref transient--prefix scope)
+      (kele--can-i :verb 'list :resource .kind :context .context)))
   :description
   (lambda ()
-    (format "List all %s"
-            (propertize
-             (alist-get 'kind (oref transient--prefix scope))
-             'face
-             'warning)))
+    (let-alist (oref transient--prefix scope)
+      (if (kele--can-i :verb 'list :resource .kind :context .context)
+          (format "List all %s" (propertize .kind 'face 'warning))
+        (format "Don't have permission to list %s" .kind))))
   (interactive
    (let* ((kind (kele--get-kind-arg))
           (group-version (kele--get-groupversion-arg kind)))
@@ -1627,7 +1632,6 @@ if it's set.  Otherwise, prompts user for input."
                        (kele--get-resource-types-for-context
                         (kele--get-context-arg)))))
 
-;; TODO: Disable if user does not have permission to get the given resource
 (transient-define-suffix kele-get (context namespace group-version kind name)
   "Get resource KIND by NAME and display it in a buffer.
 
@@ -1637,12 +1641,20 @@ resource type to query for.
 KIND should be the plural form of the kind's name, e.g. \"pods\"
 instead of \"pod.\""
   :key "g"
+  ;; TODO(#185): Make this account for group + version as well
+  :inapt-if-not
+  (lambda ()
+    (let-alist (oref transient--prefix scope)
+      (kele--can-i :verb 'get :resource .kind :context .context)))
   :description
   (lambda ()
-    (--> (oref transient--prefix scope)
-         (alist-get 'kind it)
-         (propertize it 'face 'warning)
-         (format "Get a single %s" it)))
+    (let-alist (oref transient--prefix scope)
+      (if (kele--can-i
+           :verb 'get
+           :resource .kind
+           :context .context)
+          (format "Get a single %s" (propertize .kind 'face 'warning))
+        (format "Don't have permission to get %s" .kind))))
   (interactive
    (-let* ((kind (kele--get-kind-arg))
            (gv (kele--get-groupversion-arg kind))
@@ -1781,6 +1793,8 @@ Similar to `kele-dispatch'."
     (easy-menu-add-item
      kele-menu-map
      '("Configuration")
+     ;; FIXME: If user doesn't have list-namespace auth, fallback to option that
+     ;; simply asks user for verbatim namespace name
      (append '("Switch namespace for current context to...")
              (mapcar (lambda (ns)
                        (vector ns
@@ -1822,7 +1836,6 @@ Return the resulting SelfSubjectAccessReview in alist form."
                                     (version . ,version)
                                     (verb . ,(symbol-name verb))))))))
 
-
 (cl-defun kele--can-i (&key resource group (verb 'get) context)
   "Return whether or not user can perform VERB on RESOURCE in GROUP.
 
@@ -1849,6 +1862,14 @@ If CONTEXT is not provided, uses current context."
            :as #'json-read)
          (-let (((&alist 'status (&alist 'allowed allowed)) it))
            allowed))))
+
+;; Memoize can-i so that we can use auth info in high-"refresh" settings
+;; e.g. menu bar redrawing without having to create and block on proxy server
+;; every single time
+(memoize 'kele--can-i)
+
+;; TODO: Method to invalidate all caches (manual as well as memoized)
+
 (provide 'kele)
 
 ;;; kele.el ends here

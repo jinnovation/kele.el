@@ -11,6 +11,13 @@ versioning][semver].
 
 ## Unreleased
 
+### Changed
+
+- Added dependency `memoize`
+- The `kele-resource` suffixes now disable themselves if you don't have the
+  required permissions. For example, if you don't have permission to `list`
+  Pods, the `l` keybinding will be grayed out and inaccessible.
+
 ## 0.5.0
 
 ### Added
