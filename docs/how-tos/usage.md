@@ -39,6 +39,13 @@ bound to `kele-resource`.
 
     `kele-resource` supports [custom resources] too!
 
+!!! note
+
+    Individual bindings within `kele-resource` are enabled/disabled based on
+    your permissions in the given cluster. For example, if you do not have `get`
+    permission for the given resource, the `g` key will be disabled -- likewise
+    the `l` key with `list` permission.
+
 `kele-resource` will first prompt you to select the **kind** that you'd like to
 work with, after which you can choose to **get** a specific object of that kind
 by name. If the resource is namespaced, you will also be presented with the
