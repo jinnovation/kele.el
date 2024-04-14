@@ -1545,13 +1545,16 @@ If NAMESPACE is provided, use it.  Otherwise, use the default
 namespace for the context.  If NAMESPACE is provided and the KIND
 is not namespaced, returns an error."
   :key "l"
+  :inapt-if-not
+  (lambda ()
+    (let-alist (oref transient--prefix scope)
+      (kele--can-i :verb 'list :resource .kind :context .context)))
   :description
   (lambda ()
-    (format "List all %s"
-            (propertize
-             (alist-get 'kind (oref transient--prefix scope))
-             'face
-             'warning)))
+    (let-alist (oref transient--prefix scope)
+      (if (kele--can-i :verb 'list :resource .kind :context .context)
+          (format "List all %s" (propertize .kind 'face 'warning))
+        (format "Don't have permission to list %s" .kind))))
   (interactive
    (let* ((kind (kele--get-kind-arg))
           (group-version (kele--get-groupversion-arg kind)))
@@ -1640,20 +1643,17 @@ instead of \"pod.\""
   ;; TODO: Make this account for group + version as well
   :inapt-if-not
   (lambda ()
-    (kele--can-i
-     :verb 'get
-     :resource (alist-get 'kind (oref transient--prefix scope))
-     :context (alist-get 'context (oref transient--prefix scope))))
+    (let-alist (oref transient--prefix scope)
+      (kele--can-i :verb 'get :resource .kind :context .context)))
   :description
   (lambda ()
-    (let ((kind (alist-get 'kind (oref transient--prefix scope)))
-          (ctx (alist-get 'context (oref transient--prefix scope))))
+    (let-alist (oref transient--prefix scope)
       (if (kele--can-i
            :verb 'get
-           :resource kind
-           :context ctx)
-          (format "Get a single %s" (propertize kind 'face 'warning))
-        (format "Don't have permission to get %s" kind))))
+           :resource .kind
+           :context .context)
+          (format "Get a single %s" (propertize .kind 'face 'warning))
+        (format "Don't have permission to get %s" .kind))))
   (interactive
    (-let* ((kind (kele--get-kind-arg))
            (gv (kele--get-groupversion-arg kind))
