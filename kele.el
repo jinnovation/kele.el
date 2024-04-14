@@ -1628,7 +1628,6 @@ if it's set.  Otherwise, prompts user for input."
                        (kele--get-resource-types-for-context
                         (kele--get-context-arg)))))
 
-;; TODO: Disable if user does not have permission to get the given resource
 (transient-define-suffix kele-get (context namespace group-version kind name)
   "Get resource KIND by NAME and display it in a buffer.
 
@@ -1638,12 +1637,23 @@ resource type to query for.
 KIND should be the plural form of the kind's name, e.g. \"pods\"
 instead of \"pod.\""
   :key "g"
+  ;; TODO: Make this account for group + version as well
+  :inapt-if-not
+  (lambda ()
+    (kele--can-i
+     :verb 'get
+     :resource (alist-get 'kind (oref transient--prefix scope))
+     :context (alist-get 'context (oref transient--prefix scope))))
   :description
   (lambda ()
-    (--> (oref transient--prefix scope)
-         (alist-get 'kind it)
-         (propertize it 'face 'warning)
-         (format "Get a single %s" it)))
+    (let ((kind (alist-get 'kind (oref transient--prefix scope)))
+          (ctx (alist-get 'context (oref transient--prefix scope))))
+      (if (kele--can-i
+           :verb 'get
+           :resource kind
+           :context ctx)
+          (format "Get a single %s" (propertize kind 'face 'warning))
+        (format "Don't have permission to get %s" kind))))
   (interactive
    (-let* ((kind (kele--get-kind-arg))
            (gv (kele--get-groupversion-arg kind))
@@ -1822,7 +1832,6 @@ Return the resulting SelfSubjectAccessReview in alist form."
                                     (resource . ,resource)
                                     (version . ,version)
                                     (verb . ,(symbol-name verb))))))))
-
 
 (cl-defun kele--can-i (&key resource group (verb 'get) context)
   "Return whether or not user can perform VERB on RESOURCE in GROUP.
