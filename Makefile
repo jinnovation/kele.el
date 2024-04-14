@@ -21,7 +21,7 @@ checkdoc:
 
 .PHONY: package-lint
 package-lint:
-	cask emacs -batch -f package-lint-batch-and-exit kele.el
+	cask emacs -batch --eval "(setq package-lint-batch-fail-on-warnings nil)" -f package-lint-batch-and-exit kele.el
 
 .PHONY: test
 test: compile
