@@ -1546,6 +1546,7 @@ namespace for the context.  If NAMESPACE is provided and the KIND
 is not namespaced, returns an error."
   :key "l"
   :inapt-if-not
+  ;; TODO(#185): Make this account for group + version as well
   (lambda ()
     (let-alist (oref transient--prefix scope)
       (kele--can-i :verb 'list :resource .kind :context .context)))
@@ -1640,7 +1641,7 @@ resource type to query for.
 KIND should be the plural form of the kind's name, e.g. \"pods\"
 instead of \"pod.\""
   :key "g"
-  ;; TODO: Make this account for group + version as well
+  ;; TODO(#185): Make this account for group + version as well
   :inapt-if-not
   (lambda ()
     (let-alist (oref transient--prefix scope)
