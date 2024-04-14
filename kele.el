@@ -1792,6 +1792,8 @@ Similar to `kele-dispatch'."
     (easy-menu-add-item
      kele-menu-map
      '("Configuration")
+     ;; FIXME: If user doesn't have list-namespace auth, fallback to option that
+     ;; simply asks user for verbatim namespace name
      (append '("Switch namespace for current context to...")
              (mapcar (lambda (ns)
                        (vector ns
