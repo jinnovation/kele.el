@@ -8,7 +8,7 @@
 ;; Homepage: https://github.com/jinnovation/kele.el
 ;; Keywords: kubernetes tools
 ;; SPDX-License-Identifier: Apache-2.0
-;; Package-Requires: ((emacs "28.1") (async "1.9.7") (dash "2.19.1") (f "0.20.0") (ht "2.3") (plz "0.7.3") (s "1.13.0") (yaml "0.5.1"))
+;; Package-Requires: ((emacs "28.1") (async "1.9.7") (dash "2.19.1") (f "0.20.0") (ht "2.3") memoize (plz "0.7.3") (s "1.13.0") (yaml "0.5.1"))
 
 ;;; Commentary:
 
@@ -25,6 +25,7 @@
 (require 'filenotify)
 (require 'ht)
 (require 'json)
+(require 'memoize)
 (require 'plz)
 (require 's)
 (require 'subr-x)
@@ -1849,6 +1850,14 @@ If CONTEXT is not provided, uses current context."
            :as #'json-read)
          (-let (((&alist 'status (&alist 'allowed allowed)) it))
            allowed))))
+
+;; Memoize can-i so that we can use auth info in high-"refresh" settings
+;; e.g. menu bar redrawing without having to create and block on proxy server
+;; every single time
+(memoize 'kele--can-i)
+
+;; TODO: Method to invalidate all caches (manual as well as memoized)
+
 (provide 'kele)
 
 ;;; kele.el ends here
