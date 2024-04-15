@@ -1676,6 +1676,43 @@ instead of \"pod.\""
                                              :namespace namespace
                                              :context context))))
 
+(transient-define-suffix kele--deployments-restart (context namespace deployment-name)
+  :key "R"
+  :description "Restart a deployment"
+  :if
+  (lambda ()
+    (let-alist (oref transient--prefix scope)
+      (string-equal "deployments" .kind)))
+  (interactive
+   (let* ((context (kele--get-context-arg))
+         (ns (kele--get-namespace-arg
+              :kind "deployments"
+              :group-version "apps/v1"
+              :use-default nil))
+         (cands (kele--fetch-resource-names
+                 "apps"
+                 "v1"
+                 "deployments"
+                 :namespace ns
+                 :context context))
+         (name (completing-read "Deployment to restart: "
+                                (-cut kele--resources-complete <> <> <> :cands cands))))
+     (list context ns name)))
+  ;; TODO: Ask user for confirmation?
+  (with-temp-buffer
+    (let ((exit-code (call-process kele-kubectl-executable
+                                   nil
+                                   (current-buffer)
+                                   nil
+                                   "rollout"
+                                   "restart"
+                                   (format "deployment/%s" deployment-name)
+                                   (format "--context=%s" context)
+                                   (format "--namespace=%s" namespace))))
+      (if (= 0 exit-code)
+          (message (buffer-string))
+        (error (buffer-string))))))
+
 (transient-define-prefix kele-resource (group-versions kind)
   "Work with Kubernetes resources."
   ["Arguments"
@@ -1683,9 +1720,16 @@ instead of \"pod.\""
    (kele--groupversions-infix)
    (kele--namespace-infix)]
 
-  ["Actions"
+  [["General Actions"
    (kele-get)
    (kele-list)]
+
+   [:description
+    (lambda ()
+      (format "%s-specific actions"
+              (let-alist (oref transient--prefix scope)
+                (capitalize .kind))))
+    (kele--deployments-restart)]]
 
   (interactive (let* ((context (kele-current-context-name))
                       (kind (completing-read
