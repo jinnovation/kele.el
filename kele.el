@@ -1726,9 +1726,12 @@ instead of \"pod.\""
 
    [:description
     (lambda ()
-      (format "%s-specific actions"
-              (let-alist (oref transient--prefix scope)
-                (capitalize .kind))))
+      (string-join
+       (list (--> (oref transient--prefix scope)
+                  (alist-get 'kind it)
+                  (capitalize it)
+                  (propertize it 'face 'warning))
+             (propertize "-specific actions" 'face 'transient-heading))))
     (kele--deployments-restart)]]
 
   (interactive (let* ((context (kele-current-context-name))
