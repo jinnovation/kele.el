@@ -17,6 +17,12 @@ versioning][semver].
 - `kele-resource` now has a dedicated section for **kind-specific actions** that
   populates based on the resource kind you selected.
 
+### Fixed
+
+- Fixed a bug where kubeconfig cluster entries with uppercase letters in the
+  server address erroneously cause resource kind completion to silently fail and
+  show no kinds present in cluster
+
 ### Changed
 
 - Added dependency `memoize`
