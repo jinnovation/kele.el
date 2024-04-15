@@ -25,15 +25,14 @@ to accomplish, reach for `kele-dispatch`.
 
 ## Working with Resources
 
-Interacting with resources in Kele centers around the `s-k r` prefix, which is
-bound to `kele-resource`.
-
-`kele-resource` allows you to act on specific resource kinds. With
-`kele-resource`, you can, for example:
+`s-k r` will invoke `kele-resource`, allowing you to act on specific resource
+kinds. With `kele-resource`, you can, for example:
 
 - Look up a given Kubernetes object by name, fetch its manifest, and display it
   in a separate buffer;
 - List out all resources of a given type.
+
+![](./img/resource-prefix.png)
 
 !!! tip inline ""
 
@@ -50,6 +49,12 @@ bound to `kele-resource`.
 work with, after which you can choose to **get** a specific object of that kind
 by name. If the resource is namespaced, you will also be presented with the
 option to choose the namespace to select from.
+
+Certain resource kinds have actions unique to them. When you select a resource
+kind that has such actions defined, these are presented in a dedicated section
+with their own key bindings. For example, `s-k r "deployments"` will, in
+addition to the general actions for getting and listing Deployments, also allow
+you to restart a specific Deployment.
 
 ### Getting a single resource
 
