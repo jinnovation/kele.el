@@ -295,7 +295,7 @@ MSG is the progress reporting message to display."
   (alist-get
    (s-replace ":" "_" (kele--get-host-for-context (or context (kele-current-context-name))))
    (oref cache contents)
-   nil nil #'equal))
+   nil nil (-cut compare-strings <> nil nil <> nil nil t)))
 
 (cl-defmethod kele--get-groupversions-for-type ((cache kele--discovery-cache)
                                                 type
@@ -548,6 +548,7 @@ returns nil."
 
 (defvar kele--global-proxy-manager (kele--proxy-manager))
 
+;; FIXME: Returns nil sometimes...
 (cl-defun kele--get-resource-types-for-context (context-name &key verb)
   "Retrieve the names of all resource types for CONTEXT-NAME.
 
