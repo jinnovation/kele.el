@@ -11,6 +11,12 @@ versioning][semver].
 
 ## Unreleased
 
+### Added
+
+- Implemented `kele-deployment-restart` for restarting Deployments.
+- `kele-resource` now has a dedicated section for **kind-specific actions** that
+  populates based on the resource kind you selected.
+
 ### Changed
 
 - Added dependency `memoize`

@@ -1676,7 +1676,10 @@ instead of \"pod.\""
                                              :namespace namespace
                                              :context context))))
 
-(transient-define-suffix kele--deployments-restart (context namespace deployment-name)
+(transient-define-suffix kele-deployment-restart (context namespace deployment-name)
+  "Restart DEPLOYMENT-NAME.
+
+CONTEXT and NAMESPACE are used to identify where the deployment lives."
   :key "R"
   :description "Restart a deployment"
   :if
@@ -1732,7 +1735,7 @@ instead of \"pod.\""
                   (capitalize it)
                   (propertize it 'face 'warning))
              (propertize "-specific actions" 'face 'transient-heading))))
-    (kele--deployments-restart)]]
+    (kele-deployment-restart)]]
 
   (interactive (let* ((context (kele-current-context-name))
                       (kind (completing-read
