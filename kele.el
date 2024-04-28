@@ -99,6 +99,9 @@ pods."
   :type 'integer
   :group 'kele)
 
+(defvar kele-after-context-switch-hook nil
+  "Normal hook run after switching to a new context.")
+
 (defvar kele--discovery-last-refresh-time nil
   "Timestamp of last successful poll of the discovery cache.")
 
@@ -741,7 +744,8 @@ node `(elisp)Programmed Completion'."
                         'warning)))
   (interactive (list (completing-read "Context: " #'kele--contexts-complete)))
   (kele--with-progress (format "Switching to use context `%s'..." context)
-    (kele-kubectl-do "config" "use-context" context)))
+    (kele-kubectl-do "config" "use-context" context)
+    (run-hooks 'kele-after-context-switch-hook)))
 
 ;; TODO(#176): Update `kele--namespace-cache'
 (transient-define-suffix kele-context-rename (old-name new-name)

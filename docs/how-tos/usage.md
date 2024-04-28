@@ -108,6 +108,13 @@ Kele commands involving Kubernetes [contexts] center around the `s-k c` prefix (
     Most context-related Kele functionality can also be done via [Embark] on any
     completion candidate in any context-related Kele command.
 
+!!! tip
+
+    If you have functions that need to run after switching to a new context in
+    order to use it, `kele-after-context-switch-hook` is available to use. This
+    can be useful for, say, re-authenticating with the new context before
+    interacting with it.
+
 ### Managing proxy servers
 
 Kele allows for starting and stopping [HTTP
