@@ -111,6 +111,11 @@ pods."
   "Top-level resource fields to never display, e.g. in `kele-get'."
   :type '(repeat (repeat symbol)))
 
+(defcustom kele-confirm-deletions t
+  "Whether or not to confirm before deleting resources."
+  :type 'boolean
+  :group 'kele)
+
 (define-error 'kele-cache-lookup-error
   "Kele failed to find the requested resource in the cache.")
 (define-error 'kele-request-error "Kele failed in querying the Kubernetes API")
@@ -1637,6 +1642,54 @@ if it's set.  Otherwise, prompts user for input."
                        (kele--get-resource-types-for-context
                         (kele--get-context-arg)))))
 
+(transient-define-suffix kele-delete (context namespace group-version kind name)
+  "Delete resource KIND named NAME.
+
+GROUP-VERSION, NAMESPACE, KIND, and CONTEXT are all used to identify the
+resource type to query for.
+
+KIND should be the plural form of the kind's name, e.g. \"pods\"
+instead of \"pod.\""
+  :key "d"
+  :inapt-if-not
+  (lambda ()
+    (let-alist (oref transient--prefix scope)
+      (kele--can-i :verb 'delete :resource .kind :context .context)))
+  :description
+  (lambda ()
+    (let-alist (oref transient--prefix scope)
+      (if (kele--can-i
+           :verb 'delete
+           :resource .kind
+           :context .context)
+          (format "Delete a single %s" (propertize .kind 'face 'warning))
+        (format "Don't have permission to delete %s" .kind))))
+  (interactive
+   (-let* ((kind (kele--get-kind-arg))
+           (gv (kele--get-groupversion-arg kind))
+           ((group version) (kele--groupversion-split gv))
+           (ns (kele--get-namespace-arg
+                :group-version gv
+                :kind kind
+                :use-default nil))
+           (cands (kele--fetch-resource-names group version kind
+                                              :namespace ns
+                                              :context (kele--get-context-arg)))
+           (name (completing-read "Name: " (-cut kele--resources-complete <> <>
+                                                 <> :cands cands))))
+     (list (kele--get-context-arg) ns gv kind name)))
+  ;; TODO: Success/failure indicator
+  ;; TODO: Are-you-sure confirmation
+  (if (or (not kele-confirm-deletions)
+          (yes-or-no-p
+           (format "Delete %s/%s in %s (context %s)?"
+                   kind name namespace context)))
+      (kele-kubectl-do "delete"
+                       "--namespace" namespace
+                       "--context" context
+                       kind name)
+    (message "Aborted deletion.")))
+
 (transient-define-suffix kele-get (context namespace group-version kind name)
   "Get resource KIND by NAME and display it in a buffer.
 
@@ -1730,6 +1783,7 @@ CONTEXT and NAMESPACE are used to identify where the deployment lives."
 
   [["General Actions"
    (kele-get)
+   (kele-delete)
    (kele-list)]
 
    [:description
