@@ -1694,7 +1694,6 @@ instead of \"pod.\""
                                                  <> :cands cands))))
      (list (kele--get-context-arg) ns gv kind name)))
   ;; TODO: Success/failure indicator
-  ;; TODO: Are-you-sure confirmation
   (if (or (not kele-confirm-deletions)
           (yes-or-no-p
            (format "Delete %s/%s in %s (context %s)?"
