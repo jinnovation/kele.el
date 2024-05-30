@@ -221,6 +221,27 @@ If WAIT is non-nil, `kele--proxy-process' will wait for the proxy
                    :count 10))
     proc))
 
+(cl-defun kele-kubectl-do-sync (args &key (silent t) (suppress-error t))
+  "Execute kubectl with ARGS synchronously, returning the error code.
+
+Unless SUPPRESS-ERROR is non-nil, errors in the kubectl
+invocation will signal an error in Emacs.
+
+Unless SILENT is non-nil, will log the command output."
+  (with-temp-buffer
+    (let ((exit-code (apply #'call-process kele-kubectl-executable
+                            nil
+                            (current-buffer)
+                            nil
+                            "--kubeconfig" kele-kubeconfig-path
+                            args)))
+      (if (= 0 exit-code)
+          (progn
+            (unless silent (message (s-trim-right (buffer-string))))
+            exit-code)
+        (unless suppress-error (error (buffer-string)))
+        exit-code))))
+
 (cl-defun kele-kubectl-do (&rest args)
   "Execute kubectl with ARGS."
   (let ((cmd (append (list kele-kubectl-executable)
@@ -1693,16 +1714,17 @@ instead of \"pod.\""
            (name (completing-read "Name: " (-cut kele--resources-complete <> <>
                                                  <> :cands cands))))
      (list (kele--get-context-arg) ns gv kind name)))
-  ;; TODO: Success/failure indicator
-  ;; TODO: Are-you-sure confirmation
   (if (or (not kele-confirm-deletions)
           (yes-or-no-p
            (format "Delete %s/%s in %s (context %s)?"
                    kind name namespace context)))
-      (kele-kubectl-do "delete"
-                       "--namespace" namespace
-                       "--context" context
-                       kind name)
+      (kele-kubectl-do-sync `("delete"
+                              "--namespace" ,namespace
+                              "--context" ,context
+                              ,kind
+                              ,name)
+                            :silent nil
+                            :suppress-error nil)
     (message "Aborted deletion.")))
 
 (transient-define-suffix kele-get (context namespace group-version kind name)
@@ -1761,33 +1783,27 @@ CONTEXT and NAMESPACE are used to identify where the deployment lives."
       (string-equal "deployments" .kind)))
   (interactive
    (let* ((context (kele--get-context-arg))
-         (ns (kele--get-namespace-arg
-              :kind "deployments"
-              :group-version "apps/v1"
-              :use-default nil))
-         (cands (kele--fetch-resource-names
-                 "apps"
-                 "v1"
-                 "deployments"
-                 :namespace ns
-                 :context context))
-         (name (completing-read "Deployment to restart: "
-                                (-cut kele--resources-complete <> <> <> :cands cands))))
+          (ns (kele--get-namespace-arg
+               :kind "deployments"
+               :group-version "apps/v1"
+               :use-default nil))
+          (cands (kele--fetch-resource-names
+                  "apps"
+                  "v1"
+                  "deployments"
+                  :namespace ns
+                  :context context))
+          (name (completing-read "Deployment to restart: "
+                                 (-cut kele--resources-complete <> <> <> :cands cands))))
      (list context ns name)))
   ;; TODO: Ask user for confirmation?
-  (with-temp-buffer
-    (let ((exit-code (call-process kele-kubectl-executable
-                                   nil
-                                   (current-buffer)
-                                   nil
-                                   "rollout"
-                                   "restart"
-                                   (format "deployment/%s" deployment-name)
-                                   (format "--context=%s" context)
-                                   (format "--namespace=%s" namespace))))
-      (if (= 0 exit-code)
-          (message (buffer-string))
-        (error (buffer-string))))))
+  (kele-kubectl-do-sync `("rollout"
+                          "restart"
+                          ,(format "deployment/%s" deployment-name)
+                          ,(format "--context=%s" context)
+                          ,(format "--namespace=%s" namespace))
+                        :silent nil
+                        :suppress-error nil))
 
 (transient-define-prefix kele-resource (group-versions kind)
   "Work with Kubernetes resources."
