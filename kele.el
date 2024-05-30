@@ -984,6 +984,8 @@ show the requested Kubernetes object manifest.
 (defvar kele-list-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "RET") #'kele-list-get)
+    (define-key map (kbd "k") #'kele-list-delete)
+    ;; TODO: refresh
     map))
 
 (define-derived-mode kele-list-mode tabulated-list-mode "Kele: List"
@@ -1628,6 +1630,19 @@ If BUTTON is provided, pull the resource information from the
               (kele--list-entry-id-group-version id)
               (kele--list-entry-id-kind id)
               (kele--list-entry-id-name id))))
+
+(cl-defun kele-list-delete (&optional button)
+  "Call `kele-delete' on entry at point.
+
+If BUTTON is provided, pull the resource information from the
+button properties.  Otherwise, get it from the list entry."
+  (interactive nil kele-list-mode)
+  (-let* ((id (if button (button-get button 'kele-resource-id) (tabulated-list-get-id))))
+    (kele-delete (kele--list-entry-id-context id)
+                 (kele--list-entry-id-namespace id)
+                 (kele--list-entry-id-group-version id)
+                 (kele--list-entry-id-kind id)
+                 (kele--list-entry-id-name id))))
 
 (cl-defun kele--get-kind-arg ()
   "Get the kind to work with.

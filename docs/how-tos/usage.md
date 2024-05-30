@@ -89,9 +89,9 @@ This will list all resources of the specified group-version and kind in a
 separate buffer in a table. From here, you can:
 
 - Click any of the header columns to sort the list;
-- Refresh the list with `g`;
 - Click or hit `RET` on any of the entries to display its full manifest in a
-  separate buffer.
+  separate buffer;
+- Delete a resource with `k`.
 
 ### Refreshing a resource
 
