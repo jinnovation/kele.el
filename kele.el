@@ -1006,7 +1006,7 @@ show the requested Kubernetes object manifest.
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "RET") #'kele-list-get)
     (define-key map (kbd "k") #'kele-list-delete)
-    ;; TODO: refresh
+    ;; TODO: add binding for refresh list
     map))
 
 (define-derived-mode kele-list-mode tabulated-list-mode "Kele: List"
