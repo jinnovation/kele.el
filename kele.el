@@ -1657,7 +1657,7 @@ if it's set.  Otherwise, prompts user for input."
                        (kele--get-resource-types-for-context
                         (kele--get-context-arg)))))
 
-(transient-define-suffix kele-delete (context namespace group-version kind name)
+(transient-define-suffix kele-delete (context namespace _group-version kind name)
   "Delete resource KIND named NAME.
 
 GROUP-VERSION, NAMESPACE, KIND, and CONTEXT are all used to identify the
