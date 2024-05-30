@@ -60,12 +60,19 @@ you to restart a specific Deployment.
 
 You can get a single resource of the given kind with:
 ```
-s-k r <kind name> g <resource name>`
+s-k r <kind name> g <resource name>
 ```
 
 This is bound to `kele-get`.
 
 ![](./img/kele-resource.gif)
+
+### Deleting a single resource
+
+You can delete a single resource of the given kind with:
+```
+s-k r <kind name> d <resource name>
+```
 
 ### Listing all resources of a single kind
 
@@ -82,9 +89,9 @@ This will list all resources of the specified group-version and kind in a
 separate buffer in a table. From here, you can:
 
 - Click any of the header columns to sort the list;
-- Refresh the list with `g`;
 - Click or hit `RET` on any of the entries to display its full manifest in a
-  separate buffer.
+  separate buffer;
+- Delete a resource with `k`.
 
 ### Refreshing a resource
 

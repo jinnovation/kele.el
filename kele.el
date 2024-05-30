@@ -111,6 +111,11 @@ pods."
   "Top-level resource fields to never display, e.g. in `kele-get'."
   :type '(repeat (repeat symbol)))
 
+(defcustom kele-confirm-deletions t
+  "Whether or not to confirm before deleting resources."
+  :type 'boolean
+  :group 'kele)
+
 (define-error 'kele-cache-lookup-error
   "Kele failed to find the requested resource in the cache.")
 (define-error 'kele-request-error "Kele failed in querying the Kubernetes API")
@@ -215,6 +220,27 @@ If WAIT is non-nil, `kele--proxy-process' will wait for the proxy
                    :wait 2
                    :count 10))
     proc))
+
+(cl-defun kele-kubectl-do-sync (args &key (silent t) (suppress-error t))
+  "Execute kubectl with ARGS synchronously, returning the error code.
+
+Unless SUPPRESS-ERROR is non-nil, errors in the kubectl
+invocation will signal an error in Emacs.
+
+Unless SILENT is non-nil, will log the command output."
+  (with-temp-buffer
+    (let ((exit-code (apply #'call-process kele-kubectl-executable
+                            nil
+                            (current-buffer)
+                            nil
+                            "--kubeconfig" kele-kubeconfig-path
+                            args)))
+      (if (= 0 exit-code)
+          (progn
+            (unless silent (message (s-trim-right (buffer-string))))
+            exit-code)
+        (unless suppress-error (error (buffer-string)))
+        exit-code))))
 
 (cl-defun kele-kubectl-do (&rest args)
   "Execute kubectl with ARGS."
@@ -979,6 +1005,8 @@ show the requested Kubernetes object manifest.
 (defvar kele-list-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "RET") #'kele-list-get)
+    (define-key map (kbd "k") #'kele-list-delete)
+    ;; TODO: add binding for refresh list
     map))
 
 (define-derived-mode kele-list-mode tabulated-list-mode "Kele: List"
@@ -1624,6 +1652,19 @@ If BUTTON is provided, pull the resource information from the
               (kele--list-entry-id-kind id)
               (kele--list-entry-id-name id))))
 
+(cl-defun kele-list-delete (&optional button)
+  "Call `kele-delete' on entry at point.
+
+If BUTTON is provided, pull the resource information from the
+button properties.  Otherwise, get it from the list entry."
+  (interactive nil kele-list-mode)
+  (-let* ((id (if button (button-get button 'kele-resource-id) (tabulated-list-get-id))))
+    (kele-delete (kele--list-entry-id-context id)
+                 (kele--list-entry-id-namespace id)
+                 (kele--list-entry-id-group-version id)
+                 (kele--list-entry-id-kind id)
+                 (kele--list-entry-id-name id))))
+
 (cl-defun kele--get-kind-arg ()
   "Get the kind to work with.
 
@@ -1636,6 +1677,55 @@ if it's set.  Otherwise, prompts user for input."
                         (kele--get-context-arg))
                        (kele--get-resource-types-for-context
                         (kele--get-context-arg)))))
+
+(transient-define-suffix kele-delete (context namespace _group-version kind name)
+  "Delete resource KIND named NAME.
+
+GROUP-VERSION, NAMESPACE, KIND, and CONTEXT are all used to identify the
+resource type to query for.
+
+KIND should be the plural form of the kind's name, e.g. \"pods\"
+instead of \"pod.\""
+  :key "d"
+  :inapt-if-not
+  (lambda ()
+    (let-alist (oref transient--prefix scope)
+      (kele--can-i :verb 'delete :resource .kind :context .context)))
+  :description
+  (lambda ()
+    (let-alist (oref transient--prefix scope)
+      (if (kele--can-i
+           :verb 'delete
+           :resource .kind
+           :context .context)
+          (format "Delete a single %s" (propertize .kind 'face 'warning))
+        (format "Don't have permission to delete %s" .kind))))
+  (interactive
+   (-let* ((kind (kele--get-kind-arg))
+           (gv (kele--get-groupversion-arg kind))
+           ((group version) (kele--groupversion-split gv))
+           (ns (kele--get-namespace-arg
+                :group-version gv
+                :kind kind
+                :use-default nil))
+           (cands (kele--fetch-resource-names group version kind
+                                              :namespace ns
+                                              :context (kele--get-context-arg)))
+           (name (completing-read "Name: " (-cut kele--resources-complete <> <>
+                                                 <> :cands cands))))
+     (list (kele--get-context-arg) ns gv kind name)))
+  (if (or (not kele-confirm-deletions)
+          (yes-or-no-p
+           (format "Delete %s/%s in %s (context %s)?"
+                   kind name namespace context)))
+      (kele-kubectl-do-sync `("delete"
+                              "--namespace" ,namespace
+                              "--context" ,context
+                              ,kind
+                              ,name)
+                            :silent nil
+                            :suppress-error nil)
+    (message "Aborted deletion.")))
 
 (transient-define-suffix kele-get (context namespace group-version kind name)
   "Get resource KIND by NAME and display it in a buffer.
@@ -1693,33 +1783,27 @@ CONTEXT and NAMESPACE are used to identify where the deployment lives."
       (string-equal "deployments" .kind)))
   (interactive
    (let* ((context (kele--get-context-arg))
-         (ns (kele--get-namespace-arg
-              :kind "deployments"
-              :group-version "apps/v1"
-              :use-default nil))
-         (cands (kele--fetch-resource-names
-                 "apps"
-                 "v1"
-                 "deployments"
-                 :namespace ns
-                 :context context))
-         (name (completing-read "Deployment to restart: "
-                                (-cut kele--resources-complete <> <> <> :cands cands))))
+          (ns (kele--get-namespace-arg
+               :kind "deployments"
+               :group-version "apps/v1"
+               :use-default nil))
+          (cands (kele--fetch-resource-names
+                  "apps"
+                  "v1"
+                  "deployments"
+                  :namespace ns
+                  :context context))
+          (name (completing-read "Deployment to restart: "
+                                 (-cut kele--resources-complete <> <> <> :cands cands))))
      (list context ns name)))
   ;; TODO: Ask user for confirmation?
-  (with-temp-buffer
-    (let ((exit-code (call-process kele-kubectl-executable
-                                   nil
-                                   (current-buffer)
-                                   nil
-                                   "rollout"
-                                   "restart"
-                                   (format "deployment/%s" deployment-name)
-                                   (format "--context=%s" context)
-                                   (format "--namespace=%s" namespace))))
-      (if (= 0 exit-code)
-          (message (buffer-string))
-        (error (buffer-string))))))
+  (kele-kubectl-do-sync `("rollout"
+                          "restart"
+                          ,(format "deployment/%s" deployment-name)
+                          ,(format "--context=%s" context)
+                          ,(format "--namespace=%s" namespace))
+                        :silent nil
+                        :suppress-error nil))
 
 (transient-define-prefix kele-resource (group-versions kind)
   "Work with Kubernetes resources."
@@ -1730,6 +1814,7 @@ CONTEXT and NAMESPACE are used to identify where the deployment lives."
 
   [["General Actions"
    (kele-get)
+   (kele-delete)
    (kele-list)]
 
    [:description
