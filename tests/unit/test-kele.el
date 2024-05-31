@@ -336,6 +336,25 @@
     (it "sets the timer"
       (expect (oref cache timer) :to-equal :timer)))
 
+  (describe "kele--get-singular-for-plural"
+    (before-each
+      (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
+      (async-wait (kele--cache-update kele--global-discovery-cache)))
+
+    (it "fetches singularName"
+      (expect
+       (kele--get-singular-for-plural kele--global-discovery-cache
+      "ambiguousthings")
+       :to-equal
+       "ambiguousthing"))
+
+    (describe "when singularName not present"
+      (it "returns lowercased .metadata.name"
+        (expect (kele--get-singular-for-plural kele--global-discovery-cache
+                                               "componentstatuses")
+                :to-equal
+                "componentstatus"))))
+
   (describe "kele--get-groupversions-for-type"
     (before-each
       (setq kele-cache-dir (f-expand "./tests/testdata/cache"))

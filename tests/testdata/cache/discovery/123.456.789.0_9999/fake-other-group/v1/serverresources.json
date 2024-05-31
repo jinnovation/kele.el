@@ -4,7 +4,7 @@
             "kind": "AmbiguousThingBar",
             "name": "ambiguousthings",
             "namespaced": true,
-            "singularName": "",
+            "singularName": "ambiguousthing",
             "verbs": [
                 "get"
             ]
