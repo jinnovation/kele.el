@@ -1945,18 +1945,6 @@ The `scope' is the current context name."
   (interactive)
   (transient-setup 'kele-proxy nil nil :scope (kele-current-context-name)))
 
-;; TODO: Show:
-;; - Active proxy servers
-(defun kele--help-echo ()
-  "Return text to display for help echo."
-  (let* ((ns (kele-current-namespace))
-         (msgs (list (format "Current context: %s" (kele-current-context-name)))))
-    (if ns
-        (setq msgs (append msgs (list (format "Current namespace: %s" ns)))))
-    (setq msgs (append msgs (list (format "Discovery cache last polled: %s"
-                                          (format-time-string "%F %T" kele--discovery-last-refresh-time)))))
-    (string-join msgs "\n")))
-
 (easy-menu-define kele-menu-map kele-mode-map
   "Menu for Kubernetes management.
 
