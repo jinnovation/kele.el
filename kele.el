@@ -1206,7 +1206,7 @@ context and namespace in its name."
   (cl-assert (and object (if (kele--resource-container-p object)
                              (kele--resource-container-resource object)
                            t)))
-  (let* ((buf-name (concat " *kele: "
+  (let* ((buf-name (concat "*kele: "
                            (if (kele--resource-container-p object)
                                (concat
                                 (kele--resource-container-context object)
@@ -1235,9 +1235,6 @@ context and namespace in its name."
         (whitespace-cleanup)
         (goto-char (point-min)))
 
-      (if (featurep 'yaml-mode) (yaml-mode)
-        (message "[kele] For syntax highlighting, install `yaml-mode'."))
-
       (when (kele--resource-container-p object)
         (setq-local kele--current-resource-buffer-context
                     (kele--resource-buffer-context-create
@@ -1248,7 +1245,8 @@ context and namespace in its name."
                      :namespace (kele--resource-container-namespace object)))
         (put 'kele--current-resource-buffer-context 'permanent-local t))
 
-      (kele-get-mode 1))
+      (kele-get-mode 1)
+      (funcall kele-yaml-highlighting-mode))
     (select-window (display-buffer buf))))
 
 (defun kele--prune (alist &rest keys)

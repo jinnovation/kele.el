@@ -18,6 +18,8 @@ versioning][semver].
   populates based on the resource kind you selected.
 - Added ability to `delete` individual resources via `kele-resource` and
   `kele-list`
+- Added variable for selecting which YAML major mode function to use for YAML
+  highlighting in resource buffers
 
 ### Fixed
 
@@ -26,6 +28,8 @@ versioning][semver].
   show no kinds present in cluster
 - Fixed a bug in `kele-resource` where the improper singular/plural form of the
   resource name is used, e.g. "Get a single pods" instead of "Get a single pod"
+- Fixed a bug where keybinding explanation "blurbs" in `kele-get` buffers don't
+  properly show the keybinding in clickable form
 
 ### Changed
 
