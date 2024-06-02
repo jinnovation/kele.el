@@ -1,3 +1,4 @@
+---
 name: test
 on:
   push:
@@ -80,9 +81,10 @@ jobs:
 
       - name: Upload coverage
         if: steps.install.outcome == 'success' && steps.install.conclusion == 'success'
-        uses: codecov/codecov-action@v2
-        continue-on-error: true
+        uses: codecov/codecov-action@v4
         with:
           env_vars: EMACS_VERSION
           files: ./coverage/unit/lcov-buttercup.info,./coverage/integration/lcov-buttercup.info
+          token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
+          verbose: true
