@@ -116,6 +116,14 @@ pods."
   :type 'boolean
   :group 'kele)
 
+(defcustom kele-yaml-highlighting-mode
+  (cond ((featurep 'yaml-mode) 'yaml-mode)
+        ((featurep 'yaml-ts-mode) 'yaml-ts-mode))
+  "Which major mode to use for YAML highlighting.
+
+Set to nil to disable YAML highlighting."
+  :type '(choice nil symbol))
+
 (define-error 'kele-cache-lookup-error
   "Kele failed to find the requested resource in the cache.")
 (define-error 'kele-request-error "Kele failed in querying the Kubernetes API")
