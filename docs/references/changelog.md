@@ -24,6 +24,8 @@ versioning][semver].
 - Fixed a bug where kubeconfig cluster entries with uppercase letters in the
   server address erroneously cause resource kind completion to silently fail and
   show no kinds present in cluster
+- Fixed a bug in `kele-resource` where the improper singular/plural form of the
+  resource name is used, e.g. "Get a single pods" instead of "Get a single pod"
 
 ### Changed
 

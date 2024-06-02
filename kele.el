@@ -342,6 +342,48 @@ If CONTEXT is nil, use the current context."
        (-map (-partial #'alist-get 'groupVersion))
        (-sort (lambda (a _) (equal a "v1")))))
 
+(defun kele--resource-list-has-resource (name resource-list)
+  "Return non-nil when RESOURCE-LIST has resource named NAME.
+
+RESOURCE-LIST expected to be an alist mirroring the
+APIResourceList schema."
+  (->> (alist-get 'resources resource-list)
+       (-any (lambda (resource)
+               (equal (alist-get 'name resource) name)))))
+
+(cl-defmethod kele--get-singular-for-plural ((cache kele--discovery-cache)
+                                             type
+                                             &key context)
+  "Look up the singular name for a given resource TYPE in CACHE.
+
+TYPE is expected to be the plural name of the resource.
+
+If CONTEXT is nil, use the current context."
+  (let* ((ctx (or context (kele-current-context-name)))
+         (resource-lists (kele--get-resource-lists-for-context cache ctx))
+
+         ;; TODO:
+         ;; - Accept group-version optional kwarg
+         ;; - Error if len(filtered-resource-lists) > 1 AND group-version not specified
+         ;; - Filter for group-version
+         (filtered-resource-lists (-filter (-partial #'kele--resource-list-has-resource type) resource-lists)))
+
+    (when (> (length filtered-resource-lists) 1)
+      (warn "More than one group-version found for resource name `%s'; assuming `%s'"
+            type
+            (alist-get 'groupVersion (car filtered-resource-lists))))
+
+    (let-alist (car filtered-resource-lists)
+      (let* ((resource (-first (lambda (resource)
+                                 (string-equal
+                                  (alist-get 'name resource)
+                                  type))
+                               .resources))
+             (lower (alist-get 'singularName resource)))
+        (if (or (not lower) (string-equal lower ""))
+            (downcase (alist-get 'kind resource))
+          lower)))))
+
 (cl-defmethod kele--resource-namespaced-p ((cache kele--discovery-cache)
                                            group-version
                                            type
@@ -1698,7 +1740,13 @@ instead of \"pod.\""
            :verb 'delete
            :resource .kind
            :context .context)
-          (format "Delete a single %s" (propertize .kind 'face 'warning))
+          (format "Delete a single %s" (propertize
+                                        (kele--get-singular-for-plural
+                                         kele--global-discovery-cache
+                                         .kind
+                                         :context .context)
+                                        'face
+                                        'warning))
         (format "Don't have permission to delete %s" .kind))))
   (interactive
    (-let* ((kind (kele--get-kind-arg))
@@ -1748,7 +1796,11 @@ instead of \"pod.\""
            :verb 'get
            :resource .kind
            :context .context)
-          (format "Get a single %s" (propertize .kind 'face 'warning))
+          (format "Get a single %s"
+                  (propertize
+                   (kele--get-singular-for-plural kele--global-discovery-cache .kind :context .context)
+                   'face
+                   'warning))
         (format "Don't have permission to get %s" .kind))))
   (interactive
    (-let* ((kind (kele--get-kind-arg))
