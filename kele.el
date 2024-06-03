@@ -1245,9 +1245,10 @@ context and namespace in its name."
                      :namespace (kele--resource-container-namespace object)))
         (put 'kele--current-resource-buffer-context 'permanent-local t))
 
-      (kele-get-mode 1)
       (when kele-yaml-highlighting-mode
-        (funcall kele-yaml-highlighting-mode)))
+        (funcall kele-yaml-highlighting-mode))
+
+      (kele-get-mode 1))
     (select-window (display-buffer buf))))
 
 (defun kele--prune (alist &rest keys)

@@ -30,6 +30,7 @@ versioning][semver].
   resource name is used, e.g. "Get a single pods" instead of "Get a single pod"
 - Fixed a bug where keybinding explanation "blurbs" in `kele-get` buffers don't
   properly show the keybinding in clickable form
+- Fixed a bug where keybindings in `kele-get-mode` are not actually bound
 
 ### Changed
 
