@@ -1677,7 +1677,7 @@ is not namespaced, returns an error."
                                            (or group
                                                (propertize "N/A" 'face 'kele-disabled-face))
                                            version))))))))))
-    (let ((buf (get-buffer-create (format " *kele: %s/%s [%s(%s)]*"
+    (let ((buf (get-buffer-create (format "*kele: %s/%s [%s(%s)]*"
                                           group-version
                                           kind
                                           context
