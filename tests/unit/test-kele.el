@@ -430,18 +430,18 @@ metadata:
                               :resource fake-obj
                               :context "fake-context"
                               :namespace "fake-namespace"))
-        (expect (-map #'buffer-name (buffer-list)) :to-contain " *kele: fake-context(fake-namespace): FakeKind/fake-name*"))
+        (expect (-map #'buffer-name (buffer-list)) :to-contain "*kele: fake-context(fake-namespace): FakeKind/fake-name*"))
       (describe "when the resource is not namespaced"
         (it "buffer name only shows context, kind, and name"
           (kele--render-object (kele--resource-container-create
                                 :resource fake-obj
                                 :context "fake-context"
                                 :namespace nil))
-          (expect (-map #'buffer-name (buffer-list)) :to-contain " *kele: fake-context: FakeKind/fake-name*"))))
+          (expect (-map #'buffer-name (buffer-list)) :to-contain "*kele: fake-context: FakeKind/fake-name*"))))
     (describe "when input is regular alist"
       (it "buffer name only has kind and name"
         (kele--render-object fake-obj)
-        (expect (-map #'buffer-name (buffer-list)) :to-contain " *kele: FakeKind/fake-name*")))))
+        (expect (-map #'buffer-name (buffer-list)) :to-contain "*kele: FakeKind/fake-name*")))))
 
 (describe "kele--get-resource"
   (before-each
