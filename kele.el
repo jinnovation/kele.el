@@ -1040,7 +1040,8 @@ show the requested Kubernetes object manifest.
   :keymap `((,(kbd "q") . quit-window)
             (,(kbd "Q") . kele--quit-and-kill)
             (,(kbd "g") . kele-refetch))
-  (read-only-mode 1))
+  (when kele-get-mode
+    (read-only-mode 1)))
 
 (cl-defstruct (kele--list-entry-id
                (:constructor kele--list-entry-id-create)
