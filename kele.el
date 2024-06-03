@@ -30,6 +30,7 @@
 (require 's)
 (require 'subr-x)
 (require 'transient)
+(require 'vtable)
 (require 'url-parse)
 (require 'yaml)
 
@@ -1060,6 +1061,7 @@ show the requested Kubernetes object manifest.
     ;; TODO: add binding for refresh list
     map))
 
+;; FIXME: Update for vtable
 (define-derived-mode kele-list-mode tabulated-list-mode "Kele: List"
   "Major mode for listing multiple resources of a single kind."
   :group 'kele
@@ -1618,6 +1620,50 @@ prompting and the function simply returns the single option."
                                  kind)
                          gvs)))))
 
+;; TODO: Format buttons for name column
+(defun kele--make-list-vtable (group-version kind context namespace)
+  (-let (((group version) (kele--groupversion-split group-version)))
+    (make-vtable
+     :insert nil
+     :use-header-line nil
+     :objects-function
+     (lambda ()
+       (alist-get 'items (kele--list-resources
+                          group version kind
+                          :context context
+                          :namespace namespace)))
+     :columns '((:name "Name" :width 30 :align left :primary ascend)
+                (:name "Namespace" :width 20 :align left)
+                (:name "Group" :width 10 :align left)
+                (:name "Version" :width 10 :align left)
+                (:name "Created" :width 30 :align left))
+     ;; FIXME: Bind `g' to refresh the table **anywhere** the cursor is on the
+     ;; buffer, not just when hovering over the table itself
+     :actions
+     `("RET" (lambda (object)
+               (-let* (((&alist 'metadata (&alist 'name name)) object))
+                 (kele-get ,context ,namespace ,group-version ,kind name)))
+       "k" (lambda (object)
+             (-let* (((&alist 'metadata (&alist 'name name)) object))
+               (kele-delete ,context ,namespace ,group-version ,kind name)
+               (vtable-revert-command))))
+     :getter (lambda (object column vtable)
+               (-let* (((&alist 'metadata
+                                (&alist
+                                 'name name
+                                 'namespace namespace
+                                 'creationTimestamp created-time))
+                        object))
+                 (pcase (vtable-column vtable column)
+                   ("Name" name)
+                   ("Namespace"
+                    (or namespace
+                        (propertize "N/A" 'face 'kele-disabled-face)))
+                   ("Group"
+                    (or group (propertize "N/A" 'face 'kele-disabled-face)))
+                   ("Version" version)
+                   ("Created" created-time)))))))
+
 (transient-define-suffix kele-list (group-version kind context namespace)
   "List all resources of a given GROUP-VERSION and KIND.
 
@@ -1651,43 +1697,17 @@ is not namespaced, returns an error."
              (kele--get-namespace-arg)))))
 
   (-let* (((group version) (kele--groupversion-split group-version))
-          (fn-entries (lambda ()
-                        (let* ((resource-list (kele--list-resources
-                                               group version kind
-                                               :context context
-                                               :namespace namespace))
-                               (api-version (alist-get 'apiVersion resource-list)))
-                          (->> resource-list
-                               (alist-get 'items)
-                               (-map (lambda (resource)
-                                       (-let* (((&alist 'metadata (&alist 'name name 'namespace namespace)) resource)
-                                               ((group version) (kele--groupversion-split api-version))
-                                               (id (kele--list-entry-id-create
-                                                    :context context
-                                                    :namespace namespace
-                                                    :group-version api-version
-                                                    :kind kind
-                                                    :name name)))
-                                         (list
-                                          id
-                                          (vector
-                                           `(,name action kele-list-get
-                                                   kele-resource-id ,id)
-                                           (or namespace
-                                               (propertize "N/A" 'face 'kele-disabled-face))
-                                           (or group
-                                               (propertize "N/A" 'face 'kele-disabled-face))
-                                           version))))))))))
-    (let ((buf (get-buffer-create (format "*kele: %s/%s [%s(%s)]*"
+          (buf (get-buffer-create (format "*kele: %s/%s [%s(%s)]*"
                                           group-version
                                           kind
                                           context
                                           namespace))))
-      (with-current-buffer buf
-        (kele-list-mode)
-        (setq-local tabulated-list-entries fn-entries)
-        (tabulated-list-print))
-      (select-window (display-buffer buf)))))
+    (with-current-buffer buf
+      ;; (kele-list-mode)
+      (vtable-insert (kele--make-list-vtable group-version kind context namespace))
+
+      (read-only-mode 1))
+    (select-window (display-buffer buf))))
 
 (cl-defun kele-list-get (&optional button)
   "Call `kele-get' on entry at point.
