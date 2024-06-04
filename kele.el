@@ -1668,8 +1668,7 @@ is not namespaced, returns an error."
                                               kind)
              (kele--get-namespace-arg)))))
 
-  (-let* (((group version) (kele--groupversion-split group-version))
-          (buf (get-buffer-create (format "*kele: %s/%s [%s(%s)]*"
+  (-let* ((buf (get-buffer-create (format "*kele: %s/%s [%s(%s)]*"
                                           group-version
                                           kind
                                           context
