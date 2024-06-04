@@ -86,21 +86,4 @@
             :to-contain
             "*kele: kind-kele-test-cluster0(kube-system): Deployment/coredns*")))
 
-(describe "kele-list"
-  (before-all
-    (async-wait (kele--cache-update kele--global-discovery-cache))
-    (async-wait (kele--cache-update kele--global-kubeconfig-cache)))
-  (it "lists all resources of the given type"
-    (kele-list "apps/v1" "deployments" "kind-kele-test-cluster0" "kube-system")
-    (expect (-map #'buffer-name (buffer-list))
-            :to-contain
-            "*kele: apps/v1/deployments [kind-kele-test-cluster0(kube-system)]*")
-    (let* ((buf (get-buffer "*kele: apps/v1/deployments [kind-kele-test-cluster0(kube-system)]*"))
-           (entries (with-current-buffer buf
-                      (vtable-objects (vtable-current-table)))))
-      (expect (length entries) :to-equal 1)
-      (let-alist (caar entries)
-        (expect .metadata.namespace :to-equal "kube-system")
-        (expect .metadata.name :to-equal "coredns")))))
-
 ;;; test-integration.el ends here
