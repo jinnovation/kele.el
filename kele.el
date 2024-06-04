@@ -1675,12 +1675,13 @@ See bug#58712.  Remove when Emacs 30 is released."
 (defun kele-list-refresh ()
   "Refresh the `kele-list-mode' buffer."
   (interactive nil kele-list-mode)
-  (save-excursion
-    (point-min)
-    (while (setq match (text-property-search-forward 'vtable))
-      (goto-char (prop-match-beginning match))
-      (vtable-revert-command)
-      (goto-char (prop-match-end match)))))
+  (kele--with-progress "[kele] Updating list buffer"
+    (save-excursion
+      (point-min)
+      (while-let ((match (text-property-search-forward 'vtable)))
+        (goto-char (prop-match-beginning match))
+        (vtable-revert-command)
+        (goto-char (prop-match-end match))))))
 
 (transient-define-suffix kele-list (group-version kind context namespace)
   "List all resources of a given GROUP-VERSION and KIND.
