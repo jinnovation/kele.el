@@ -1310,6 +1310,9 @@ This is idempotent."
       ;; FIXME: Update the watcher when `kele-cache-dir' changes.
       (kele--cache-start kele--global-discovery-cache :bootstrap t)
 
+      (advice-add #'vtable-beginning-of-table :before-until #'kele--vtable-beginning-of-table)
+      (advice-add #'vtable-end-of-table :before-until #'kele--vtable-end-of-table)
+
       (kele--setup-embark-maybe)
 
       ;; menu bar update requires kubeconfig cache to be populated, so we wait
@@ -1325,6 +1328,9 @@ This is idempotent."
     (setq kele--enabled nil)
     (kele--cache-stop kele--global-kubeconfig-cache)
     (kele--cache-stop kele--global-discovery-cache)
+
+    (advice-remove #'vtable-beginning-of-table #'kele--vtable-beginning-of-table)
+    (advice-remove #'vtable-end-of-table #'kele--vtable-end-of-table)
 
     (remove-hook 'menu-bar-update-hook 'kele--update-contexts-menu)
     (kele--teardown-embark-maybe)))
@@ -1636,6 +1642,31 @@ prompting and the function simply returns the single option."
                    ("Kind" kind)
                    ("Created" created-time)))))))
 
+(define-derived-mode kele-list-mode fundamental-mode "Kele: List"
+  "Major mode for listing multiple resources of a single kind."
+  :group 'kele
+  :interactive nil
+  (read-only-mode 1))
+
+(defun kele--vtable-beginning-of-table ()
+  "Backport of `vtable-beginning-of-table' from Emacs HEAD.
+
+See bug#58712.  Remove when Emacs 30 is released."
+  (when (eq major-mode #'kele-list-mode)
+    (if (or (text-property-search-backward 'vtable (vtable-current-table) #'eq)
+            (get-text-property (point) 'vtable))
+        (point)
+      (goto-char (point-min)))))
+
+(defun kele--vtable-end-of-table ()
+  "Backport of `vtable-end-of-table' from Emacs HEAD.
+
+See bug#58712.  Remove when Emacs 30 is released."
+  (when (eq major-mode #'kele-list-mode)
+    (if (text-property-search-forward 'vtable (vtable-current-table) #'eq)
+        (point)
+      (goto-char (point-max)))))
+
 (transient-define-suffix kele-list (group-version kind context namespace)
   "List all resources of a given GROUP-VERSION and KIND.
 
@@ -1677,7 +1708,7 @@ is not namespaced, returns an error."
       (let ((inhibit-read-only t))
         (erase-buffer)
         (vtable-insert (kele--make-list-vtable group-version kind context namespace)))
-      (read-only-mode 1))
+      (kele-list-mode))
     (select-window (display-buffer buf))))
 
 (cl-defun kele--get-kind-arg ()
