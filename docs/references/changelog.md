@@ -40,6 +40,12 @@ versioning][semver].
 - The `kele-resource` suffixes now disable themselves if you don't have the
   required permissions. For example, if you don't have permission to `list`
   Pods, the `l` keybinding will be grayed out and inaccessible.
+- Migrated `kele-list` to
+  [`vtable.el`](https://www.gnu.org/software/emacs/manual/html_node/vtable/index.html)
+
+### Removed
+
+- Removed support for Emacs 28
 
 ## 0.5.0
 

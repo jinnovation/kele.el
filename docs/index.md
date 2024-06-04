@@ -46,7 +46,7 @@ with Kele.
 
 !!! warning ""
 
-    Kele requires Emacs 28.1+.
+    Kele requires Emacs 29+.
 
 ```emacs-lisp
 (use-package kele

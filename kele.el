@@ -8,7 +8,7 @@
 ;; Homepage: https://github.com/jinnovation/kele.el
 ;; Keywords: kubernetes tools
 ;; SPDX-License-Identifier: Apache-2.0
-;; Package-Requires: ((emacs "28.1") (async "1.9.7") (dash "2.19.1") (f "0.20.0") (ht "2.3") memoize (plz "0.7.3") (s "1.13.0") (yaml "0.5.1"))
+;; Package-Requires: ((emacs "29.1") (async "1.9.7") (dash "2.19.1") (f "0.20.0") (ht "2.3") memoize (plz "0.7.3") (s "1.13.0") (yaml "0.5.1"))
 
 ;;; Commentary:
 
@@ -30,6 +30,7 @@
 (require 's)
 (require 'subr-x)
 (require 'transient)
+(require 'vtable)
 (require 'url-parse)
 (require 'yaml)
 
@@ -1043,35 +1044,6 @@ show the requested Kubernetes object manifest.
   (when kele-get-mode
     (read-only-mode 1)))
 
-(cl-defstruct (kele--list-entry-id
-               (:constructor kele--list-entry-id-create)
-               (:copier nil))
-  "ID value for entries in `kele-list-mode'."
-  context
-  namespace
-  group-version
-  kind
-  name)
-
-(defvar kele-list-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "RET") #'kele-list-get)
-    (define-key map (kbd "k") #'kele-list-delete)
-    ;; TODO: add binding for refresh list
-    map))
-
-(define-derived-mode kele-list-mode tabulated-list-mode "Kele: List"
-  "Major mode for listing multiple resources of a single kind."
-  :group 'kele
-  :interactive nil
-  (setq-local tabulated-list-format
-              (vector (list "Name" 50 t)
-                      (list "Namespace" 20 t)
-                      (list "Group" 10 t)
-                      (list "Version" 5 t)))
-  (tabulated-list-init-header)
-  (read-only-mode 1))
-
 (defun kele-refetch ()
   "Refetches the currently displayed resource."
   (interactive nil kele-get-mode)
@@ -1618,6 +1590,52 @@ prompting and the function simply returns the single option."
                                  kind)
                          gvs)))))
 
+(defun kele--make-list-vtable (group-version kind context namespace)
+  (-let (((group version) (kele--groupversion-split group-version)))
+    (make-vtable
+     :insert nil
+     :use-header-line nil
+     :objects-function
+     (lambda ()
+       (let ((resource-list (kele--list-resources
+                          group version kind
+                          :context context
+                          :namespace namespace)))
+       (alist-get 'items resource-list)))
+     :columns '((:name "Name" :width 30 :align left :primary ascend)
+                (:name "Namespace" :width 20 :align left)
+                (:name "Group" :width 10 :align left)
+                (:name "Version" :width 10 :align left)
+                (:name "Kind" :width 10 :align left)
+                (:name "Created" :width 30 :align left))
+     ;; FIXME: Bind `g' to refresh the table **anywhere** the cursor is on the
+     ;; buffer, not just when hovering over the table itself
+     :actions
+     `("RET" (lambda (object)
+               (-let* (((&alist 'metadata (&alist 'name name)) object))
+                 (kele-get ,context ,namespace ,group-version ,kind name)))
+       "k" (lambda (object)
+             (-let* (((&alist 'metadata (&alist 'name name)) object))
+               (kele-delete ,context ,namespace ,group-version ,kind name)
+               (vtable-revert-command))))
+     :getter (lambda (object column vtable)
+               (-let* (((&alist 'metadata
+                                (&alist
+                                 'name name
+                                 'namespace namespace
+                                 'creationTimestamp created-time))
+                        object))
+                 (pcase (vtable-column vtable column)
+                   ("Name" name)
+                   ("Namespace"
+                    (or namespace
+                        (propertize "N/A" 'face 'kele-disabled-face)))
+                   ("Group"
+                    (or group (propertize "N/A" 'face 'kele-disabled-face)))
+                   ("Version" version)
+                   ("Kind" kind)
+                   ("Created" created-time)))))))
+
 (transient-define-suffix kele-list (group-version kind context namespace)
   "List all resources of a given GROUP-VERSION and KIND.
 
@@ -1650,70 +1668,17 @@ is not namespaced, returns an error."
                                               kind)
              (kele--get-namespace-arg)))))
 
-  (-let* (((group version) (kele--groupversion-split group-version))
-          (fn-entries (lambda ()
-                        (let* ((resource-list (kele--list-resources
-                                               group version kind
-                                               :context context
-                                               :namespace namespace))
-                               (api-version (alist-get 'apiVersion resource-list)))
-                          (->> resource-list
-                               (alist-get 'items)
-                               (-map (lambda (resource)
-                                       (-let* (((&alist 'metadata (&alist 'name name 'namespace namespace)) resource)
-                                               ((group version) (kele--groupversion-split api-version))
-                                               (id (kele--list-entry-id-create
-                                                    :context context
-                                                    :namespace namespace
-                                                    :group-version api-version
-                                                    :kind kind
-                                                    :name name)))
-                                         (list
-                                          id
-                                          (vector
-                                           `(,name action kele-list-get
-                                                   kele-resource-id ,id)
-                                           (or namespace
-                                               (propertize "N/A" 'face 'kele-disabled-face))
-                                           (or group
-                                               (propertize "N/A" 'face 'kele-disabled-face))
-                                           version))))))))))
-    (let ((buf (get-buffer-create (format "*kele: %s/%s [%s(%s)]*"
+  (-let* ((buf (get-buffer-create (format "*kele: %s/%s [%s(%s)]*"
                                           group-version
                                           kind
                                           context
                                           namespace))))
-      (with-current-buffer buf
-        (kele-list-mode)
-        (setq-local tabulated-list-entries fn-entries)
-        (tabulated-list-print))
-      (select-window (display-buffer buf)))))
-
-(cl-defun kele-list-get (&optional button)
-  "Call `kele-get' on entry at point.
-
-If BUTTON is provided, pull the resource information from the
-  button properties.  Otherwise, get it from the list entry."
-  (interactive nil kele-list-mode)
-  (-let* ((id (if button (button-get button 'kele-resource-id) (tabulated-list-get-id))))
-    (kele-get (kele--list-entry-id-context id)
-              (kele--list-entry-id-namespace id)
-              (kele--list-entry-id-group-version id)
-              (kele--list-entry-id-kind id)
-              (kele--list-entry-id-name id))))
-
-(cl-defun kele-list-delete (&optional button)
-  "Call `kele-delete' on entry at point.
-
-If BUTTON is provided, pull the resource information from the
-button properties.  Otherwise, get it from the list entry."
-  (interactive nil kele-list-mode)
-  (-let* ((id (if button (button-get button 'kele-resource-id) (tabulated-list-get-id))))
-    (kele-delete (kele--list-entry-id-context id)
-                 (kele--list-entry-id-namespace id)
-                 (kele--list-entry-id-group-version id)
-                 (kele--list-entry-id-kind id)
-                 (kele--list-entry-id-name id))))
+    (with-current-buffer buf
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (vtable-insert (kele--make-list-vtable group-version kind context namespace)))
+      (read-only-mode 1))
+    (select-window (display-buffer buf))))
 
 (cl-defun kele--get-kind-arg ()
   "Get the kind to work with.
