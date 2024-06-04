@@ -1642,6 +1642,11 @@ prompting and the function simply returns the single option."
                    ("Kind" kind)
                    ("Created" created-time)))))))
 
+(defvar kele-list-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "g") #'kele-list-refresh)
+    map))
+
 (define-derived-mode kele-list-mode fundamental-mode "Kele: List"
   "Major mode for listing multiple resources of a single kind."
   :group 'kele
@@ -1666,6 +1671,16 @@ See bug#58712.  Remove when Emacs 30 is released."
     (if (text-property-search-forward 'vtable (vtable-current-table) #'eq)
         (point)
       (goto-char (point-max)))))
+
+(defun kele-list-refresh ()
+  "Refresh the `kele-list-mode' buffer."
+  (interactive nil kele-list-mode)
+  (save-excursion
+    (point-min)
+    (while (setq match (text-property-search-forward 'vtable))
+      (goto-char (prop-match-beginning match))
+      (vtable-revert-command)
+      (goto-char (prop-match-end match)))))
 
 (transient-define-suffix kele-list (group-version kind context namespace)
   "List all resources of a given GROUP-VERSION and KIND.
@@ -1707,6 +1722,8 @@ is not namespaced, returns an error."
     (with-current-buffer buf
       (let ((inhibit-read-only t))
         (erase-buffer)
+        (insert "Context: " context "\n")
+        (insert "\n")
         (vtable-insert (kele--make-list-vtable group-version kind context namespace)))
       (kele-list-mode))
     (select-window (display-buffer buf))))
