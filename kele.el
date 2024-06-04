@@ -1044,35 +1044,6 @@ show the requested Kubernetes object manifest.
   (when kele-get-mode
     (read-only-mode 1)))
 
-(cl-defstruct (kele--list-entry-id
-               (:constructor kele--list-entry-id-create)
-               (:copier nil))
-  "ID value for entries in `kele-list-mode'."
-  context
-  namespace
-  group-version
-  kind
-  name)
-
-(defvar kele-list-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "k") #'kele-list-delete)
-    ;; TODO: add binding for refresh list
-    map))
-
-;; FIXME: Update for vtable
-(define-derived-mode kele-list-mode tabulated-list-mode "Kele: List"
-  "Major mode for listing multiple resources of a single kind."
-  :group 'kele
-  :interactive nil
-  (setq-local tabulated-list-format
-              (vector (list "Name" 50 t)
-                      (list "Namespace" 20 t)
-                      (list "Group" 10 t)
-                      (list "Version" 5 t)))
-  (tabulated-list-init-header)
-  (read-only-mode 1))
-
 (defun kele-refetch ()
   "Refetches the currently displayed resource."
   (interactive nil kele-get-mode)
@@ -1626,14 +1597,16 @@ prompting and the function simply returns the single option."
      :use-header-line nil
      :objects-function
      (lambda ()
-       (alist-get 'items (kele--list-resources
+       (let ((resource-list (kele--list-resources
                           group version kind
                           :context context
                           :namespace namespace)))
+       (alist-get 'items resource-list)))
      :columns '((:name "Name" :width 30 :align left :primary ascend)
                 (:name "Namespace" :width 20 :align left)
                 (:name "Group" :width 10 :align left)
                 (:name "Version" :width 10 :align left)
+                (:name "Kind" :width 10 :align left)
                 (:name "Created" :width 30 :align left))
      ;; FIXME: Bind `g' to refresh the table **anywhere** the cursor is on the
      ;; buffer, not just when hovering over the table itself
@@ -1660,6 +1633,7 @@ prompting and the function simply returns the single option."
                    ("Group"
                     (or group (propertize "N/A" 'face 'kele-disabled-face)))
                    ("Version" version)
+                   ("Kind" kind)
                    ("Created" created-time)))))))
 
 (transient-define-suffix kele-list (group-version kind context namespace)
@@ -1701,7 +1675,6 @@ is not namespaced, returns an error."
                                           context
                                           namespace))))
     (with-current-buffer buf
-      ;; (kele-list-mode)
       (vtable-insert (kele--make-list-vtable group-version kind context namespace))
 
       (read-only-mode 1))
