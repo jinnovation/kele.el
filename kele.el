@@ -1674,8 +1674,9 @@ is not namespaced, returns an error."
                                           context
                                           namespace))))
     (with-current-buffer buf
-      (vtable-insert (kele--make-list-vtable group-version kind context namespace))
-
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (vtable-insert (kele--make-list-vtable group-version kind context namespace)))
       (read-only-mode 1))
     (select-window (display-buffer buf))))
 
