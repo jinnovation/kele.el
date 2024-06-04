@@ -1167,16 +1167,15 @@ If CONTEXT is not provided, use the current context."
                       kind)))
     ;; Block on proxy readiness
     (proxy-get kele--global-proxy-manager ctx :wait t)
-    (if-let* ((data (kele--retry (lambda () (plz 'get url :as #'json-read))))
-              (filtered-items (->> (append  (alist-get 'items data) '())
+    (if-let* ((data (kele--retry (lambda () (plz 'get url :as #'json-read)))))
+        (let ((filtered-items (->> (append  (alist-get 'items data) '())
                                    (-filter (lambda (item)
                                               (if (not namespace) t
                                                 (let-alist item
                                                   (equal .metadata.namespace namespace))))))))
-        (progn
           (setf (cdr (assoc 'items data)) filtered-items)
           data)
-      ;; FIXME: This might send false error if filtered-items ends up being empty
+
       (signal 'error (format "Failed to fetch %s/%s/%s" group version kind)))))
 
 (cl-defun kele--fetch-resource-names (group version kind &key namespace context)

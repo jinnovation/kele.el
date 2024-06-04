@@ -31,6 +31,8 @@ versioning][semver].
 - Fixed a bug where keybinding explanation "blurbs" in `kele-get` buffers don't
   properly show the keybinding in clickable form
 - Fixed a bug where keybindings in `kele-get-mode` are not actually bound
+- Fixed a bug where empty results when listing resources e.g. for `kele-list` or
+  completion in `kele-get` results in false errors
 
 ### Changed
 
