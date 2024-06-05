@@ -1637,28 +1637,21 @@ KIND is expectod to be the plural form."
                (kele-delete ,context ,namespace ,group-version ,kind name)
                (vtable-revert-command))))
      :getter (lambda (object column vtable)
-               (-let* (((&alist 'metadata
-                                (&alist
-                                 'ownerReferences
-                                 owners
-                                 'name name
-                                 'namespace namespace
-                                 'creationTimestamp created-time))
-                        object))
+               (let-alist object
                  (pcase (vtable-column vtable column)
-                   ("Name" name)
+                   ("Name" .metadata.name)
                    ("Namespace"
-                    (or namespace
+                    (or .metadata.namespace
                         (propertize "N/A" 'face 'kele-disabled-face)))
                    ("GVK" (kele--gvk-string group version kind))
                    ("Owner(s)"
-                    (if (not owners)
+                    (if (not .metadata.ownerReferences)
                         (propertize "N/A" 'face 'kele-disabled-face)
-                      (if (> (length owners) 1)
+                      (if (> (length .metadata.ownerReferences) 1)
                           "Multiple"
-                        (let-alist (elt owners 0)
+                        (let-alist (elt .metadata.ownerReferences 0)
                           (format "%s/%s" .kind .name)))))
-                   ("Created" created-time)))))))
+                   ("Created" .metadata.creationTimestamp)))))))
 
 (defvar kele-list-mode-map
   (let ((map (make-sparse-keymap)))
