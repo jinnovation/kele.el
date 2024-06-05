@@ -65,11 +65,13 @@
   (it "retrieves the resource as an alist"
     (async-wait (kele--cache-update kele--global-discovery-cache))
     (async-wait (kele--cache-update kele--global-kubeconfig-cache))
-    (setq retval (kele--get-resource "deployments" "coredns"
-                                                :group "apps"
-                                                :version "v1"
-                                                :context "kind-kele-test-cluster0"
-                                                :namespace "kube-system"))
+    (setq retval (kele--get-resource (kele--gvk-create
+                                      :kind "deployments"
+                                      :group "apps"
+                                      :version "v1")
+                                     "coredns"
+                                     :context "kind-kele-test-cluster0"
+                                     :namespace "kube-system"))
 
     (expect (kele--resource-container-p retval) :to-be-truthy)
     (expect (let-alist (kele--resource-container-resource retval) .metadata.name) :to-equal "coredns"))
@@ -77,11 +79,13 @@
   (it "returns an error if the resource is nonsense or does not exist"
     (async-wait (kele--cache-update kele--global-discovery-cache))
     (async-wait (kele--cache-update kele--global-kubeconfig-cache))
-    (expect (kele--get-resource "salaries" "mine"
-                                           :group "hello"
-                                           :version "v1"
-                                           :context "kind-kele-test-cluster0"
-                                           :namespace "kube-system")
+    (expect (kele--get-resource (kele--gvk-create
+                                 :kind "salaries"
+                                 :group "hello"
+                                 :version "v1")
+                                "mine"
+                                :context "kind-kele-test-cluster0"
+                                :namespace "kube-system")
             :to-throw 'kele-cache-lookup-error)))
 
 (describe "kele--proxy-process"
