@@ -973,8 +973,8 @@ RETRIEVAL-TIME denotes the time at which RESOURCE was retrieved.
   kind
   retrieval-time)
 
-(cl-defun kele--get-resource (kind name &key group version context namespace)
-  "Get resource KIND by NAME.
+(cl-defun kele--get-resource (gvk name &key context namespace)
+  "Get resource GVK by NAME.
 
 KIND should be the plural form of the kind's name, e.g. \"pods\"
 instead of \"pod.\"
@@ -997,10 +997,12 @@ throws an error."
          (time (current-time-string))
          (group-versions
           (cond
-           ((and group version) (list (format "%s/%s" group version)))
-           ((and version (not group)) (list version))
+           ((and (oref gvk group) (oref gvk version)) (list (format "%s/%s"
+                                                                    (oref gvk group)
+                                                                    (oref gvk version))))
+           ((and (oref gvk version) (not (oref gvk group))) (list (oref gvk version)))
            (t (kele--get-groupversions-for-type kele--global-discovery-cache
-                                                kind
+                                                (oref gvk kind)
                                                 :context context)))))
 
     (when (> (length group-versions) 1)
@@ -1008,7 +1010,7 @@ throws an error."
     (when (and namespace (not (kele--resource-namespaced-p
                                kele--global-discovery-cache
                                (car group-versions)
-                               kind
+                               (oref gvk kind)
                                :context context)))
       (user-error "Namespace `%s' specified for un-namespaced resource `%s'; remove namespace and try again" namespace kind))
 
@@ -1016,13 +1018,13 @@ throws an error."
             (namespace (and (kele--resource-namespaced-p
                              kele--global-discovery-cache
                              gv
-                             kind
+                             (oref gvk kind)
                              :context context)
                             (or namespace (kele--default-namespace-for-context context))))
             (url-gv (if (s-contains-p "/" gv)
                         (format "apis/%s" gv)
                       (format "api/%s" gv)))
-            (url-res (format "%s/%s" kind name))
+            (url-res (format "%s/%s" (oref gvk kind) name))
             (url-all (concat url-gv "/"
                              (if namespace (format "namespaces/%s/" namespace) "")
                              url-res))
@@ -1032,7 +1034,7 @@ throws an error."
           (kele--resource-container-create
            :resource (kele--retry (lambda () (plz 'get url :as #'json-read)))
            :context context
-           :kind kind
+           :kind (oref gvk kind)
            :namespace namespace
            :retrieval-time time)
         (error (signal 'kele-request-error (error-message-string err)))))))
@@ -1089,10 +1091,11 @@ show the requested Kubernetes object manifest.
                                  namespace
                                  context)
       (kele--render-object
-       (kele--get-resource (kele--resource-buffer-context-kind ctx)
+       (kele--get-resource (kele--gvk-create
+                            :group (car (kele--groupversion-split api-version))
+                            :version (cadr (kele--groupversion-split api-version))
+                            :kind (kele--resource-buffer-context-kind ctx))
                            name
-                           :group (car (kele--groupversion-split api-version))
-                           :version (cadr (kele--groupversion-split api-version))
                            :namespace namespace
                            :context context)
        (current-buffer)))))
@@ -1872,9 +1875,11 @@ instead of \"pod.\""
                                                  <> :cands cands))))
      (list (kele--get-context-arg) ns gv kind name)))
   (-let (((group version) (kele--groupversion-split group-version)))
-    (kele--render-object (kele--get-resource kind name
-                                             :group group
-                                             :version version
+    (kele--render-object (kele--get-resource (kele--gvk-create
+                                              :group group
+                                              :version version
+                                              :kind kind)
+                                             name
                                              :namespace namespace
                                              :context context))))
 
