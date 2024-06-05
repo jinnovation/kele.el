@@ -21,6 +21,7 @@ versioning][semver].
 - Added variable for selecting which YAML major mode function to use for YAML
   highlighting in resource buffers
 - Added output to `kele-list` buffers indicating the context
+- Added additional columns to `kele-list` output, e.g. owner references
 - Added binding `g` for refreshing a `kele-list` buffer
 
 ### Fixed

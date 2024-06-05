@@ -1597,6 +1597,12 @@ prompting and the function simply returns the single option."
                          gvs)))))
 
 (defun kele--make-list-vtable (group-version kind context namespace)
+  "Construct an interactive vtable listing resources of KIND.
+
+GROUP-VERSION, CONTEXT, and NAMESPACE are according to Kubernetes
+conventions and serve to further specify the resources to list.
+
+KIND is expectod to be the plural form."
   (-let (((group version) (kele--groupversion-split group-version)))
     (make-vtable
      :insert nil
@@ -1610,9 +1616,8 @@ prompting and the function simply returns the single option."
        (alist-get 'items resource-list)))
      :columns '((:name "Name" :width 30 :align left :primary ascend)
                 (:name "Namespace" :width 20 :align left)
-                (:name "Group" :width 10 :align left)
-                (:name "Version" :width 10 :align left)
-                (:name "Kind" :width 10 :align left)
+                (:name "GVK" :width 10 :align left)
+                (:name "Owner(s)" :width 20 :align left)
                 (:name "Created" :width 30 :align left))
      ;; FIXME: Bind `g' to refresh the table **anywhere** the cursor is on the
      ;; buffer, not just when hovering over the table itself
@@ -1627,6 +1632,8 @@ prompting and the function simply returns the single option."
      :getter (lambda (object column vtable)
                (-let* (((&alist 'metadata
                                 (&alist
+                                 'ownerReferences
+                                 owners
                                  'name name
                                  'namespace namespace
                                  'creationTimestamp created-time))
@@ -1636,10 +1643,18 @@ prompting and the function simply returns the single option."
                    ("Namespace"
                     (or namespace
                         (propertize "N/A" 'face 'kele-disabled-face)))
-                   ("Group"
-                    (or group (propertize "N/A" 'face 'kele-disabled-face)))
-                   ("Version" version)
-                   ("Kind" kind)
+                   ("GVK"
+                    (let ((vk (format "%s.%s" version kind)))
+                      (if group
+                        (format "%s.%s" group vk)
+                        vk)))
+                   ("Owner(s)"
+                    (if (not owners)
+                        (propertize "N/A" 'face 'kele-disabled-face)
+                      (if (> (length owners) 1)
+                          "Multiple"
+                        (let-alist (elt owners 0)
+                          (format "%s/%s" .kind .name)))))
                    ("Created" created-time)))))))
 
 (defvar kele-list-mode-map
