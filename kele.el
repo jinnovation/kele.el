@@ -119,7 +119,7 @@ pods."
 
 (defcustom kele-yaml-highlighting-mode
   (cond ((featurep 'yaml-mode) 'yaml-mode)
-        ((featurep 'yaml-ts-mode) 'yaml-ts-mode))
+        ((and (featurep 'yaml-ts-mode) (treesit-ready-p 'yaml)) 'yaml-ts-mode))
   "Which major mode to use for YAML highlighting.
 
 Set to nil to disable YAML highlighting."
