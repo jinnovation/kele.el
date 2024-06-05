@@ -534,6 +534,19 @@ GROUP and VERSION are not always set.  KIND is always set."
   version
   kind)
 
+(cl-defmethod kele--gv-string ((gvk kele--gvk))
+  "Return group-version string for GVK."
+  (if (oref gvk group)
+      (concat (oref gvk group) "/" (oref gvk version))
+    (oref gvk version)))
+
+(cl-defmethod kele--string ((gvk kele--gvk))
+  "Return string representation of the full GVK."
+  (let ((vk (format "%s.%s" (oref gvk version) (oref gvk kind))))
+    (if (oref gvk group)
+        (concat (oref gvk group) "/" vk)
+      vk)))
+
 (cl-defstruct (kele--proxy-record
                (:constructor kele--proxy-record-create)
                (:copier nil))
@@ -1620,55 +1633,54 @@ prompting and the function simply returns the single option."
                                  kind)
                          gvs)))))
 
-(defun kele--make-list-vtable (group-version kind context namespace)
-  "Construct an interactive vtable listing resources of KIND.
+(defun kele--make-list-vtable (gvk context namespace)
+  "Construct an interactive vtable listing resources of GVK.
 
-GROUP-VERSION, CONTEXT, and NAMESPACE are according to Kubernetes
-conventions and serve to further specify the resources to list.
-
-KIND is expectod to be the plural form."
-  (-let (((group version) (kele--groupversion-split group-version)))
-    (make-vtable
-     :insert nil
-     :use-header-line nil
-     :objects-function
-     (lambda ()
-       (let ((resource-list (kele--list-resources
-                          group version kind
-                          :context context
-                          :namespace namespace)))
+CONTEXT and NAMESPACE are according to Kubernetes conventions and
+serve to further specify the resources to list."
+  (make-vtable
+   :insert nil
+   :use-header-line nil
+   :objects-function
+   (lambda ()
+     (let ((resource-list (kele--list-resources
+                           (oref gvk group)
+                           (oref gvk version)
+                           (oref gvk kind)
+                           :context context
+                           :namespace namespace)))
        (alist-get 'items resource-list)))
-     :columns '((:name "Name" :width 30 :align left :primary ascend)
-                (:name "Namespace" :width 20 :align left)
-                (:name "GVK" :width 10 :align left)
-                (:name "Owner(s)" :width 20 :align left)
-                (:name "Created" :width 30 :align left))
-     ;; FIXME: Bind `g' to refresh the table **anywhere** the cursor is on the
-     ;; buffer, not just when hovering over the table itself
-     :actions
-     `("RET" (lambda (object)
-               (let-alist object
-                 (kele-get ,context ,namespace ,group-version ,kind .metadata.name)))
-       "k" (lambda (object)
+   :columns '((:name "Name" :width 30 :align left :primary ascend)
+              (:name "Namespace" :width 20 :align left)
+              (:name "GVK" :width 10 :align left)
+              (:name "Owner(s)" :width 20 :align left)
+              (:name "Created" :width 30 :align left))
+   ;; FIXME: Bind `g' to refresh the table **anywhere** the cursor is on the
+   ;; buffer, not just when hovering over the table itself
+   :actions
+   `("RET" (lambda (object)
              (let-alist object
-               (kele-delete ,context ,namespace ,group-version ,kind .metadata.name)
-               (vtable-revert-command))))
-     :getter (lambda (object column vtable)
-               (let-alist object
-                 (pcase (vtable-column vtable column)
-                   ("Name" .metadata.name)
-                   ("Namespace"
-                    (or .metadata.namespace
-                        (propertize "N/A" 'face 'kele-disabled-face)))
-                   ("GVK" (kele--gvk-string group version kind))
-                   ("Owner(s)"
-                    (if (not .metadata.ownerReferences)
-                        (propertize "N/A" 'face 'kele-disabled-face)
-                      (if (> (length .metadata.ownerReferences) 1)
-                          "Multiple"
-                        (let-alist (elt .metadata.ownerReferences 0)
-                          (format "%s/%s" .kind .name)))))
-                   ("Created" .metadata.creationTimestamp)))))))
+               (kele-get ,context ,namespace ,(kele--gv-string gvk) ,(oref gvk kind) .metadata.name)))
+     "k" (lambda (object)
+           (let-alist object
+             (kele-delete ,context ,namespace ,(kele--gv-string gvk) ,(oref gvk kind) .metadata.name)
+             (vtable-revert-command))))
+   :getter (lambda (object column vtable)
+             (let-alist object
+               (pcase (vtable-column vtable column)
+                 ("Name" .metadata.name)
+                 ("Namespace"
+                  (or .metadata.namespace
+                      (propertize "N/A" 'face 'kele-disabled-face)))
+                 ("GVK" (kele--string gvk))
+                 ("Owner(s)"
+                  (if (not .metadata.ownerReferences)
+                      (propertize "N/A" 'face 'kele-disabled-face)
+                    (if (> (length .metadata.ownerReferences) 1)
+                        "Multiple"
+                      (let-alist (elt .metadata.ownerReferences 0)
+                        (format "%s/%s" .kind .name)))))
+                 ("Created" .metadata.creationTimestamp))))))
 
 (defvar kele-list-mode-map
   (let ((map (make-sparse-keymap)))
@@ -1733,8 +1745,8 @@ is not namespaced, returns an error."
           (format "List all %s" (propertize .kind 'face 'warning))
         (format "Don't have permission to list %s" .kind))))
   (interactive
-   (let* ((kind (kele--get-kind-arg))
-          (group-version (kele--get-groupversion-arg kind)))
+   (-let* ((kind (kele--get-kind-arg))
+           (group-version (kele--get-groupversion-arg kind)))
      (list group-version
            kind
            (kele--get-context-arg)
@@ -1743,7 +1755,9 @@ is not namespaced, returns an error."
                                               kind)
              (kele--get-namespace-arg)))))
 
-  (-let* ((buf (get-buffer-create (format "*kele: %s/%s [%s(%s)]*"
+  (-let* (((group version) (kele--groupversion-split group-version))
+          (gvk (kele--gvk-create :group group :version version :kind kind))
+          (buf (get-buffer-create (format "*kele: %s/%s [%s(%s)]*"
                                           group-version
                                           kind
                                           context
@@ -1753,7 +1767,7 @@ is not namespaced, returns an error."
         (erase-buffer)
         (insert "Context: " context "\n")
         (insert "\n")
-        (vtable-insert (kele--make-list-vtable group-version kind context namespace)))
+        (vtable-insert (kele--make-list-vtable gvk context namespace)))
       (kele-list-mode))
     (select-window (display-buffer buf))))
 
