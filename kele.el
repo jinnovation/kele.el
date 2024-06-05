@@ -1172,7 +1172,7 @@ If CONTEXT is not provided, use the current context."
           (setf (cdr (assoc 'items data)) filtered-items)
           data)
 
-      (signal 'error (format "Failed to fetch %s/%s/%s" group version kind)))))
+      (signal 'error (format "Failed to fetch %s/%s/%s" (oref gvk group) (oref gvk version) (oref gvk kind))))))
 
 (cl-defun kele--fetch-resource-names (gvk &key namespace context)
   "Fetch names of resources belonging to GVK.
