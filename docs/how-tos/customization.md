@@ -24,7 +24,22 @@ commands](./usage.md#contexts). Give it a try!
 
 ## Interface
 
-### Resource display
+### YAML highlighting
+
+Kele automatically detects and enables YAML highlighting for `kele-get` when
+either:
+
+- [`yaml-mode`](https://melpa.org/#/yaml-mode) is installed;
+- The YAML [Treesitter grammar][treesitter] is installed, in which case the
+  built-in `yaml-ts-mode` is used.
+
+You can hard-code the major mode you'd like to use for YAML highlighting with
+the `kele-yaml-highlighting-mode` variable.
+
+If you'd prefer, you can also **disable** YAML highlighting by setting
+`kele-yaml-highlighting-mode` to `nil`.
+
+### Filtering out resource fields for display
 
 When [displaying a single resource](./usage.md#displaying-a-single-resource)
 with `kele-get`, `kele-get` retrieves the **full** manifest for the requested
@@ -120,3 +135,4 @@ If you'd like Kele to poll the discovery cache more or less frequently than the 
 
 [managed-fields]: https://kubernetes.io/docs/reference/using-api/server-side-apply/#field-management
 [last-applied-config]: https://kubernetes.io/docs/tasks/manage-kubernetes-objects/declarative-config/#how-to-create-objects
+[treesitter]: https://www.masteringemacs.org/article/how-to-get-started-tree-sitter
