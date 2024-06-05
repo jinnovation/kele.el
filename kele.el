@@ -1101,6 +1101,13 @@ show the requested Kubernetes object manifest.
   "Concatenate GROUP and VERSION into single group-version string."
   (if group (concat group "/" version) version))
 
+(defun kele--gvk-string (group version kind)
+  "Construct GVK string from GROUP, VERSION, and KIND."
+  (let ((vk (format "%s.%s" version kind)))
+    (if group
+        (concat group "/" vk)
+      vk)))
+
 (defun kele--groupversion-split (group-version)
   "Split a single GROUP-VERSION string.
 
@@ -1597,6 +1604,12 @@ prompting and the function simply returns the single option."
                          gvs)))))
 
 (defun kele--make-list-vtable (group-version kind context namespace)
+  "Construct an interactive vtable listing resources of KIND.
+
+GROUP-VERSION, CONTEXT, and NAMESPACE are according to Kubernetes
+conventions and serve to further specify the resources to list.
+
+KIND is expectod to be the plural form."
   (-let (((group version) (kele--groupversion-split group-version)))
     (make-vtable
      :insert nil
@@ -1610,37 +1623,35 @@ prompting and the function simply returns the single option."
        (alist-get 'items resource-list)))
      :columns '((:name "Name" :width 30 :align left :primary ascend)
                 (:name "Namespace" :width 20 :align left)
-                (:name "Group" :width 10 :align left)
-                (:name "Version" :width 10 :align left)
-                (:name "Kind" :width 10 :align left)
+                (:name "GVK" :width 10 :align left)
+                (:name "Owner(s)" :width 20 :align left)
                 (:name "Created" :width 30 :align left))
      ;; FIXME: Bind `g' to refresh the table **anywhere** the cursor is on the
      ;; buffer, not just when hovering over the table itself
      :actions
      `("RET" (lambda (object)
-               (-let* (((&alist 'metadata (&alist 'name name)) object))
-                 (kele-get ,context ,namespace ,group-version ,kind name)))
+               (let-alist object
+                 (kele-get ,context ,namespace ,group-version ,kind .metadata.name)))
        "k" (lambda (object)
-             (-let* (((&alist 'metadata (&alist 'name name)) object))
-               (kele-delete ,context ,namespace ,group-version ,kind name)
+             (let-alist object
+               (kele-delete ,context ,namespace ,group-version ,kind .metadata.name)
                (vtable-revert-command))))
      :getter (lambda (object column vtable)
-               (-let* (((&alist 'metadata
-                                (&alist
-                                 'name name
-                                 'namespace namespace
-                                 'creationTimestamp created-time))
-                        object))
+               (let-alist object
                  (pcase (vtable-column vtable column)
-                   ("Name" name)
+                   ("Name" .metadata.name)
                    ("Namespace"
-                    (or namespace
+                    (or .metadata.namespace
                         (propertize "N/A" 'face 'kele-disabled-face)))
-                   ("Group"
-                    (or group (propertize "N/A" 'face 'kele-disabled-face)))
-                   ("Version" version)
-                   ("Kind" kind)
-                   ("Created" created-time)))))))
+                   ("GVK" (kele--gvk-string group version kind))
+                   ("Owner(s)"
+                    (if (not .metadata.ownerReferences)
+                        (propertize "N/A" 'face 'kele-disabled-face)
+                      (if (> (length .metadata.ownerReferences) 1)
+                          "Multiple"
+                        (let-alist (elt .metadata.ownerReferences 0)
+                          (format "%s/%s" .kind .name)))))
+                   ("Created" .metadata.creationTimestamp)))))))
 
 (defvar kele-list-mode-map
   (let ((map (make-sparse-keymap)))

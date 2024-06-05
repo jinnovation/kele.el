@@ -30,6 +30,7 @@ with Kele.
 
 ![](./img/demo.gif)
 ![](./img/menu-bar.png)
+![](./img/kele-list.png)
 ![](./img/doom-modeline.png)
 
 !!! tip
