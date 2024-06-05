@@ -22,12 +22,19 @@
   (before-each
     (async-wait (kele--cache-update kele--global-discovery-cache)))
   (it "errors if namespace filtering requested for non-namespaced resource"
-    (expect (kele--fetch-resource-names nil "v1" "namespaces"
+    (expect (kele--fetch-resource-names (kele--gvk-create
+                                         :group nil
+                                         :version "v1"
+                                         :kind "namespaces")
                                         :context "kind-kele-test-cluster0"
                                         :namespace "kube-system")
             :to-throw 'user-error))
   (it "fetches core API names"
-    (expect (kele--fetch-resource-names nil "v1" "namespaces" :context "kind-kele-test-cluster0")
+    (expect (kele--fetch-resource-names (kele--gvk-create
+                                         :group nil
+                                         :version "v1"
+                                         :kind "namespaces")
+                                        :context "kind-kele-test-cluster0")
             :to-have-same-items-as
             '("default"
               "kube-node-lease"
@@ -35,11 +42,18 @@
               "kube-system"
               "local-path-storage")))
   (it "fetches group API names"
-    (expect (kele--fetch-resource-names "apps" "v1" "deployments" :context "kind-kele-test-cluster0")
+    (expect (kele--fetch-resource-names (kele--gvk-create
+                                        :group "apps"
+                                        :version "v1"
+                                        :kind "deployments")
+                                        :context "kind-kele-test-cluster0")
             :to-have-same-items-as
             '("coredns" "local-path-provisioner")))
   (it "filters by namespace"
-    (expect (kele--fetch-resource-names "apps" "v1" "deployments"
+    (expect (kele--fetch-resource-names (kele--gvk-create
+                                         :group "apps"
+                                         :version "v1"
+                                         :kind "deployments")
                                         :namespace "kube-system"
                                         :context "kind-kele-test-cluster0")
             :to-have-same-items-as

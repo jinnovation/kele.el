@@ -524,6 +524,16 @@ contents."
   (when bootstrap
     (kele--cache-update cache)))
 
+(cl-defstruct (kele--gvk
+               (:constructor kele--gvk-create)
+               (:copier nil))
+  "Group-Version-Kind object.
+
+GROUP and VERSION are not always set.  KIND is always set."
+  group
+  version
+  kind)
+
 (cl-defstruct (kele--proxy-record
                (:constructor kele--proxy-record-create)
                (:copier nil))
@@ -902,7 +912,11 @@ If the namespaces are cached, return the cached value.
 If CACHE is non-nil, cache the fetched namespaces."
   (if-let ((cached-namespaces (alist-get (intern context) kele--namespaces-cache)))
       cached-namespaces
-    (let ((namespaces (kele--fetch-resource-names nil "v1" "namespaces" :context context)))
+    (let ((namespaces (kele--fetch-resource-names (kele--gvk-create
+                                                   :group nil
+                                                   :version "v1"
+                                                   :kind "namespaces")
+                                                  :context context)))
       (if cache
           (apply #'kele--cache-namespaces context namespaces)
         namespaces))))
@@ -1158,15 +1172,17 @@ If CONTEXT is not provided, use the current context."
 
       (signal 'error (format "Failed to fetch %s/%s/%s" group version kind)))))
 
-(cl-defun kele--fetch-resource-names (group version kind &key namespace context)
-  "Fetch names of resources belonging to GROUP, VERSION, and KIND.
+(cl-defun kele--fetch-resource-names (gvk &key namespace context)
+  "Fetch names of resources belonging to GVK.
 
 If NAMESPACE is provided, return only resources belonging to that namespace.  If
 NAMESPACE is provided for non-namespaced KIND, throws an error.
 
 If CONTEXT is not provided, use the current context."
   (let* ((resource-list (kele--list-resources
-                        group version kind
+                         (kele--gvk-group gvk)
+                         (kele--gvk-version gvk)
+                         (kele--gvk-kind gvk)
                         :namespace namespace
                         :context context))
          (items (append (alist-get 'items resource-list) '())))
@@ -1790,7 +1806,10 @@ instead of \"pod.\""
                 :group-version gv
                 :kind kind
                 :use-default nil))
-           (cands (kele--fetch-resource-names group version kind
+           (cands (kele--fetch-resource-names (kele--gvk-create
+                                               :group group
+                                               :version version
+                                               :kind kind)
                                               :namespace ns
                                               :context (kele--get-context-arg)))
            (name (completing-read "Name: " (-cut kele--resources-complete <> <>
@@ -1844,7 +1863,10 @@ instead of \"pod.\""
                 :group-version gv
                 :kind kind
                 :use-default nil))
-           (cands (kele--fetch-resource-names group version kind
+           (cands (kele--fetch-resource-names (kele--gvk-create
+                                               :group group
+                                               :version version
+                                               :kind kind)
                                               :namespace ns
                                               :context (kele--get-context-arg)))
            (name (completing-read "Name: " (-cut kele--resources-complete <> <>
@@ -1874,9 +1896,10 @@ CONTEXT and NAMESPACE are used to identify where the deployment lives."
                :group-version "apps/v1"
                :use-default nil))
           (cands (kele--fetch-resource-names
-                  "apps"
-                  "v1"
-                  "deployments"
+                  (kele--gvk-create
+                   :group "apps"
+                   :version "v1"
+                   :kind "deployments")
                   :namespace ns
                   :context context))
           (name (completing-read "Deployment to restart: "
