@@ -1101,6 +1101,13 @@ show the requested Kubernetes object manifest.
   "Concatenate GROUP and VERSION into single group-version string."
   (if group (concat group "/" version) version))
 
+(defun kele--gvk-string (group version kind)
+  "Construct GVK string from GROUP, VERSION, and KIND."
+  (let ((vk (format "%s.%s" version kind)))
+    (if group
+        (concat group "/" vk)
+      vk)))
+
 (defun kele--groupversion-split (group-version)
   "Split a single GROUP-VERSION string.
 
@@ -1643,11 +1650,7 @@ KIND is expectod to be the plural form."
                    ("Namespace"
                     (or namespace
                         (propertize "N/A" 'face 'kele-disabled-face)))
-                   ("GVK"
-                    (let ((vk (format "%s.%s" version kind)))
-                      (if group
-                        (format "%s.%s" group vk)
-                        vk)))
+                   ("GVK" (kele--gvk-string group version kind))
                    ("Owner(s)"
                     (if (not owners)
                         (propertize "N/A" 'face 'kele-disabled-face)
