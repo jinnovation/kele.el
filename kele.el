@@ -1125,17 +1125,6 @@ show the requested Kubernetes object manifest.
 
 (add-hook 'kele-get-mode-hook #'kele--get-insert-header t)
 
-(defun kele--groupversion-string (group version)
-  "Concatenate GROUP and VERSION into single group-version string."
-  (if group (concat group "/" version) version))
-
-(defun kele--gvk-string (group version kind)
-  "Construct GVK string from GROUP, VERSION, and KIND."
-  (let ((vk (format "%s.%s" version kind)))
-    (if group
-        (concat group "/" vk)
-      vk)))
-
 (defun kele--groupversion-split (group-version)
   "Split a single GROUP-VERSION string.
 
