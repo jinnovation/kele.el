@@ -1145,22 +1145,22 @@ Nil value for group denotes the core API."
   (let ((split (s-split "/" group-version)))
     (if (length= split 1) (list nil (car split)) split)))
 
-(cl-defun kele--list-resources (group version kind &key namespace context)
-  "Return the List of the resources of type specified by GROUP, VERSION, and KIND.
+(cl-defun kele--list-resources (gvk &key namespace context)
+  "Return the List of the resources of type GVK.
 
 Return value is an alist mirroring the Kubernetes List type of
 the type in question.
 
 If NAMESPACE is provided, return only resources belonging to that
-namespace.  If NAMESPACE is provided for non-namespaced KIND,
+namespace.  If NAMESPACE is provided for non-namespaced GVK,
 throws an error.
 
 If CONTEXT is not provided, use the current context."
   (when (and namespace
              (not (kele--resource-namespaced-p
                    kele--global-discovery-cache
-                   (kele--groupversion-string group version)
-                   kind)))
+                   (kele--gv-string gvk)
+                   (oref gvk kind))))
     (user-error "Attempted to fetch un-namespaced resource `%s' as namespaced" kind))
 
   (let* ((ctx (or context (kele-current-context-name)))
@@ -1168,10 +1168,10 @@ If CONTEXT is not provided, use the current context."
                 (proxy-start kele--global-proxy-manager ctx)))
          (url (format "http://localhost:%s/%s/%s"
                       port
-                      (if group
-                          (format "apis/%s/%s" group version)
-                        (format "api/%s" version))
-                      kind)))
+                      (if (oref gvk group)
+                          (format "apis/%s/%s" (oref gvk group) (oref gvk version))
+                        (format "api/%s" (oref gvk version)))
+                      (oref gvk kind))))
     ;; Block on proxy readiness
     (proxy-get kele--global-proxy-manager ctx :wait t)
     (if-let* ((data (kele--retry (lambda () (plz 'get url :as #'json-read)))))
@@ -1193,9 +1193,7 @@ NAMESPACE is provided for non-namespaced KIND, throws an error.
 
 If CONTEXT is not provided, use the current context."
   (let* ((resource-list (kele--list-resources
-                         (kele--gvk-group gvk)
-                         (kele--gvk-version gvk)
-                         (kele--gvk-kind gvk)
+                         gvk
                         :namespace namespace
                         :context context))
          (items (append (alist-get 'items resource-list) '())))
@@ -1644,9 +1642,7 @@ serve to further specify the resources to list."
    :objects-function
    (lambda ()
      (let ((resource-list (kele--list-resources
-                           (oref gvk group)
-                           (oref gvk version)
-                           (oref gvk kind)
+                           gvk
                            :context context
                            :namespace namespace)))
        (alist-get 'items resource-list)))
