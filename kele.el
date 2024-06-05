@@ -1630,11 +1630,11 @@ KIND is expectod to be the plural form."
      ;; buffer, not just when hovering over the table itself
      :actions
      `("RET" (lambda (object)
-               (-let* (((&alist 'metadata (&alist 'name name)) object))
-                 (kele-get ,context ,namespace ,group-version ,kind name)))
+               (let-alist object
+                 (kele-get ,context ,namespace ,group-version ,kind .metadata.name)))
        "k" (lambda (object)
-             (-let* (((&alist 'metadata (&alist 'name name)) object))
-               (kele-delete ,context ,namespace ,group-version ,kind name)
+             (let-alist object
+               (kele-delete ,context ,namespace ,group-version ,kind .metadata.name)
                (vtable-revert-command))))
      :getter (lambda (object column vtable)
                (let-alist object
