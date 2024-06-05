@@ -30,6 +30,7 @@
 (require 's)
 (require 'subr-x)
 (require 'transient)
+(require 'treesit)
 (require 'vtable)
 (require 'url-parse)
 (require 'yaml)
