@@ -668,4 +668,10 @@ metadata:
       (kele--get-groupversion-arg)
       (expect 'completing-read :to-have-been-called))))
 
+(describe "kele--gvk-string"
+  (it "formats w/o group"
+    (expect (kele--gvk-string nil "v1" "Pod") :to-equal "v1/Pod"))
+  (it "formats w/ group"
+    (expect (kele--gvk-string "group" "v1" "Pod") :to-equal "group.v1/Pod")))
+
  ;;; test-kele.el ends here
