@@ -1869,8 +1869,7 @@ to query for."
            (cands (kele--fetch-resource-names gvk :namespace ns :context (kele--get-context-arg)))
            (name (completing-read "Name: " (-cut kele--resources-complete <> <> <> :cands cands))))
      (list (kele--get-context-arg) ns gvk name)))
-  (-let (((group version) (kele--groupversion-split group-version)))
-    (kele--render-object (kele--get-resource gvk name :namespace namespace :context context))))
+  (kele--render-object (kele--get-resource gvk name :namespace namespace :context context)))
 
 (transient-define-suffix kele-deployment-restart (context namespace deployment-name)
   "Restart DEPLOYMENT-NAME.
