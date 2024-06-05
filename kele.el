@@ -1648,7 +1648,7 @@ serve to further specify the resources to list."
    :actions
    `("RET" (lambda (object)
              (let-alist object
-               (kele-get ,context ,namespace ,(kele--gv-string gvk) ,(oref gvk kind) .metadata.name)))
+               (kele-get ,context ,namespace ,gvk .metadata.name)))
      "k" (lambda (object)
            (let-alist object
              (kele-delete ,context ,namespace ,(kele--gv-string gvk) ,(oref gvk kind) .metadata.name)
@@ -1830,14 +1830,11 @@ instead of \"pod.\""
                             :suppress-error nil)
     (message "Aborted deletion.")))
 
-(transient-define-suffix kele-get (context namespace group-version kind name)
-  "Get resource KIND by NAME and display it in a buffer.
+(transient-define-suffix kele-get (context namespace gvk name)
+  "Get resource GVK by NAME and display it in a buffer.
 
-GROUP-VERSION, NAMESPACE, KIND, and CONTEXT are all used to identify the
-resource type to query for.
-
-KIND should be the plural form of the kind's name, e.g. \"pods\"
-instead of \"pod.\""
+NAMESPACE and CONTEXT are all used to identify the resource type
+to query for."
   :key "g"
   ;; TODO(#185): Make this account for group + version as well
   :inapt-if-not
@@ -1861,27 +1858,19 @@ instead of \"pod.\""
    (-let* ((kind (kele--get-kind-arg))
            (gv (kele--get-groupversion-arg kind))
            ((group version) (kele--groupversion-split gv))
+           (gvk (kele--gvk-create
+                 :group group
+                 :version version
+                 :kind kind))
            (ns (kele--get-namespace-arg
                 :group-version gv
                 :kind kind
                 :use-default nil))
-           (cands (kele--fetch-resource-names (kele--gvk-create
-                                               :group group
-                                               :version version
-                                               :kind kind)
-                                              :namespace ns
-                                              :context (kele--get-context-arg)))
-           (name (completing-read "Name: " (-cut kele--resources-complete <> <>
-                                                 <> :cands cands))))
-     (list (kele--get-context-arg) ns gv kind name)))
+           (cands (kele--fetch-resource-names gvk :namespace ns :context (kele--get-context-arg)))
+           (name (completing-read "Name: " (-cut kele--resources-complete <> <> <> :cands cands))))
+     (list (kele--get-context-arg) ns gvk name)))
   (-let (((group version) (kele--groupversion-split group-version)))
-    (kele--render-object (kele--get-resource (kele--gvk-create
-                                              :group group
-                                              :version version
-                                              :kind kind)
-                                             name
-                                             :namespace namespace
-                                             :context context))))
+    (kele--render-object (kele--get-resource gvk name :namespace namespace :context context))))
 
 (transient-define-suffix kele-deployment-restart (context namespace deployment-name)
   "Restart DEPLOYMENT-NAME.
