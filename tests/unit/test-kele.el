@@ -474,7 +474,9 @@ metadata:
   (describe "when GROUP and VERSION not specified"
     (describe "when only one group-version exists for the argument resource type"
       (it "auto-selects group-version"
-        (kele--get-resource "resourcequotas" "my-rq" :namespace "foobar")
+        (kele--get-resource (kele--gvk-create :kind "resourcequotas")
+                            "my-rq"
+                            :namespace "foobar")
         (expect 'plz :to-have-been-called-with
                 'get
                 "http://localhost:9999/api/v1/namespaces/foobar/resourcequotas/my-rq"
@@ -485,10 +487,11 @@ metadata:
       ;; disambiguate on users' behalf, present a completion buffer to users to
       ;; select, etc.
       (it "errors with the group-version options attached to the error"
-        (expect (kele--get-resource "ambiguousthings" "fake-name")
+        (expect (kele--get-resource (kele--gvk-create :kind "ambiguousthings")
+                                    "fake-name")
                 :to-throw 'kele-ambiguous-groupversion-error)
         (condition-case err
-            (kele--get-resource "ambiguousthings" "fake-name")
+            (kele--get-resource (kele--gvk-create :kind "ambiguousthings") "fake-name")
           (kele-ambiguous-groupversion-error
            (expect (cdr err) :to-have-same-items-as '("fake-group/v1"
                                                       "fake-other-group/v1")))
