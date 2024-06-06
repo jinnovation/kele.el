@@ -23,7 +23,6 @@
     (async-wait (kele--cache-update kele--global-discovery-cache)))
   (it "errors if namespace filtering requested for non-namespaced resource"
     (expect (kele--fetch-resource-names (kele--gvk-create
-                                         :group nil
                                          :version "v1"
                                          :kind "namespaces")
                                         :context "kind-kele-test-cluster0"
@@ -31,7 +30,6 @@
             :to-throw 'user-error))
   (it "fetches core API names"
     (expect (kele--fetch-resource-names (kele--gvk-create
-                                         :group nil
                                          :version "v1"
                                          :kind "namespaces")
                                         :context "kind-kele-test-cluster0")

@@ -670,15 +670,10 @@ metadata:
 (describe "kele--gvk"
   (describe "kele--string"
     (it "formats w/o group"
-      (expect (kele--string (kele--gvk-create
-                             :group nil
-                             :version "v1"
-                             :kind "Pod"))
+      (expect (kele--string (kele--gvk-create :version "v1" :kind "Pod"))
               :to-equal "v1.Pod"))
     (it "formats w/ group"
-      (expect (kele--string (kele--gvk-create :group "group"
-                                              :version "v1"
-                                              :kind "Pod"))
+      (expect (kele--string (kele--gvk-create :group "group" :version "v1" :kind "Pod"))
               :to-equal "group/v1.Pod")))
   (describe "kele--gv-string"
     (it "properly handles 'core API', i.e. nil group"
