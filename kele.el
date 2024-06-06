@@ -1625,6 +1625,52 @@ prompting and the function simply returns the single option."
                                  kind)
                          gvs)))))
 
+(defvar kele--list-context nil
+  "The context corresponding to the current `kele-list-mode' buffer.")
+
+(defvar kele--list-gvk nil
+  "The group-version-kind corresponding to the current `kele-list-mode' buffer.")
+
+(defun kele--list-get-at-point ()
+  "`kele-get's the current object at point."
+  (let-alist (vtable-current-object)
+    (kele-get kele--list-context .metadata.namespace kele--list-gvk .metadata.name)))
+
+(defun kele-list-table-dwim ()
+  "Run the default action on `kele-list' table entries.
+
+If the cursor is over an Owner cell, `kele-get' the owning
+resource.  This function does not fully support multi-owner
+resources and will simply get the first owner in the list.
+
+Otherwise, simply `kele-get' the resource at point."
+  (interactive nil kele-list-mode)
+  (let* ((tbl (vtable-current-table))
+        (col (vtable-current-column))
+        (colname (vtable-column tbl col)))
+    (if (string-equal colname "Owner(s)")
+        (let-alist (vtable-current-object)
+          ;; TODO: Implement selection for multi-owner
+          (cond ((>= (length .metadata.ownerReferences) 1)
+                 (kele-get
+                  kele--list-context
+                  .metadata.namespace
+                  (kele--gvk-create :kind
+                                    (alist-get 'name
+                                               (kele--get-discovery-resource
+                                                kele--global-discovery-cache
+                                                (alist-get 'kind (elt .metadata.ownerReferences 0))
+                                                :lookup-key
+                                                'kind)))
+                  (alist-get 'name (elt .metadata.ownerReferences 0))))
+                (t (kele--list-get-at-point))))
+      (kele--list-get-at-point))))
+
+(defvar kele-list-table-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "RET") #'kele-list-table-dwim)
+    map))
+
 (defun kele--make-list-vtable (gvk context namespace)
   "Construct an interactive vtable listing resources of GVK.
 
@@ -1645,13 +1691,11 @@ serve to further specify the resources to list."
               (:name "GVK" :width 10 :align left)
               (:name "Owner(s)" :width 20 :align left)
               (:name "Created" :width 30 :align left))
+   :keymap kele-list-table-map
    ;; FIXME: Bind `g' to refresh the table **anywhere** the cursor is on the
    ;; buffer, not just when hovering over the table itself
    :actions
-   `("RET" (lambda (object)
-             (let-alist object
-               (kele-get ,context ,namespace ,gvk .metadata.name)))
-     "k" (lambda (object)
+   `("k" (lambda (object)
            (let-alist object
              (kele-delete ,context ,namespace ,(kele--gv-string gvk) ,(oref gvk kind) .metadata.name)
              (vtable-revert-command))))
@@ -1753,6 +1797,11 @@ is not namespaced, returns an error."
                                           context
                                           namespace))))
     (with-current-buffer buf
+      (setq-local kele--list-context context)
+      (setq-local kele--list-gvk gvk)
+      (put 'kele--list-context 'permanent-local t)
+      (put 'kele--list-gvk 'permanent-local t)
+
       (let ((inhibit-read-only t))
         (erase-buffer)
         (insert "Context: " context "\n")
