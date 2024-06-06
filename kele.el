@@ -925,11 +925,8 @@ If the namespaces are cached, return the cached value.
 If CACHE is non-nil, cache the fetched namespaces."
   (if-let ((cached-namespaces (alist-get (intern context) kele--namespaces-cache)))
       cached-namespaces
-    (let ((namespaces (kele--fetch-resource-names (kele--gvk-create
-                                                   :group nil
-                                                   :version "v1"
-                                                   :kind "namespaces")
-                                                  :context context)))
+    (let* ((gvk (kele--gvk-create :version "v1" :kind "namespaces"))
+           (namespaces (kele--fetch-resource-names gvk :context context)))
       (if cache
           (apply #'kele--cache-namespaces context namespaces)
         namespaces))))
@@ -1084,20 +1081,18 @@ show the requested Kubernetes object manifest.
                    'metadata (&alist 'name name
                                      'namespace namespace))
            (kele--resource-buffer-context-resource ctx))
-          (context (kele--resource-buffer-context-context ctx)))
+          (context (kele--resource-buffer-context-context ctx))
+          (gvk (kele--gvk-create
+                :group (car (kele--groupversion-split api-version))
+                :version (cadr (kele--groupversion-split api-version))
+                :kind (kele--resource-buffer-context-kind ctx))))
     (kele--with-progress (format "Re-fetching resource `%s/%s' (namespace: %s, context: %s)..."
                                  kind
                                  name
                                  namespace
                                  context)
       (kele--render-object
-       (kele--get-resource (kele--gvk-create
-                            :group (car (kele--groupversion-split api-version))
-                            :version (cadr (kele--groupversion-split api-version))
-                            :kind (kele--resource-buffer-context-kind ctx))
-                           name
-                           :namespace namespace
-                           :context context)
+       (kele--get-resource gvk name :namespace namespace :context context)
        (current-buffer)))))
 
 (defun kele--get-insert-header ()
