@@ -22,12 +22,17 @@
   (before-each
     (async-wait (kele--cache-update kele--global-discovery-cache)))
   (it "errors if namespace filtering requested for non-namespaced resource"
-    (expect (kele--fetch-resource-names nil "v1" "namespaces"
+    (expect (kele--fetch-resource-names (kele--gvk-create
+                                         :version "v1"
+                                         :kind "namespaces")
                                         :context "kind-kele-test-cluster0"
                                         :namespace "kube-system")
             :to-throw 'user-error))
   (it "fetches core API names"
-    (expect (kele--fetch-resource-names nil "v1" "namespaces" :context "kind-kele-test-cluster0")
+    (expect (kele--fetch-resource-names (kele--gvk-create
+                                         :version "v1"
+                                         :kind "namespaces")
+                                        :context "kind-kele-test-cluster0")
             :to-have-same-items-as
             '("default"
               "kube-node-lease"
@@ -35,11 +40,18 @@
               "kube-system"
               "local-path-storage")))
   (it "fetches group API names"
-    (expect (kele--fetch-resource-names "apps" "v1" "deployments" :context "kind-kele-test-cluster0")
+    (expect (kele--fetch-resource-names (kele--gvk-create
+                                        :group "apps"
+                                        :version "v1"
+                                        :kind "deployments")
+                                        :context "kind-kele-test-cluster0")
             :to-have-same-items-as
             '("coredns" "local-path-provisioner")))
   (it "filters by namespace"
-    (expect (kele--fetch-resource-names "apps" "v1" "deployments"
+    (expect (kele--fetch-resource-names (kele--gvk-create
+                                         :group "apps"
+                                         :version "v1"
+                                         :kind "deployments")
                                         :namespace "kube-system"
                                         :context "kind-kele-test-cluster0")
             :to-have-same-items-as
@@ -51,11 +63,13 @@
   (it "retrieves the resource as an alist"
     (async-wait (kele--cache-update kele--global-discovery-cache))
     (async-wait (kele--cache-update kele--global-kubeconfig-cache))
-    (setq retval (kele--get-resource "deployments" "coredns"
-                                                :group "apps"
-                                                :version "v1"
-                                                :context "kind-kele-test-cluster0"
-                                                :namespace "kube-system"))
+    (setq retval (kele--get-resource (kele--gvk-create
+                                      :kind "deployments"
+                                      :group "apps"
+                                      :version "v1")
+                                     "coredns"
+                                     :context "kind-kele-test-cluster0"
+                                     :namespace "kube-system"))
 
     (expect (kele--resource-container-p retval) :to-be-truthy)
     (expect (let-alist (kele--resource-container-resource retval) .metadata.name) :to-equal "coredns"))
@@ -63,11 +77,13 @@
   (it "returns an error if the resource is nonsense or does not exist"
     (async-wait (kele--cache-update kele--global-discovery-cache))
     (async-wait (kele--cache-update kele--global-kubeconfig-cache))
-    (expect (kele--get-resource "salaries" "mine"
-                                           :group "hello"
-                                           :version "v1"
-                                           :context "kind-kele-test-cluster0"
-                                           :namespace "kube-system")
+    (expect (kele--get-resource (kele--gvk-create
+                                 :kind "salaries"
+                                 :group "hello"
+                                 :version "v1")
+                                "mine"
+                                :context "kind-kele-test-cluster0"
+                                :namespace "kube-system")
             :to-throw 'kele-cache-lookup-error)))
 
 (describe "kele--proxy-process"

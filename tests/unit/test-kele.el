@@ -20,12 +20,6 @@
               '((foo . 1)
                 (bar . ((baz . 2))))))))
 
-(describe "kele--groupversion-string"
-  (it "properly handles 'core API', i.e. nil group"
-    (expect (kele--groupversion-string nil "v1") :to-equal "v1"))
-  (it "properly forms the group-version string"
-    (expect (kele--groupversion-string "apps" "v1") :to-equal "apps/v1")))
-
 (describe "kele--groupversion-split"
   (it "properly handles core API group-version strings"
     (expect (kele--groupversion-split "v1") :to-equal '(nil "v1")))
@@ -457,12 +451,14 @@ metadata:
 
   (describe "when resource is not namespaced"
     (it "errors when namespace is provided anyway"
-      (expect (kele--get-resource "nodes" "my-node"
-                                             :namespace "foobar")
+      (expect (kele--get-resource (kele--gvk-create :kind "nodes")
+                                  "my-node"
+                                  :namespace "foobar")
               :to-throw 'user-error))
     (it "calls the right endpoint"
       (expect (kele--get-resource
-               "nodes" "my-node"
+               (kele--gvk-create :kind "nodes")
+               "my-node"
                :context "development")
               :not :to-throw)
       (expect 'plz :to-have-been-called-with
@@ -473,7 +469,9 @@ metadata:
   (describe "when GROUP and VERSION not specified"
     (describe "when only one group-version exists for the argument resource type"
       (it "auto-selects group-version"
-        (kele--get-resource "resourcequotas" "my-rq" :namespace "foobar")
+        (kele--get-resource (kele--gvk-create :kind "resourcequotas")
+                            "my-rq"
+                            :namespace "foobar")
         (expect 'plz :to-have-been-called-with
                 'get
                 "http://localhost:9999/api/v1/namespaces/foobar/resourcequotas/my-rq"
@@ -484,10 +482,11 @@ metadata:
       ;; disambiguate on users' behalf, present a completion buffer to users to
       ;; select, etc.
       (it "errors with the group-version options attached to the error"
-        (expect (kele--get-resource "ambiguousthings" "fake-name")
+        (expect (kele--get-resource (kele--gvk-create :kind "ambiguousthings")
+                                    "fake-name")
                 :to-throw 'kele-ambiguous-groupversion-error)
         (condition-case err
-            (kele--get-resource "ambiguousthings" "fake-name")
+            (kele--get-resource (kele--gvk-create :kind "ambiguousthings") "fake-name")
           (kele-ambiguous-groupversion-error
            (expect (cdr err) :to-have-same-items-as '("fake-group/v1"
                                                       "fake-other-group/v1")))
@@ -668,10 +667,20 @@ metadata:
       (kele--get-groupversion-arg)
       (expect 'completing-read :to-have-been-called))))
 
-(describe "kele--gvk-string"
-  (it "formats w/o group"
-    (expect (kele--gvk-string nil "v1" "Pod") :to-equal "v1.Pod"))
-  (it "formats w/ group"
-    (expect (kele--gvk-string "group" "v1" "Pod") :to-equal "group/v1.Pod")))
+(describe "kele--gvk"
+  (describe "kele--string"
+    (it "formats w/o group"
+      (expect (kele--string (kele--gvk-create :version "v1" :kind "Pod"))
+              :to-equal "v1.Pod"))
+    (it "formats w/ group"
+      (expect (kele--string (kele--gvk-create :group "group" :version "v1" :kind "Pod"))
+              :to-equal "group/v1.Pod")))
+  (describe "kele--gv-string"
+    (it "properly handles 'core API', i.e. nil group"
+      (expect (kele--gv-string (kele--gvk-create :group nil :version "v1"))
+              :to-equal "v1"))
+    (it "properly forms the group-version string"
+      (expect (kele--gv-string (kele--gvk-create :group "apps" :version "v1"))
+              :to-equal "apps/v1"))))
 
  ;;; test-kele.el ends here
