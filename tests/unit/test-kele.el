@@ -457,8 +457,9 @@ metadata:
 
   (describe "when resource is not namespaced"
     (it "errors when namespace is provided anyway"
-      (expect (kele--get-resource "nodes" "my-node"
-                                             :namespace "foobar")
+      (expect (kele--get-resource (kele--gvk-create :kind "nodes")
+                                  "my-node"
+                                  :namespace "foobar")
               :to-throw 'user-error))
     (it "calls the right endpoint"
       (expect (kele--get-resource

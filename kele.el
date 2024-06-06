@@ -1844,10 +1844,7 @@ to query for."
   :description
   (lambda ()
     (let-alist (oref transient--prefix scope)
-      (if (kele--can-i
-           :verb 'get
-           :resource .kind
-           :context .context)
+      (if (kele--can-i :verb 'get :resource .kind :context .context)
           (format "Get a single %s"
                   (propertize
                    (kele--get-singular-for-plural kele--global-discovery-cache .kind :context .context)
