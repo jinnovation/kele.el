@@ -20,12 +20,6 @@
               '((foo . 1)
                 (bar . ((baz . 2))))))))
 
-(describe "kele--groupversion-string"
-  (it "properly handles 'core API', i.e. nil group"
-    (expect (kele--groupversion-string nil "v1") :to-equal "v1"))
-  (it "properly forms the group-version string"
-    (expect (kele--groupversion-string "apps" "v1") :to-equal "apps/v1")))
-
 (describe "kele--groupversion-split"
   (it "properly handles core API group-version strings"
     (expect (kele--groupversion-split "v1") :to-equal '(nil "v1")))
@@ -463,7 +457,8 @@ metadata:
               :to-throw 'user-error))
     (it "calls the right endpoint"
       (expect (kele--get-resource
-               "nodes" "my-node"
+               (kele--gvk-create :kind "nodes")
+               "my-node"
                :context "development")
               :not :to-throw)
       (expect 'plz :to-have-been-called-with
@@ -672,10 +667,25 @@ metadata:
       (kele--get-groupversion-arg)
       (expect 'completing-read :to-have-been-called))))
 
-(describe "kele--gvk-string"
-  (it "formats w/o group"
-    (expect (kele--gvk-string nil "v1" "Pod") :to-equal "v1.Pod"))
-  (it "formats w/ group"
-    (expect (kele--gvk-string "group" "v1" "Pod") :to-equal "group/v1.Pod")))
+(describe "kele--gvk"
+  (describe "kele--string"
+    (it "formats w/o group"
+      (expect (kele--string (kele--gvk-create
+                             :group nil
+                             :version "v1"
+                             :kind "Pod"))
+              :to-equal "v1.Pod"))
+    (it "formats w/ group"
+      (expect (kele--string (kele--gvk-create :group "group"
+                                              :version "v1"
+                                              :kind "Pod"))
+              :to-equal "group/v1.Pod")))
+  (describe "kele--gv-string"
+    (it "properly handles 'core API', i.e. nil group"
+      (expect (kele--gv-string (kele--gvk-create :group nil :version "v1"))
+              :to-equal "v1"))
+    (it "properly forms the group-version string"
+      (expect (kele--gv-string (kele--gvk-create :group "apps" :version "v1"))
+              :to-equal "apps/v1"))))
 
  ;;; test-kele.el ends here
