@@ -330,6 +330,16 @@
     (it "sets the timer"
       (expect (oref cache timer) :to-equal :timer)))
 
+  (describe "kele--get-discovery-resource"
+    (before-each
+      (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
+      (async-wait (kele--cache-update kele--global-discovery-cache)))
+
+    (it "fetches by kind"
+      (expect (kele--get-discovery-resource kele--global-discovery-cache
+      "AmbiguousThingFoo" :lookup-key 'kind)
+              :to-be-truthy)))
+
   (describe "kele--get-singular-for-plural"
     (before-each
       (setq kele-cache-dir (f-expand "./tests/testdata/cache"))

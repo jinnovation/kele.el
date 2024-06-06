@@ -352,21 +352,18 @@ If CONTEXT is nil, use the current context."
        (-map (-partial #'alist-get 'groupVersion))
        (-sort (lambda (a _) (equal a "v1")))))
 
-(defun kele--resource-list-has-resource (name resource-list)
-  "Return non-nil when RESOURCE-LIST has resource named NAME.
+(defun kele--resource-list-find-resource (name field resource-list)
+  "Return non-nil when RESOURCE-LIST has resource with value NAME at FIELD.
 
 RESOURCE-LIST expected to be an alist mirroring the
 APIResourceList schema."
   (->> (alist-get 'resources resource-list)
        (-any (lambda (resource)
-               (equal (alist-get 'name resource) name)))))
+               (equal (alist-get field resource) name)))))
 
-(cl-defmethod kele--get-singular-for-plural ((cache kele--discovery-cache)
-                                             type
-                                             &key context)
-  "Look up the singular name for a given resource TYPE in CACHE.
-
-TYPE is expected to be the plural name of the resource.
+(cl-defmethod kele--get-discovery-resource ((cache kele--discovery-cache)
+                                            type &key context (lookup-key 'name))
+  "Look up the discovery cache entry in CACHE using TYPE and LOOKUP-KEY.
 
 If CONTEXT is nil, use the current context."
   (let* ((ctx (or context (kele-current-context-name)))
@@ -376,7 +373,7 @@ If CONTEXT is nil, use the current context."
          ;; - Accept group-version optional kwarg
          ;; - Error if len(filtered-resource-lists) > 1 AND group-version not specified
          ;; - Filter for group-version
-         (filtered-resource-lists (-filter (-partial #'kele--resource-list-has-resource type) resource-lists)))
+         (filtered-resource-lists (-filter (-partial #'kele--resource-list-find-resource type lookup-key) resource-lists)))
 
     (when (> (length filtered-resource-lists) 1)
       (warn "More than one group-version found for resource name `%s'; assuming `%s'"
@@ -386,13 +383,23 @@ If CONTEXT is nil, use the current context."
     (let-alist (car filtered-resource-lists)
       (let* ((resource (-first (lambda (resource)
                                  (string-equal
-                                  (alist-get 'name resource)
+                                  (alist-get lookup-key resource)
                                   type))
-                               .resources))
-             (lower (alist-get 'singularName resource)))
-        (if (or (not lower) (string-equal lower ""))
-            (downcase (alist-get 'kind resource))
-          lower)))))
+                               .resources)))
+        resource))))
+
+(cl-defmethod kele--get-singular-for-plural ((cache kele--discovery-cache)
+                                             type
+                                             &key context)
+  "Look up the singular name for a given resource TYPE in CACHE.
+
+TYPE is expected to be the plural name of the resource.
+
+If CONTEXT is nil, use the current context."
+  (let-alist (kele--get-discovery-resource cache type :context context)
+    (if (or (not .singularName) (string-equal .singularName ""))
+        (downcase .kind)
+      .singularName)))
 
 (cl-defmethod kele--resource-namespaced-p ((cache kele--discovery-cache)
                                            group-version
