@@ -1773,9 +1773,9 @@ See bug#58712.  Remove when Emacs 30 is released."
 If CONTEXT is provided, use it.  Otherwise, use the current context as reported
 by `kele-current-context-name'.
 
-If NAMESPACE is provided, use it.  Otherwise, use the default
-namespace for the context.  If NAMESPACE is provided and the KIND
-is not namespaced, returns an error."
+If NAMESPACE is provided, use it.  A nil value for NAMESPACE
+fetches across all namespaces.  If NAMESPACE is provided and the
+KIND is not namespaced, returns an error."
   :key "l"
   :inapt-if-not
   ;; TODO(#185): Make this account for group + version as well
@@ -1804,7 +1804,7 @@ is not namespaced, returns an error."
                                           group-version
                                           kind
                                           context
-                                          namespace))))
+                                          (or namespace "<all namespaces>")))))
     (with-current-buffer buf
       (setq-local kele--list-context context)
       (setq-local kele--list-gvk gvk)
