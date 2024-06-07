@@ -1639,9 +1639,8 @@ prompting and the function simply returns the single option."
 (defun kele-list-table-dwim ()
   "Run the default action on `kele-list' table entries.
 
-If the cursor is over an Owner cell, `kele-get' the owning
-resource.  This function does not fully support multi-owner
-resources and will simply get the first owner in the list.
+If the cursor is over an Owner cell, `kele-get' the first owning
+resource.
 
 Otherwise, simply `kele-get' the resource at point."
   (interactive nil kele-list-mode)
