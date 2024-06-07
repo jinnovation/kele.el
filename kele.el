@@ -1702,7 +1702,8 @@ If NAMESPACE is nil, displays resources for all namespaces."
                            :context context
                            :namespace namespace)))
        (alist-get 'items resource-list)))
-   :columns '((:name "Name" :width 30 :align left :primary ascend)
+   :sort-by '((0 ascend) (1 ascend))
+   :columns '((:name "Name" :width 30 :align left)
               (:name "Namespace" :width 20 :align left)
               (:name "GVK" :width 10 :align left)
               (:name "Owner(s)" :width 20 :align left)
