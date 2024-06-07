@@ -45,6 +45,7 @@ versioning][semver].
   Pods, the `l` keybinding will be grayed out and inaccessible.
 - Migrated `kele-list` to
   [`vtable.el`](https://www.gnu.org/software/emacs/manual/html_node/vtable/index.html)
+- Bumped dependency `plz` from `0.7.3` to `0.8.0`
 
 ### Removed
 
