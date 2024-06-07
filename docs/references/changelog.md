@@ -22,6 +22,8 @@ versioning][semver].
   highlighting in resource buffers
 - Added output to `kele-list` buffers indicating the context
 - Added additional columns to `kele-list` output, e.g. owner references
+- In a `kele-list` table, `RET` now either opens the corresponding resource
+  **or** the owning resource, depending on cursor position
 - Added binding `g` for refreshing a `kele-list` buffer
 
 ### Fixed

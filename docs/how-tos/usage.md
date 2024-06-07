@@ -93,6 +93,11 @@ separate buffer in a table. From here, you can:
   separate buffer;
 - Delete a resource with `k`.
 
+!!! tip
+
+    Hitting `RET` with your cursor on the **Owner(s)** column will open the
+    **owner resource**.
+
 ### Refreshing a resource
 
 You can press `g` in a `kele-get` buffer to re-fetch and refresh the current resource.
