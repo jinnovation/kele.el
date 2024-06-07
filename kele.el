@@ -1666,9 +1666,24 @@ Otherwise, simply `kele-get' the resource at point."
                 (t (kele--list-get-at-point))))
       (kele--list-get-at-point))))
 
+(defun kele-list-kill ()
+  "Delete the resource at the current line."
+  (interactive nil kele-list-mode)
+  (let-alist (vtable-current-object)
+    (kele-delete
+     kele--list-context
+     .metadata.namespace
+     (kele--gv-string kele--list-gvk)
+     (oref kele--list-gvk kind)
+     .metadata.name))
+  (vtable-revert-command))
+
 (defvar kele-list-table-map
   (let ((map (make-sparse-keymap)))
+    ;; FIXME: Bind `g' to refresh the table **anywhere** the cursor is on the
+    ;; buffer, not just when hovering over the table itself
     (define-key map (kbd "RET") #'kele-list-table-dwim)
+    (define-key map (kbd "k") #'kele-list-kill)
     map))
 
 (defun kele--make-list-vtable (gvk context namespace)
@@ -1692,13 +1707,6 @@ serve to further specify the resources to list."
               (:name "Owner(s)" :width 20 :align left)
               (:name "Created" :width 30 :align left))
    :keymap kele-list-table-map
-   ;; FIXME: Bind `g' to refresh the table **anywhere** the cursor is on the
-   ;; buffer, not just when hovering over the table itself
-   :actions
-   `("k" (lambda (object)
-           (let-alist object
-             (kele-delete ,context ,namespace ,(kele--gv-string gvk) ,(oref gvk kind) .metadata.name)
-             (vtable-revert-command))))
    :getter (lambda (object column vtable)
              (let-alist object
                (pcase (vtable-column vtable column)
