@@ -693,4 +693,31 @@ metadata:
       (expect (kele--gv-string (kele--gvk-create :group "apps" :version "v1"))
               :to-equal "apps/v1"))))
 
+(describe "`kele-list-mode' functions"
+  (before-each
+    (setq kele-confirm-deletions nil)
+    (setq kele--list-context "fake-context")
+    (setq kele--list-gvk (kele--gvk-create
+                          :group "fake-group"
+                          :version "v999"
+                          :kind "fake-kind"))
+    (spy-on 'vtable-revert-command)
+    (spy-on 'kele-delete))
+  (describe "`kele-list-kill'"
+    (before-each
+      (spy-on 'vtable-current-object :and-return-value
+              '((metadata . ((namespace . "fake-namespace")
+                             (name . "fake-name"))))))
+    (it "kills the current object"
+      (kele-list-kill)
+      (expect 'kele-delete :to-have-been-called-with
+              "fake-context"
+              "fake-namespace"
+              "fake-group/v999"
+              "fake-kind"
+              "fake-name"))
+    (it "refreshes the table"
+      (kele-list-kill)
+      (expect 'vtable-revert-command :to-have-been-called))))
+
  ;;; test-kele.el ends here
