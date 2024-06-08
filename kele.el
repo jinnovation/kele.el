@@ -1525,7 +1525,6 @@ context as set in `kele-kubeconfig-path'."
   :argument "--namespace="
   :class 'transient-option
   :reader 'kele--namespace-read-from-prefix
-  :always-read t
   :if
   (lambda ()
     (-let (((&alist 'group-versions gvs 'kind kind)
@@ -1574,13 +1573,14 @@ Otherwise, returns the current context name from kubeconfig."
       value
     (kele-current-context-name)))
 
-(cl-defun kele--get-namespace-arg (&key use-default group-version kind (prompt "Namespace: "))
+(cl-defun kele--get-namespace-arg (&key (permit-nil nil) use-default group-version kind (prompt "Namespace: "))
   "Get the value to use for Kubernetes namespace.
 
 In order of priority, this function attempts the following:
 
 - If we are currently in a Transient command; if so, pull the
-  `--namespace=`' argument from it;
+  `--namespace=`' argument from it.  If PERMIT-NIL is non-nil,
+  return this value unconditionally;
 
 - If USE-DEFAULT is non-nil, use the default namespace for the context argument
   (from `kele--get-context-arg');
@@ -1593,7 +1593,7 @@ In order of priority, this function attempts the following:
                                   (transient-args)
                                   (transient-arg-value "--namespace="))))
     (cond
-     (transient-arg-maybe transient-arg-maybe)
+     ((or transient-arg-maybe permit-nil) transient-arg-maybe)
      ((or (not (and group-version kind)) use-default)
       (kele--default-namespace-for-context (kele--get-context-arg)))
      ((not (kele--resource-namespaced-p
@@ -1689,7 +1689,9 @@ Otherwise, simply `kele-get' the resource at point."
   "Construct an interactive vtable listing resources of GVK.
 
 CONTEXT and NAMESPACE are according to Kubernetes conventions and
-serve to further specify the resources to list."
+serve to further specify the resources to list.
+
+If NAMESPACE is nil, displays resources for all namespaces."
   (make-vtable
    :insert nil
    :use-header-line nil
@@ -1700,7 +1702,8 @@ serve to further specify the resources to list."
                            :context context
                            :namespace namespace)))
        (alist-get 'items resource-list)))
-   :columns '((:name "Name" :width 30 :align left :primary ascend)
+   :sort-by '((0 ascend) (1 ascend))
+   :columns '((:name "Name" :width 30 :align left)
               (:name "Namespace" :width 20 :align left)
               (:name "GVK" :width 10 :align left)
               (:name "Owner(s)" :width 20 :align left)
@@ -1770,9 +1773,9 @@ See bug#58712.  Remove when Emacs 30 is released."
 If CONTEXT is provided, use it.  Otherwise, use the current context as reported
 by `kele-current-context-name'.
 
-If NAMESPACE is provided, use it.  Otherwise, use the default
-namespace for the context.  If NAMESPACE is provided and the KIND
-is not namespaced, returns an error."
+If NAMESPACE is provided, use it.  A nil value for NAMESPACE
+fetches across all namespaces.  If NAMESPACE is provided and the
+KIND is not namespaced, returns an error."
   :key "l"
   :inapt-if-not
   ;; TODO(#185): Make this account for group + version as well
@@ -1794,15 +1797,14 @@ is not namespaced, returns an error."
            (when (kele--resource-namespaced-p kele--global-discovery-cache
                                               group-version
                                               kind)
-             (kele--get-namespace-arg)))))
-
+             (kele--get-namespace-arg :permit-nil t)))))
   (-let* (((group version) (kele--groupversion-split group-version))
           (gvk (kele--gvk-create :group group :version version :kind kind))
           (buf (get-buffer-create (format "*kele: %s/%s [%s(%s)]*"
                                           group-version
                                           kind
                                           context
-                                          namespace))))
+                                          (or namespace "<all namespaces>")))))
     (with-current-buffer buf
       (setq-local kele--list-context context)
       (setq-local kele--list-gvk gvk)
