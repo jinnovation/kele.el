@@ -1702,39 +1702,45 @@ CONTEXT and NAMESPACE are according to Kubernetes conventions and
 serve to further specify the resources to list.
 
 If NAMESPACE is nil, displays resources for all namespaces."
-  (make-vtable
-   :insert nil
-   :use-header-line nil
-   :objects-function
-   (lambda ()
-     (let ((resource-list (kele--list-resources
-                           gvk
-                           :context context
-                           :namespace namespace)))
-       (alist-get 'items resource-list)))
-   :sort-by '((0 ascend) (1 ascend))
-   :columns '((:name "Name" :width 30 :align left)
-              (:name "Namespace" :width 20 :align left)
-              (:name "GVK" :width 10 :align left)
-              (:name "Owner(s)" :width 20 :align left)
-              (:name "Created" :width 30 :align left))
-   :keymap kele-list-table-map
-   :getter (lambda (object column vtable)
-             (let-alist object
-               (pcase (vtable-column vtable column)
-                 ("Name" .metadata.name)
-                 ("Namespace"
-                  (or .metadata.namespace
-                      (propertize "N/A" 'face 'kele-disabled-face)))
-                 ("GVK" (kele--string gvk))
-                 ("Owner(s)"
-                  (if (not .metadata.ownerReferences)
-                      (propertize "N/A" 'face 'kele-disabled-face)
-                    (if (> (length .metadata.ownerReferences) 1)
-                        "Multiple"
-                      (let-alist (elt .metadata.ownerReferences 0)
-                        (format "%s/%s" .kind .name)))))
-                 ("Created" .metadata.creationTimestamp))))))
+  (let ((columns
+         (append
+          '((:name "Name" :width 30 :align left)
+            (:name "Namespace" :width 20 :align left)
+            (:name "GVK" :width 10 :align left)
+            (:name "Owner(s)" :width 20 :align left)
+            (:name "Created" :width 30 :align left))
+          (map-keys (alist-get (intern (oref gvk kind)) kele--list-columns)))))
+    (make-vtable
+     :insert nil
+     :use-header-line nil
+     :objects-function
+     (lambda ()
+       (let ((resource-list (kele--list-resources
+                             gvk
+                             :context context
+                             :namespace namespace)))
+         (alist-get 'items resource-list)))
+     :sort-by '((0 ascend) (1 ascend))
+     :columns columns
+     :keymap kele-list-table-map
+     :getter (lambda (object column vtable)
+               (let-alist object
+                 (pcase (vtable-column vtable column)
+                   ("Name" .metadata.name)
+                   ("Namespace"
+                    (or .metadata.namespace
+                        (propertize "N/A" 'face 'kele-disabled-face)))
+                   ("GVK" (kele--string gvk))
+                   ("Owner(s)"
+                    (if (not .metadata.ownerReferences)
+                        (propertize "N/A" 'face 'kele-disabled-face)
+                      (if (> (length .metadata.ownerReferences) 1)
+                          "Multiple"
+                        (let-alist (elt .metadata.ownerReferences 0)
+                          (format "%s/%s" .kind .name)))))
+                   ("Created" .metadata.creationTimestamp)))))))
+
+(alist-get 'deployments kele--list-columns)
 
 (defvar kele-list-mode-map
   (let ((map (make-sparse-keymap)))
@@ -2166,6 +2172,14 @@ If CONTEXT is not provided, uses current context."
 (memoize 'kele--can-i)
 
 ;; TODO: Method to invalidate all caches (manual as well as memoized)
+
+(defvar kele--list-columns
+  '((deployments . (("Ready" . (lambda (r)
+                                 (let-alist r (format "%s/%s" .status.readyReplicas .status.replicas))))
+                    ("Up-to-date" . (lambda (r)
+                                      (let-alist r .status.updatedReplicas)))
+                    ("Available" . (lambda (r) (let-alist r .status.readyReplicas)))))))
+
 
 (provide 'kele)
 
