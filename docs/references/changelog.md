@@ -11,6 +11,8 @@ versioning][semver].
 
 ## Unreleased
 
+## 0.6.0
+
 ### Added
 
 - Implemented `kele-deployment-restart` for restarting Deployments.
