@@ -65,6 +65,11 @@ s-k r <kind name> g <resource name>
 
 This is bound to `kele-get`.
 
+!!! tip
+
+    Leaving `--namespace=` unset will list all resources of the selected kind
+    across all namespaces for you to choose from.
+
 ![](./img/kele-resource.gif)
 
 ### Deleting a single resource

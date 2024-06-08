@@ -1922,6 +1922,7 @@ to query for."
            (ns (kele--get-namespace-arg
                 :group-version gv
                 :kind kind
+                :permit-nil t
                 :use-default nil))
            (cands (kele--fetch-resource-names gvk :namespace ns :context (kele--get-context-arg)))
            (name (completing-read "Name: " (-cut kele--resources-complete <> <> <> :cands cands))))

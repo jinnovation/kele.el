@@ -26,9 +26,9 @@ versioning][semver].
   **or** the owning resource, depending on cursor position
 - Added binding `g` for refreshing a `kele-list` buffer
 - `kele-resource` now allows `--namespace=` to be unset. Resulting behavior is
-  suffix-specific. For example, nil `--namespace=` for `kele-list` is equivalent
-  to `--all-namespaces`, while `kele-get` will simply prompt you for a namespace
-  via completion
+  suffix-specific. For example, nil `--namespace=` for `kele-list` will list
+  resources across all namespaces, while `kele-get` will do similarly for
+  completion/selection.
 
 ### Fixed
 
