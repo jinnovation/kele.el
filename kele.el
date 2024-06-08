@@ -388,6 +388,16 @@ If CONTEXT is nil, use the current context."
                                .resources)))
         resource))))
 
+(cl-defmethod kele--get-kind-for-plural ((cache kele--discovery-cache)
+                                         type
+                                         &key context)
+  "Look up the Kind name for the given resource TYPE in CACHE.
+
+TYPE is expected to be the plural name of the resource.
+
+If CONTEXT is nil, use the current context."
+  (alist-get 'kind (kele--get-discovery-resource cache type)))
+
 (cl-defmethod kele--get-singular-for-plural ((cache kele--discovery-cache)
                                              type
                                              &key context)
@@ -1981,7 +1991,7 @@ CONTEXT and NAMESPACE are used to identify where the deployment lives."
       (string-join
        (list (--> (oref transient--prefix scope)
                   (alist-get 'kind it)
-                  (capitalize it)
+                  (kele--get-kind-for-plural kele--global-discovery-cache it)
                   (propertize it 'face 'warning))
              (propertize "-specific actions" 'face 'transient-heading))))
     (kele-deployment-restart)]]
