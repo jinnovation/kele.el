@@ -396,7 +396,7 @@ If CONTEXT is nil, use the current context."
 TYPE is expected to be the plural name of the resource.
 
 If CONTEXT is nil, use the current context."
-  (alist-get 'kind (kele--get-discovery-resource cache type)))
+  (alist-get 'kind (kele--get-discovery-resource cache type :context context)))
 
 (cl-defmethod kele--get-singular-for-plural ((cache kele--discovery-cache)
                                              type
