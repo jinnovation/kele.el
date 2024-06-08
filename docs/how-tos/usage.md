@@ -95,6 +95,10 @@ separate buffer in a table. From here, you can:
 
 !!! tip
 
+    Leaving `--namespace=` unset will list resources across all namespaces.
+
+!!! tip
+
     Hitting `RET` with your cursor on the **Owner(s)** column will open the
     **owner resource**.
 
