@@ -1709,7 +1709,9 @@ If NAMESPACE is nil, displays resources for all namespaces."
             (:name "GVK" :width 10 :align left)
             (:name "Owner(s)" :width 20 :align left)
             (:name "Created" :width 30 :align left))
-          (map-keys (alist-get (intern (oref gvk kind)) kele--list-columns)))))
+          (mapcar (lambda (key)
+                    `(:name ,key :width ,(length key) :align left))
+                  (map-keys (alist-get (intern (oref gvk kind)) kele--list-columns))))))
     (make-vtable
      :insert nil
      :use-header-line nil
