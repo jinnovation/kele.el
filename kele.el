@@ -1689,11 +1689,42 @@ Otherwise, simply `kele-get' the resource at point."
 
 (defvar kele-list-table-map
   (let ((map (make-sparse-keymap)))
-    ;; FIXME: Bind `g' to refresh the table **anywhere** the cursor is on the
-    ;; buffer, not just when hovering over the table itself
     (define-key map (kbd "RET") #'kele-list-table-dwim)
     (define-key map (kbd "k") #'kele-list-kill)
     map))
+
+(defvar kele-list-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "g") #'kele-list-refresh)
+    map))
+
+(defvar kele--list-columns
+  '((nil . (("Name" . (lambda (r)
+                        (let-alist r .metadata.name)))
+            ("Namespace" . (lambda (r) (let-alist r .metadata.namespace)))
+            ("Created" . (lambda (r) (let-alist r .metadata.creationTimestamp)))
+            ("Owner(s)" . (lambda (r)
+                            (let-alist r
+                              (if (not .metadata.ownerReferences)
+                                  (propertize "N/A" 'face 'kele-disabled-face)
+                                (if (> (length .metadata.ownerReferences) 1)
+                                    "Multiple"
+                                  (let-alist (elt .metadata.ownerReferences 0)
+                                    (format "%s/%s" .kind .name)))))))))
+    (deployments . (("Ready" . (lambda (r)
+                                 (let-alist r (format "%s/%s" .status.readyReplicas .status.replicas))))
+                    ("Up-to-date" . (lambda (r)
+                                      (let-alist r .status.updatedReplicas)))
+                    ("Available" . (lambda (r) (let-alist r
+  .status.readyReplicas))))))
+  "Alist containing column specifications for `kele-list'.
+
+Keys are symbols representing the plural form of Kubernetes
+resource kinds, e.g. `deployments'.  Values are alists mapping
+column names to unary functions that take the resource object and
+return the corresponding value.
+
+The nil key contains columns general to all resources.")
 
 (defun kele--make-list-vtable (gvk context namespace)
   "Construct an interactive vtable listing resources of GVK.
@@ -1734,11 +1765,6 @@ If NAMESPACE is nil, displays resources for all namespaces."
                    (colname (vtable-column vtable column))
                    (f (alist-get colname column-specs nil nil #'string-equal)))
          (funcall f object))))))
-
-(defvar kele-list-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "g") #'kele-list-refresh)
-    map))
 
 (define-derived-mode kele-list-mode fundamental-mode "Kele: List"
   "Major mode for listing multiple resources of a single kind."
@@ -2165,35 +2191,6 @@ If CONTEXT is not provided, uses current context."
 (memoize 'kele--can-i)
 
 ;; TODO: Method to invalidate all caches (manual as well as memoized)
-
-(defvar kele--list-columns
-  '((nil . (("Name" . (lambda (r)
-                        (let-alist r .metadata.name)))
-            ("Namespace" . (lambda (r) (let-alist r .metadata.namespace)))
-            ("Created" . (lambda (r) (let-alist r .metadata.creationTimestamp)))
-            ("Owner(s)" . (lambda (r)
-                            (let-alist r
-                              (if (not .metadata.ownerReferences)
-                                  (propertize "N/A" 'face 'kele-disabled-face)
-                                (if (> (length .metadata.ownerReferences) 1)
-                                    "Multiple"
-                                  (let-alist (elt .metadata.ownerReferences 0)
-                                    (format "%s/%s" .kind .name)))))))))
-    (deployments . (("Ready" . (lambda (r)
-                                 (let-alist r (format "%s/%s" .status.readyReplicas .status.replicas))))
-                    ("Up-to-date" . (lambda (r)
-                                      (let-alist r .status.updatedReplicas)))
-                    ("Available" . (lambda (r) (let-alist r
-  .status.readyReplicas))))))
-  "Alist containing column specifications for `kele-list'.
-
-Keys are symbols representing the plural form of Kubernetes
-resource kinds, e.g. `deployments'.  Values are alists mapping
-column names to unary functions that take the resource object and
-return the corresponding value.
-
-The nil key contains columns general to all resources.")
-
 
 (provide 'kele)
 
