@@ -28,11 +28,6 @@ With Kele, you can:
 See [How-Tos > Usage](./how-tos/usage.md) for more details on what's possible
 with Kele.
 
-![](./img/demo.gif)
-![](./img/menu-bar.png)
-![](./img/kele-list.png)
-![](./img/doom-modeline.png)
-
 !!! tip
 
     To learn more about how Kele compares to some other Kubernetes packages for
@@ -42,6 +37,24 @@ with Kele.
 !!! note
 
     Kele is not an official Kubernetes project.
+
+## Screenshots
+
+=== "End-to-end"
+
+    ![](./img/demo.gif)
+
+=== "Menu bar integration"
+
+    ![](./img/menu-bar.png)
+
+=== "Resource listing"
+
+    ![](./img/kele-list.png)
+
+=== "`doom-modeline` integration"
+
+    ![](./img/doom-modeline.png)
 
 ## Getting Started
 
