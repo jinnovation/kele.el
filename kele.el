@@ -1724,23 +1724,14 @@ If NAMESPACE is nil, displays resources for all namespaces."
      :columns columns
      :keymap kele-list-table-map
      :getter (lambda (object column vtable)
-               (let-alist object
-                 (pcase (vtable-column vtable column)
-                   ("Name" .metadata.name)
-                   ("Namespace"
-                    (or .metadata.namespace
-                        (propertize "N/A" 'face 'kele-disabled-face)))
-                   ("GVK" (kele--string gvk))
-                   ("Owner(s)"
-                    (if (not .metadata.ownerReferences)
-                        (propertize "N/A" 'face 'kele-disabled-face)
-                      (if (> (length .metadata.ownerReferences) 1)
-                          "Multiple"
-                        (let-alist (elt .metadata.ownerReferences 0)
-                          (format "%s/%s" .kind .name)))))
-                   ("Created" .metadata.creationTimestamp)))))))
-
-(alist-get 'deployments kele--list-columns)
+               (let ((column-specs (append
+                                    `(("GVK" . (lambda (_) (kele--string ,gvk))))
+                                    (alist-get nil kele--list-columns)
+                                    (alist-get (intern (oref gvk kind)) kele--list-columns)))
+                     (colname (vtable-column vtable column)))
+                 (when-let ((f (alist-get colname column-specs nil nil
+  #'string-equal)))
+                   (funcall f object)))))))
 
 (defvar kele-list-mode-map
   (let ((map (make-sparse-keymap)))
@@ -2174,7 +2165,19 @@ If CONTEXT is not provided, uses current context."
 ;; TODO: Method to invalidate all caches (manual as well as memoized)
 
 (defvar kele--list-columns
-  '((deployments . (("Ready" . (lambda (r)
+  '((nil . (("Name" . (lambda (r)
+                        (let-alist r .metadata.name)))
+            ("Namespace" . (lambda (r) (let-alist r .metadata.namespace)))
+            ("Created" . (lambda (r) (let-alist r .metadata.creationTimestamp)))
+            ("Owner(s)" . (lambda (r)
+                            (let-alist r
+                              (if (not .metadata.ownerReferences)
+                                  (propertize "N/A" 'face 'kele-disabled-face)
+                                (if (> (length .metadata.ownerReferences) 1)
+                                    "Multiple"
+                                  (let-alist (elt .metadata.ownerReferences 0)
+                                    (format "%s/%s" .kind .name)))))))))
+    (deployments . (("Ready" . (lambda (r)
                                  (let-alist r (format "%s/%s" .status.readyReplicas .status.replicas))))
                     ("Up-to-date" . (lambda (r)
                                       (let-alist r .status.updatedReplicas)))
