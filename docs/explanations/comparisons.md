@@ -11,30 +11,31 @@ This page compares Kele with some of its peer packages.
 
 ## [kubernetes-el]
 
+!!! note
+
+    The author of Kele is a co-maintainer of [kubernetes-el].
+
 [kubernetes-el] is a Kubernetes cluster management package for Emacs. It draws
 **heavy** inspiration from [Magit], from its "status page"-centric interface
 design down to its prevalent use of [Transient]-based keybindings.
 
-Kele itself draws inspiration from [kubernetes-el]. In fact, the author of Kele
-is a co-maintainer of [kubernetes-el].
+Kele draws heavy inspiration from [kubernetes-el]. It takes lessons learned
+during [kubernetes-el] development and strives for a cluster management
+experience that is lighter-weight, more agile, and more fluidly integrated with
+the native Emacs environment.
 
-Kele draws from some lessons learned during [kubernetes-el] development and
-strives for a cluster management experience that [has
-PLANS](../index.md#design-ethos). Kele aims for a Kubernetes cluster management
-experience that is less intrusive, requires less context-switching, and is
-overall more performant than [kubernetes-el]. If Kele proves to be flexible
-enough that [kubernetes-el] could be re-implemented on top of Kele, then that's
-a sign that we've done a good job here.
+Kele aims for a Kubernetes cluster management experience that is less intrusive,
+requires less context-switching, and is overall more performant than
+[kubernetes-el].
 
-More critically, however, one of `kubernetes-el`'s biggest limitations is [its
-lack of support for custom resources][kubernetes-el-69]. Not only does this
-limitation impose a very low ceiling on the package's utility, the design
-decisions underpinning that limitation extend to `kubernetes-el`'s **incomplete
-support for the Kubernetes core API** (see
-[`kubernetes-el/kubernetes-el#306`][kubernetes-el-306]. Overhauling the
+One of `kubernetes-el`'s biggest limitations is [its lack of support for custom
+resources][kubernetes-el-69]. This limitation imposes a **very** low ceiling on
+the package's utility. The root causes extend to `kubernetes-el`'s **hard-coded
+and incomplete support for the Kubernetes core API** (see
+[`kubernetes-el/kubernetes-el#306`][kubernetes-el-306]). Overhauling the
 associated design decisions would amount, in my co-maintainer's opinion, to a
-complete rewrite of `kubernetes-el` -- hence my decision to kick off
-development on Kele.
+complete rewrite of `kubernetes-el` -- hence my decision to kick off development
+on Kele.
 
 ## [kubel]
 
