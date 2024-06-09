@@ -12,6 +12,8 @@ This page compares Kele with some of its peer packages.
 **heavy** inspiration from [Magit], from its "status page"-centric interface
 design down to its prevalent use of [Transient]-based keybindings.
 
+### Design Philosophy
+
 Kele draws heavy inspiration from [kubernetes-el]. It takes lessons learned
 during [kubernetes-el] development and strives for a cluster management
 experience that is lighter-weight, more agile, and more fluidly integrated with
@@ -21,6 +23,19 @@ Kele aims for a Kubernetes cluster management experience that is less intrusive,
 requires less context-switching, and is overall more performant than
 [kubernetes-el].
 
+### Permissions
+
+`kubernetes-el` assumes a high level of privilege over the managed clusters,
+e.g. the ability to list namespaces. This is a simplifying assumption that
+obviously does not hold in all cases.
+
+Kele learns from this limitation by dynamically enabling/disabling specific
+keybindings depending on reported permissions from the cluster under
+management. For example, if you do not have permission to list Pods, then the
+`l` keybinding within the `kele-resource` Transient prefix will be disabled.
+
+### Support for custom resources
+
 One of `kubernetes-el`'s biggest limitations is [its lack of support for custom
 resources][kubernetes-el-69]. This limitation imposes a **very** low ceiling on
 the package's utility. The root causes extend to `kubernetes-el`'s **hard-coded
@@ -29,6 +44,11 @@ and incomplete support for the Kubernetes core API** (see
 associated design decisions would amount, in my co-maintainer's opinion, to a
 complete rewrite of `kubernetes-el` -- hence my decision to kick off development
 on Kele.
+
+Kele was implemented to support custom resources from day one. To the fullest
+extent possible, "core" resources (Pods, Deployments, etc.) are treated in
+exactly the same way as custom resources. Almost all resource-specific
+functionality, e.g. display logic and commands, are implemented generically.
 
 ## [kubel]
 
