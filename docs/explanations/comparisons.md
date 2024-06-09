@@ -2,13 +2,6 @@
 
 This page compares Kele with some of its peer packages.
 
-!!! note
-
-    Given Kele's relative infancy, this page compares less on concrete
-    features and capabilities and more on design philosophy and overall
-    goals. All packages listed here are, as of today, far more feature-complete
-    than Kele.
-
 ## [kubernetes-el]
 
 !!! note
