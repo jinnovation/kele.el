@@ -96,7 +96,7 @@
     (async-wait (kele--cache-update kele--global-discovery-cache))
     (async-wait (kele--cache-update kele--global-kubeconfig-cache))
     (with-simulated-input
-        "deployments RET kube-system RET coredns RET"
+        "deployments RET coredns RET"
       (call-interactively #'kele-get))
     (expect (-map #'buffer-name (buffer-list))
             :to-contain
