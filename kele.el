@@ -2183,7 +2183,16 @@ If CONTEXT is not provided, uses current context."
                                  (let-alist r (format "%s/%s" .status.readyReplicas .status.replicas))))
                     ("Up-to-date" . (lambda (r)
                                       (let-alist r .status.updatedReplicas)))
-                    ("Available" . (lambda (r) (let-alist r .status.readyReplicas)))))))
+                    ("Available" . (lambda (r) (let-alist r
+  .status.readyReplicas))))))
+  "Alist containing column specifications for `kele-list'.
+
+Keys are symbols representing the plural form of Kubernetes
+resource kinds, e.g. `deployments'.  Values are alists mapping
+column names to unary functions that take the resource object and
+return the corresponding value.
+
+The nil key contains columns general to all resources.")
 
 
 (provide 'kele)
