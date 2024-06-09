@@ -29,7 +29,7 @@
           (expect (buffer-string) :to-match "--context=kind-kele-test-cluster0")))
       (it "sets the current context's default namespace as the default value"
         (with-current-buffer transient--buffer-name
-          (expect (buffer-string) :to-match "--namespace=kube-public"))))
+          (expect (buffer-string) :to-match "--namespace=kube-system"))))
 
     ;; TODO: This is blocked on some odd behavior when calling Transient from
     ;; batch mode. See: magit/transient#180

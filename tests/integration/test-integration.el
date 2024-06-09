@@ -93,6 +93,8 @@
 
 (describe "kele-get"
   (it "fetches the resource"
+    ;; FIXME: This should not be necessary for all-namespace GET-ing; see #222
+    (kele-namespace-switch-for-current-context "kube-system")
     (async-wait (kele--cache-update kele--global-discovery-cache))
     (async-wait (kele--cache-update kele--global-kubeconfig-cache))
     (with-simulated-input
