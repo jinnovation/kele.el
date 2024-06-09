@@ -1723,15 +1723,15 @@ If NAMESPACE is nil, displays resources for all namespaces."
      :sort-by '((0 ascend) (1 ascend))
      :columns columns
      :keymap kele-list-table-map
-     :getter (lambda (object column vtable)
-               (let ((column-specs (append
-                                    `(("GVK" . (lambda (_) (kele--string ,gvk))))
-                                    (alist-get nil kele--list-columns)
-                                    (alist-get (intern (oref gvk kind)) kele--list-columns)))
-                     (colname (vtable-column vtable column)))
-                 (when-let ((f (alist-get colname column-specs nil nil
-  #'string-equal)))
-                   (funcall f object)))))))
+     :getter
+     (lambda (object column vtable)
+       (when-let* ((column-specs (append
+                            `(("GVK" . (lambda (_) (kele--string ,gvk))))
+                            (alist-get nil kele--list-columns)
+                            (alist-get (intern (oref gvk kind)) kele--list-columns)))
+                   (colname (vtable-column vtable column))
+                   (f (alist-get colname column-specs nil nil #'string-equal)))
+         (funcall f object))))))
 
 (defvar kele-list-mode-map
   (let ((map (make-sparse-keymap)))
