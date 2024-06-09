@@ -11,6 +11,12 @@ versioning][semver].
 
 ## Unreleased
 
+### Added
+
+- `kele-list` now supports kind-specific columns. For example, listing
+  Deployments will now show columns `READY`, `UP-TO-DATE`, and `AVAILABLE`,
+  similar to `kubectl get deployments`
+
 ## 0.6.0
 
 ### Added
