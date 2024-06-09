@@ -48,7 +48,7 @@ quickly as possible and move on with your life") and requires less
 context-switching -- unavoidable with a status-page-centric user interface --
 than [kubel].
 
-[kubernetes-el]: https;//kubernetes-el.github.io/kubernetes-el
+[kubernetes-el]: https://kubernetes-el.github.io/kubernetes-el
 [kubel]: https://github.com/abrochard/kubel
 [Magit]: https://magit.vc
 [Transient]: https://github.com/magit/transient
