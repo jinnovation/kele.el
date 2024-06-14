@@ -1701,7 +1701,10 @@ Otherwise, simply `kele-get' the resource at point."
 (defvar kele--list-columns
   '((nil . (("Name" . (lambda (r)
                         (let-alist r .metadata.name)))
-            ("Namespace" . (lambda (r) (let-alist r .metadata.namespace)))
+            ("Namespace" . (lambda (r) (let-alist r
+                                         (if (not .metadata.namespace)
+                                             (propertize "N/A" 'face 'kele-disabled-face)
+                                           .metadata.namespace))))
             ("Created" . (lambda (r) (let-alist r .metadata.creationTimestamp)))
             ("Owner(s)" . (lambda (r)
                             (let-alist r
@@ -1711,6 +1714,23 @@ Otherwise, simply `kele-get' the resource at point."
                                     "Multiple"
                                   (let-alist (elt .metadata.ownerReferences 0)
                                     (format "%s/%s" .kind .name)))))))))
+    (namespaces . (("Status" . (lambda (r) (let-alist r .status.phase)))))
+    (pods . (("Ready" . (lambda (r)
+                          (let-alist r (format "%s/%s"
+                                               (->> .status.containerStatuses
+                                                    (-map (lambda (status)
+                                                            (alist-get 'ready status)))
+                                                    (-non-nil)
+                                                    (length))
+                                               (length .status.containerStatuses)))))
+             ("Status" . (lambda (r)
+                           (let-alist r .status.phase)))
+             ("Restarts" . (lambda (r)
+                             (let-alist r
+                               (->> .status.containerStatuses
+                                    (-map (lambda (status)
+                                            (alist-get 'restartCount status)))
+                                    (-sum)))))))
     (deployments . (("Ready" . (lambda (r)
                                  (let-alist r (format "%s/%s" .status.readyReplicas .status.replicas))))
                     ("Up-to-date" . (lambda (r)
