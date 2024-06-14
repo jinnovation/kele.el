@@ -1711,6 +1711,22 @@ Otherwise, simply `kele-get' the resource at point."
                                     "Multiple"
                                   (let-alist (elt .metadata.ownerReferences 0)
                                     (format "%s/%s" .kind .name)))))))))
+    (pods . (("Ready" . (lambda (r)
+                          (let-alist r (format "%s/%s"
+                                               (->> .status.containerStatuses
+                                                    (-map (lambda (status)
+                                                            (alist-get 'ready status)))
+                                                    (-non-nil)
+                                                    (length))
+                                               (length .status.containerStatuses)))))
+             ("Status" . (lambda (r)
+                           (let-alist r .status.phase)))
+             ("Restarts" . (lambda (r)
+                             (let-alist r
+                               (->> .status.containerStatuses
+                                    (-map (lambda (status)
+                                            (alist-get 'restartCount status)))
+                                    (-sum)))))))
     (deployments . (("Ready" . (lambda (r)
                                  (let-alist r (format "%s/%s" .status.readyReplicas .status.replicas))))
                     ("Up-to-date" . (lambda (r)
