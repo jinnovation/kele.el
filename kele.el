@@ -1689,11 +1689,42 @@ Otherwise, simply `kele-get' the resource at point."
 
 (defvar kele-list-table-map
   (let ((map (make-sparse-keymap)))
-    ;; FIXME: Bind `g' to refresh the table **anywhere** the cursor is on the
-    ;; buffer, not just when hovering over the table itself
     (define-key map (kbd "RET") #'kele-list-table-dwim)
     (define-key map (kbd "k") #'kele-list-kill)
     map))
+
+(defvar kele-list-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "g") #'kele-list-refresh)
+    map))
+
+(defvar kele--list-columns
+  '((nil . (("Name" . (lambda (r)
+                        (let-alist r .metadata.name)))
+            ("Namespace" . (lambda (r) (let-alist r .metadata.namespace)))
+            ("Created" . (lambda (r) (let-alist r .metadata.creationTimestamp)))
+            ("Owner(s)" . (lambda (r)
+                            (let-alist r
+                              (if (not .metadata.ownerReferences)
+                                  (propertize "N/A" 'face 'kele-disabled-face)
+                                (if (> (length .metadata.ownerReferences) 1)
+                                    "Multiple"
+                                  (let-alist (elt .metadata.ownerReferences 0)
+                                    (format "%s/%s" .kind .name)))))))))
+    (deployments . (("Ready" . (lambda (r)
+                                 (let-alist r (format "%s/%s" .status.readyReplicas .status.replicas))))
+                    ("Up-to-date" . (lambda (r)
+                                      (let-alist r .status.updatedReplicas)))
+                    ("Available" . (lambda (r) (let-alist r
+  .status.readyReplicas))))))
+  "Alist containing column specifications for `kele-list'.
+
+Keys are symbols representing the plural form of Kubernetes
+resource kinds, e.g. `deployments'.  Values are alists mapping
+column names to unary functions that take the resource object and
+return the corresponding value.
+
+The nil key contains columns general to all resources.")
 
 (defun kele--make-list-vtable (gvk context namespace)
   "Construct an interactive vtable listing resources of GVK.
@@ -1702,44 +1733,38 @@ CONTEXT and NAMESPACE are according to Kubernetes conventions and
 serve to further specify the resources to list.
 
 If NAMESPACE is nil, displays resources for all namespaces."
-  (make-vtable
-   :insert nil
-   :use-header-line nil
-   :objects-function
-   (lambda ()
-     (let ((resource-list (kele--list-resources
-                           gvk
-                           :context context
-                           :namespace namespace)))
-       (alist-get 'items resource-list)))
-   :sort-by '((0 ascend) (1 ascend))
-   :columns '((:name "Name" :width 30 :align left)
-              (:name "Namespace" :width 20 :align left)
-              (:name "GVK" :width 10 :align left)
-              (:name "Owner(s)" :width 20 :align left)
-              (:name "Created" :width 30 :align left))
-   :keymap kele-list-table-map
-   :getter (lambda (object column vtable)
-             (let-alist object
-               (pcase (vtable-column vtable column)
-                 ("Name" .metadata.name)
-                 ("Namespace"
-                  (or .metadata.namespace
-                      (propertize "N/A" 'face 'kele-disabled-face)))
-                 ("GVK" (kele--string gvk))
-                 ("Owner(s)"
-                  (if (not .metadata.ownerReferences)
-                      (propertize "N/A" 'face 'kele-disabled-face)
-                    (if (> (length .metadata.ownerReferences) 1)
-                        "Multiple"
-                      (let-alist (elt .metadata.ownerReferences 0)
-                        (format "%s/%s" .kind .name)))))
-                 ("Created" .metadata.creationTimestamp))))))
-
-(defvar kele-list-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "g") #'kele-list-refresh)
-    map))
+  (let ((columns
+         (append
+          '((:name "Name" :width 30 :align left)
+            (:name "Namespace" :width 20 :align left)
+            (:name "GVK" :width 10 :align left)
+            (:name "Owner(s)" :width 20 :align left)
+            (:name "Created" :width 30 :align left))
+          (mapcar (lambda (key)
+                    `(:name ,key :width ,(length key) :align left))
+                  (map-keys (alist-get (intern (oref gvk kind)) kele--list-columns))))))
+    (make-vtable
+     :insert nil
+     :use-header-line nil
+     :objects-function
+     (lambda ()
+       (let ((resource-list (kele--list-resources
+                             gvk
+                             :context context
+                             :namespace namespace)))
+         (alist-get 'items resource-list)))
+     :sort-by '((0 ascend) (1 ascend))
+     :columns columns
+     :keymap kele-list-table-map
+     :getter
+     (lambda (object column vtable)
+       (when-let* ((column-specs (append
+                            `(("GVK" . (lambda (_) (kele--string ,gvk))))
+                            (alist-get nil kele--list-columns)
+                            (alist-get (intern (oref gvk kind)) kele--list-columns)))
+                   (colname (vtable-column vtable column))
+                   (f (alist-get colname column-specs nil nil #'string-equal)))
+         (funcall f object))))))
 
 (define-derived-mode kele-list-mode fundamental-mode "Kele: List"
   "Major mode for listing multiple resources of a single kind."
