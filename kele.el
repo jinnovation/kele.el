@@ -1715,6 +1715,9 @@ Otherwise, simply `kele-get' the resource at point."
                                   (let-alist (elt .metadata.ownerReferences 0)
                                     (format "%s/%s" .kind .name)))))))))
     (namespaces . (("Status" . (lambda (r) (let-alist r .status.phase)))))
+    (secrets . (("Type" . (lambda (r) (alist-get 'type r)))))
+    (configmaps . (("Data" . (lambda (r)
+                               (length (map-keys (alist-get 'data r)))))))
     (pods . (("Ready" . (lambda (r)
                           (let-alist r (format "%s/%s"
                                                (->> .status.containerStatuses
