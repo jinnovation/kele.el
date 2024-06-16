@@ -1981,16 +1981,10 @@ to query for."
                    'warning))
         (format "Don't have permission to get %s" .kind))))
   (interactive
-   (-let* ((kind (kele--get-kind-arg))
-           (gv (kele--get-groupversion-arg kind))
-           ((group version) (kele--groupversion-split gv))
-           (gvk (kele--gvk-create
-                 :group group
-                 :version version
-                 :kind kind))
+   (-let* ((gvk (kele--get-gvk-arg))
            (ns (kele--get-namespace-arg
-                :group-version gv
-                :kind kind
+                :group-version (kele--gv-string gvk)
+                :kind (oref gvk kind)
                 :permit-nil t
                 :use-default nil))
            (cands (kele--fetch-resource-names gvk :namespace ns :context (kele--get-context-arg)))
@@ -2009,18 +2003,13 @@ CONTEXT and NAMESPACE are used to identify where the deployment lives."
     (let-alist (oref transient--prefix scope)
       (string-equal "deployments" .kind)))
   (interactive
-   (let* ((context (kele--get-context-arg))
+   (let* ((gvk (kele--gvk-create :kind "deployments" :group "apps" :version "v1"))
+          (context (kele--get-context-arg))
           (ns (kele--get-namespace-arg
-               :kind "deployments"
-               :group-version "apps/v1"
+               :kind (oref gvk kind)
+               :group-version (kele--gv-string gvk)
                :use-default nil))
-          (cands (kele--fetch-resource-names
-                  (kele--gvk-create
-                   :group "apps"
-                   :version "v1"
-                   :kind "deployments")
-                  :namespace ns
-                  :context context))
+          (cands (kele--fetch-resource-names gvk :namespace ns :context context))
           (name (completing-read "Deployment to restart: "
                                  (-cut kele--resources-complete <> <> <> :cands cands))))
      (list context ns name)))
