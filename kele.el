@@ -2085,8 +2085,8 @@ CONTEXT and NAMESPACE are used to identify where the deployment lives."
   (interactive
    (-let* ((gvk (kele--get-gvk-arg))
            (ns (kele--get-namespace-arg
-                :group-version gv
-                :kind kind
+                :group-version (kele--gv-string gvk)
+                :kind (oref gvk kind)
                 :use-default nil))
            (cands (kele--fetch-resource-names gvk :namespace ns :context (kele--get-context-arg)))
            (name (completing-read "Name: " (-cut kele--resources-complete <> <> <> :cands cands))))
