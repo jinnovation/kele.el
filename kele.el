@@ -107,6 +107,9 @@ pods."
 (defvar kele--discovery-last-refresh-time nil
   "Timestamp of last successful poll of the discovery cache.")
 
+(defvar kele--loggable-kinds '("pods" "deployments" "jobs" "services")
+  "Resource kinds that can be passed to kubectl log.")
+
 ;; TODO (#80): Display in the `kele-get-mode' header what fields were filtered out
 (defcustom kele-filtered-fields '((metadata managedFields)
                                   (metadata annotations kubectl.kubernetes.io/last-applied-configuration))
@@ -2042,6 +2045,7 @@ CONTEXT and NAMESPACE are used to identify where the deployment lives."
                   (kele--get-kind-for-plural kele--global-discovery-cache it)
                   (propertize it 'face 'warning))
              (propertize "-specific actions" 'face 'transient-heading))))
+    (kele-resource-follow-logs)
     (kele-deployment-restart)]]
 
   (interactive (let* ((context (kele-current-context-name))
@@ -2060,6 +2064,40 @@ CONTEXT and NAMESPACE are used to identify where the deployment lives."
   (transient-setup 'kele-resource nil nil :scope `((group-versions . ,group-versions)
                                                    (kind . ,kind)
                                                    (context . ,(kele-current-context-name)))))
+
+;; FIXME: Known issues:
+;; - Might not support multi-container pods
+(transient-define-suffix kele-resource-follow-logs (context namespace gvk name)
+  :key "l"
+  :if
+  (lambda ()
+    (let-alist (oref transient--prefix scope)
+      (-contains? kele--loggable-kinds .kind)))
+  :description "Follow logs"
+  (interactive
+   (-let* ((kind (kele--get-kind-arg))
+           (gv (kele--get-groupversion-arg kind))
+           ((group version) (kele--groupversion-split gv))
+           (gvk (kele--gvk-create
+                 :group group
+                 :version version
+                 :kind kind))
+           (ns (kele--get-namespace-arg
+                :group-version gv
+                :kind kind
+                :use-default nil))
+           (cands (kele--fetch-resource-names gvk :namespace ns :context (kele--get-context-arg)))
+           (name (completing-read "Name: " (-cut kele--resources-complete <> <> <> :cands cands))))
+     (list (kele--get-context-arg) ns gvk name)))
+  (let ((buf-name (format "*kele: logs: %s/%s*" (kele--string gvk) name)))
+    (compilation-start
+     (format "kubectl logs --follow --context %s --namespace %s %s/%s"
+             context
+             namespace
+             (kele--gvk-kind gvk)
+             name)
+     t
+     (lambda (_) buf-name))))
 
 (transient-define-prefix kele-dispatch ()
   "Work with Kubernetes clusters and configs."

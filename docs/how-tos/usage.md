@@ -111,6 +111,13 @@ separate buffer in a table. From here, you can:
 
 You can press `g` in a `kele-get` buffer to re-fetch and refresh the current resource.
 
+### Following logs
+
+When `kele-resource` is called on a resource that supports logs, you can use the
+`l` key to follow the logs for a single resource.
+
+![](./img/kele-resource-logs.png)
+
 ## Contexts
 
 ![](./img/context-prefix.png)
