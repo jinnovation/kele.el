@@ -2062,6 +2062,9 @@ CONTEXT and NAMESPACE are used to identify where the deployment lives."
                                                    (kind . ,kind)
                                                    (context . ,(kele-current-context-name)))))
 
+;; TODO:
+;; - `kele-log-mode-map' with bindings to change parameters and reload the buffer
+
 ;; FIXME: Known issues:
 ;; - Might not support multi-container pods
 (transient-define-suffix kele-resource-follow-logs (context namespace gvk name)
