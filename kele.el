@@ -2083,15 +2083,14 @@ CONTEXT and NAMESPACE are used to identify where the deployment lives."
            (cands (kele--fetch-resource-names gvk :namespace ns :context (kele--get-context-arg)))
            (name (completing-read "Name: " (-cut kele--resources-complete <> <> <> :cands cands))))
      (list (kele--get-context-arg) ns gvk name)))
-  (let ((buf-name (format "*kele: logs: %s/%s*" (kele--string gvk) name)))
-    (compilation-start
-     (format "kubectl logs --follow --context %s --namespace %s %s/%s"
-             context
-             namespace
-             (kele--gvk-kind gvk)
-             name)
-     t
-     (lambda (_) buf-name))))
+  (let* ((buf-name (format "*kele: logs: %s/%s*" (kele--string gvk) name))
+         (name-func (lambda (_) buf-name))
+         (cmd (format "kubectl logs --follow --context %s --namespace %s %s/%s"
+                      context
+                      namespace
+                      (kele--gvk-kind gvk)
+                      name)))
+    (compilation-start cmd t name-func)))
 
 (transient-define-prefix kele-dispatch ()
   "Work with Kubernetes clusters and configs."
