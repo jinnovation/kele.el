@@ -1638,6 +1638,14 @@ prompting and the function simply returns the single option."
                                  kind)
                          gvs)))))
 
+(defun kele--get-gvk-arg ()
+  "Get the GVK to use for a command."
+  (-let* ((kind (kele--get-kind-arg))
+          (gv (kele--get-groupversion-arg kind))
+          ((group version) (kele--groupversion-split gv)))
+    (kele--gvk-create :group group :version version :kind kind)))
+
+
 (defvar kele--list-context nil
   "The context corresponding to the current `kele-list-mode' buffer.")
 
@@ -2075,13 +2083,7 @@ CONTEXT and NAMESPACE are used to identify where the deployment lives."
       (-contains? kele--loggable-kinds .kind)))
   :description "Follow logs"
   (interactive
-   (-let* ((kind (kele--get-kind-arg))
-           (gv (kele--get-groupversion-arg kind))
-           ((group version) (kele--groupversion-split gv))
-           (gvk (kele--gvk-create
-                 :group group
-                 :version version
-                 :kind kind))
+   (-let* ((gvk (kele--get-gvk-arg))
            (ns (kele--get-namespace-arg
                 :group-version gv
                 :kind kind
