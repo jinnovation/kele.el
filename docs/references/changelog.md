@@ -16,6 +16,8 @@ versioning][semver].
 - `kele-list` now supports kind-specific columns. For example, listing
   Deployments will now show columns `READY`, `UP-TO-DATE`, and `AVAILABLE`,
   similar to `kubectl get deployments`
+- `kele-resource` now has a keybinding to follow logs for resources that support
+  it
 
 ## 0.6.0
 
