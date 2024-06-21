@@ -2068,7 +2068,7 @@ CONTEXT and NAMESPACE are used to identify where the deployment lives."
 ;; FIXME: Known issues:
 ;; - Might not support multi-container pods
 (transient-define-suffix kele-resource-follow-logs (context namespace gvk name)
-  :key "l"
+  :key "L"
   :if
   (lambda ()
     (let-alist (oref transient--prefix scope)
