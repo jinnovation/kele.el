@@ -2071,7 +2071,24 @@ The port-forward must have been initiated with
   (interactive)
   (if (= 0 (length (mapcar 'car kele--active-port-forwards)))
       (message "[kele] No port-forwards active!")
-    (let* ((port (completing-read "Port-forward to terminate: "
+    (let* ((completion-extra-properties
+            (list :affixation-function
+                  (lambda (cands)
+                    (mapcar (lambda (cand)
+                              (let ((record (alist-get cand kele--active-port-forwards nil nil #'equal)))
+                                (list cand
+                                      (propertize
+                                       (format "%s/%s:"
+                                               (oref (car (nthcdr 2 record)) kind)
+                                               (car (nthcdr 0 record)))
+                                       'face 'completions-annotations)
+                                      (propertize
+                                       (format " (context: %s, namespace: %s)"
+                                               (car (nthcdr 3 record))
+                                               (car (nthcdr 1 record)))
+                                       'face 'completions-annotations))))
+                            cands))))
+           (port (completing-read "Port-forward to terminate: "
                                   (mapcar 'car kele--active-port-forwards)))
            (record (alist-get port kele--active-port-forwards nil nil #'equal))
            (proc (car (last record))))
