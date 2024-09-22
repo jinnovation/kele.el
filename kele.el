@@ -2082,18 +2082,20 @@ PORTS is used according to `completion-extra-properties'."
                      'face 'completions-annotations))))
           ports))
 
+(defun kele--port-forwards-active-p ()
+  "Return non-nil if there are any port-forwards active."
+  (/= 0 (length (mapcar 'car kele--active-port-forwards))))
+
 (transient-define-suffix kele-kill-port-forward (port)
   "Kill a port-forward process.
 
 The port-forward must have been initiated with
 `kele-port-forward'."
   :description "Kill a port-forward"
-  :inapt-if
-  (lambda () (= 0 (length (mapcar 'car kele--active-port-forwards))))
+  :inapt-if-not #'kele--port-forwards-active-p
   (interactive
-   (if (= 0 (length (mapcar 'car kele--active-port-forwards)))
+   (if (not (kele--port-forwards-active-p))
        (error "[kele] No port-forwards active!")
-
     (let* ((completion-extra-properties
             (list :affixation-function #'kele--port-forward-affixation))
            (port (completing-read "Port-forward to kill: "
