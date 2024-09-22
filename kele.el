@@ -571,6 +571,10 @@ GROUP and VERSION are not always set.  KIND is always set."
       vk)))
 
 (cl-defmethod kele--singular ((gvk kele--gvk) &optional context)
+  "Return the name of GVK in singular form.
+
+If CONTEXT is provided, look up in that context.  Otherwise, use
+the current context."
   (kele--get-singular-for-plural
    kele--global-discovery-cache
    (oref gvk kind)
@@ -2002,6 +2006,9 @@ to query for."
   (kele--render-object (kele--get-resource gvk name :namespace namespace :context context)))
 
 (transient-define-suffix kele-port-forward (context namespace gvk name port)
+  "Create a port-forward for resource GVK named NAME at PORT.
+
+NAMESPACE and CONTEXT are used to identify the resource type to query for."
   :key "F"
   :description
   "Port-forward to..."
