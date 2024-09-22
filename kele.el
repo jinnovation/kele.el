@@ -2095,8 +2095,8 @@ OBJ is assumed to be a `kele--resource-container'."
                      (equal
                       (alist-get 'protocol port-spec)
                       protocol))
-                   ports)
-        ports))))
+                   (append ports '()))
+        (append ports '())))))
 
 (defun kele--port-forwards-active-p ()
   "Return non-nil if there are any port-forwards active."
