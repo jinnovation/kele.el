@@ -570,6 +570,12 @@ GROUP and VERSION are not always set.  KIND is always set."
         (concat (oref gvk group) "/" vk)
       vk)))
 
+(cl-defmethod kele--singular ((gvk kele--gvk) &optional context)
+  (kele--get-singular-for-plural
+   kele--global-discovery-cache
+   (oref gvk kind)
+   :context (or context (kele-current-context-name))))
+
 (cl-defstruct (kele--proxy-record
                (:constructor kele--proxy-record-create)
                (:copier nil))
@@ -2010,11 +2016,11 @@ to query for."
                :kind (oref gvk kind)
                :group-version (kele--gv-string gvk)
                :use-default nil))
-          (cands (kele--fetch-resource-names gvk :namespace ns :context
-                                             context))
-          (name (completing-read "Resource to port forward to: "
-                                 (-cut kele--resources-complete <> <> <> :cands
-                                       cands)))
+          (cands (kele--fetch-resource-names gvk :namespace ns :context context))
+          (name (completing-read
+                 (format "%s to port-forward to: " (kele--singular gvk))
+                 (-cut kele--resources-complete <> <> <> :cands cands)))
+
           ;; TODO: Completion on the resource's exposed ports
           (port (number-to-string (read-number "Port: "))))
      (list context ns gvk name port)))
