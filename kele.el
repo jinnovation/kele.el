@@ -2087,7 +2087,8 @@ PORTS is used according to `completion-extra-properties'."
 
 If PROTOCOL is provided, filter for only ports of that protocol.
 
-OBJ is assumed to be a `kele--resource-container'."
+OBJ is assumed to be a `kele--resource-container' containing a
+Service resource."
   (let-alist (oref obj resource)
     (let ((ports .spec.ports))
       (if protocol
