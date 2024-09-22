@@ -2029,6 +2029,7 @@ NAMESPACE and CONTEXT are used to identify the resource type to query for."
                  (-cut kele--resources-complete <> <> <> :cands cands)))
 
           ;; TODO: Completion on the resource's exposed ports
+          ;; TODO: Error if the port is already in use
           (port (number-to-string (read-number "Port: "))))
      (list context ns gvk name port)))
   (let ((proc-name (format "kele: port-forward (%s/%s, %s, %s, %s)" (oref gvk kind) name context namespace port)))
