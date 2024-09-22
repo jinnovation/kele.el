@@ -20,6 +20,9 @@ versioning][semver].
   it
 - `kele-resource` now has a suffix for port-forwarding to resources that support
   it
+- Implemented `kele-kill-port-forward` for terminating port-forwards that were
+  created using `kele-port-forward`
+- Rename `kele-proxy` to `kele-ports`
 
 ## 0.6.0
 

@@ -113,6 +113,12 @@ pods."
 (defvar kele--port-forwardable-kinds '("pods" "deployments" "services")
   "Resource kinds that can be passed to kubectl port-forward.")
 
+(defvar kele--active-port-forwards nil
+  "Alist of active port-forward processes.
+
+Each entry is a cons of local port (in string form) to (CONTEXT
+NAMESPACE GVK NAME PROCESS).")
+
 ;; TODO (#80): Display in the `kele-get-mode' header what fields were filtered out
 (defcustom kele-filtered-fields '((metadata managedFields)
                                   (metadata annotations kubectl.kubernetes.io/last-applied-configuration))
@@ -1397,7 +1403,7 @@ This is idempotent."
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "c") #'kele-config)
     (define-key map (kbd "r") #'kele-resource)
-    (define-key map (kbd "p") #'kele-proxy)
+    (define-key map (kbd "p") #'kele-ports)
     (define-key map (kbd "?") #'kele-dispatch)
     map)
   "Keymap for Kele commands.")
@@ -2032,29 +2038,75 @@ NAMESPACE and CONTEXT are used to identify the resource type to query for."
           ;; TODO: Error if the port is already in use
           (port (number-to-string (read-number "Port: "))))
      (list context ns gvk name port)))
-  (let ((proc-name (format "kele: port-forward (%s/%s, %s, %s, %s)" (oref gvk kind) name context namespace port)))
-    (make-process
-     :name proc-name
-     :command (list kele-kubectl-executable
-                    "--context"
-                    context
-                    "--namespace"
-                    namespace
-                    "port-forward"
-                    (format "%s/%s" (oref gvk kind) name)
-                    port)
-     :buffer (generate-new-buffer (format " *%s*" proc-name))
-     :sentinel
-     (lambda (proc _status)
-       (let ((exit-code (process-exit-status proc)))
-         (cl-case exit-code
-           (0 (message "Successfully terminated port-forward for %s" name))
-           (9 (message "Port-forward for %s (port %s) terminated" name port))
-           (t (message "Port-forward process for %s failed with exit code %s" name exit-code)))
-         (kele--kill-process-quietly proc)))
-     :noquery t))
+  (let* ((proc-name (format "kele: port-forward (%s/%s, %s, %s, %s)" (oref gvk kind) name context namespace port))
+         (proc (make-process
+                :name proc-name
+                :command (list kele-kubectl-executable
+                               "--context"
+                               context
+                               "--namespace"
+                               namespace
+                               "port-forward"
+                               (format "%s/%s" (oref gvk kind) name)
+                               port)
+                :buffer (generate-new-buffer (format " *%s*" proc-name))
+                :sentinel
+                (lambda (proc _status)
+                  (let ((exit-code (process-exit-status proc)))
+                    (cl-case exit-code
+                      (0 (message "Successfully terminated port-forward for %s" name))
+                      (9 (message "Port-forward for %s (port %s) terminated" name port))
+                      (t (message "Port-forward process for %s failed with exit code %s" name exit-code)))
+                    (kele--kill-process-quietly proc)))
+                :noquery t)))
+    (add-to-list 'kele--active-port-forwards (list port context namespace gvk name proc))
+    proc)
   (message "[kele] Started port-forward for %s/%s (port %s)" (oref gvk kind) name port))
 
+(defun kele--port-forward-affixation (ports)
+  "Affixation function for port-forwards.
+
+PORTS is used according to `completion-extra-properties'."
+  (mapcar (lambda (port)
+            (let ((record (alist-get port kele--active-port-forwards nil nil #'equal)))
+              (list port
+                    (propertize
+                     (format "%s/%s:"
+                             (oref (car (nthcdr 2 record)) kind)
+                             (car (nthcdr 3 record)))
+                     'face 'completions-annotations)
+                    (propertize
+                     (format " (context: %s, namespace: %s)"
+                             (car (nthcdr 0 record))
+                             (car (nthcdr 1 record)))
+                     'face 'completions-annotations))))
+          ports))
+
+(defun kele--port-forwards-active-p ()
+  "Return non-nil if there are any port-forwards active."
+  (< 0 (length (mapcar 'car kele--active-port-forwards))))
+
+(transient-define-suffix kele-kill-port-forward (port)
+  "Kill a port-forward process.
+
+The port-forward must have been initiated with
+`kele-port-forward'."
+  :description "Kill a port-forward"
+  :inapt-if-not #'kele--port-forwards-active-p
+  (interactive
+   (if (not (kele--port-forwards-active-p))
+       (error "[kele] No port-forwards active!")
+    (let* ((completion-extra-properties
+            (list :affixation-function #'kele--port-forward-affixation))
+           (port (completing-read "Port-forward to kill: "
+                                  (mapcar 'car kele--active-port-forwards))))
+      (list port))))
+
+  (let* ((record (alist-get port kele--active-port-forwards nil nil #'equal))
+         (proc (car (last record))))
+    (setq kele--active-port-forwards (assoc-delete-all port kele--active-port-forwards #'equal))
+    (kele--kill-process-quietly proc)
+    (message "Killed port-forward for port %s" port)))
 
 (transient-define-suffix kele-deployment-restart (context namespace deployment-name)
   "Restart DEPLOYMENT-NAME.
@@ -2198,13 +2250,15 @@ The `scope' is the current context name."
   (interactive)
   (transient-setup 'kele-config nil nil :scope (kele-current-context-name)))
 
-(transient-define-prefix kele-proxy ()
-  "Work with kubectl proxy servers."
-  ["Proxy servers"
-   (kele--toggle-proxy-current-context)
-   ("P" kele-proxy-toggle :description "Start/stop proxy server for...")]
+(transient-define-prefix kele-ports ()
+  "Work with ports in Kubernetes."
+  [["Proxy servers"
+    (kele--toggle-proxy-current-context)
+    ("P" kele-proxy-toggle :description "Start/stop proxy server for...")]
+   ["Ports"
+    ("k" kele-kill-port-forward)]]
   (interactive)
-  (transient-setup 'kele-proxy nil nil :scope (kele-current-context-name)))
+  (transient-setup 'kele-ports nil nil :scope (kele-current-context-name)))
 
 (easy-menu-define kele-menu-map kele-mode-map
   "Menu for Kubernetes management.
