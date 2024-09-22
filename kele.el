@@ -1997,7 +1997,8 @@ to query for."
 
 (transient-define-suffix kele-port-forward (context namespace gvk name port)
   :key "F"
-  :description "Port forward a service"
+  :description
+  "Port-forward to..."
   :if
   (lambda ()
     (let-alist (oref transient--prefix scope)
