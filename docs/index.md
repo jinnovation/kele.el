@@ -16,9 +16,9 @@ With Kele, you can:
 
 - Manage [contexts], e.g. [switching, renaming, changing the default
   namespace](./how-tos/usage.md#contexts);
-- [Fetch and display the manifest of a single
-  resource](./how-tos/usage.md#working-with-resources);
-- [Follow logs for a single resource](./how-tos/usage.md#following-logs)
+- [Display details](./how-tos/usage.md#working-with-resources), [follow
+  logs](./how-tos/usage.md#following-logs), and manage port-forwards for
+  resources;
 - [List collections of resources](./how-tos/usage.md#working-with-resources);
 - Start and stop [proxy servers](./how-tos/usage.md#managing-proxy-servers);
 - Use the menu bar to perform basic cluster/config management;
