@@ -1403,7 +1403,7 @@ This is idempotent."
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "c") #'kele-config)
     (define-key map (kbd "r") #'kele-resource)
-    (define-key map (kbd "p") #'kele-proxy)
+    (define-key map (kbd "p") #'kele-ports)
     (define-key map (kbd "?") #'kele-dispatch)
     map)
   "Keymap for Kele commands.")
@@ -2063,11 +2063,17 @@ NAMESPACE and CONTEXT are used to identify the resource type to query for."
     proc)
   (message "[kele] Started port-forward for %s/%s (port %s)" (oref gvk kind) name port))
 
-(cl-defun kele-kill-port-forward ()
+(transient-define-suffix kele-kill-port-forward ()
   "Kill a port-forward process.
 
 The port-forward must have been initiated with
 `kele-port-forward'."
+  :inapt-if
+  (lambda () (= 0 (length (mapcar 'car kele--active-port-forwards))))
+
+  :description
+  "Kill a port-forward"
+
   (interactive)
   (if (= 0 (length (mapcar 'car kele--active-port-forwards)))
       (message "[kele] No port-forwards active!")
@@ -2239,13 +2245,15 @@ The `scope' is the current context name."
   (interactive)
   (transient-setup 'kele-config nil nil :scope (kele-current-context-name)))
 
-(transient-define-prefix kele-proxy ()
-  "Work with kubectl proxy servers."
-  ["Proxy servers"
-   (kele--toggle-proxy-current-context)
-   ("P" kele-proxy-toggle :description "Start/stop proxy server for...")]
+(transient-define-prefix kele-ports ()
+  "Work with ports in Kubernetes."
+  [["Proxy servers"
+    (kele--toggle-proxy-current-context)
+    ("P" kele-proxy-toggle :description "Start/stop proxy server for...")]
+   ["Ports"
+    ("k" kele-kill-port-forward)]]
   (interactive)
-  (transient-setup 'kele-proxy nil nil :scope (kele-current-context-name)))
+  (transient-setup 'kele-ports nil nil :scope (kele-current-context-name)))
 
 (easy-menu-define kele-menu-map kele-mode-map
   "Menu for Kubernetes management.
