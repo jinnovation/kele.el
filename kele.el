@@ -2084,7 +2084,7 @@ PORTS is used according to `completion-extra-properties'."
 
 (defun kele--port-forwards-active-p ()
   "Return non-nil if there are any port-forwards active."
-  (/= 0 (length (mapcar 'car kele--active-port-forwards))))
+  (< 0 (length (mapcar 'car kele--active-port-forwards))))
 
 (transient-define-suffix kele-kill-port-forward (port)
   "Kill a port-forward process.
