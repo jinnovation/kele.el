@@ -2063,6 +2063,25 @@ NAMESPACE and CONTEXT are used to identify the resource type to query for."
     proc)
   (message "[kele] Started port-forward for %s/%s (port %s)" (oref gvk kind) name port))
 
+(defun kele--port-forward-affixation (ports)
+  "Affixation function for port-forwards.
+
+PORTS is used according to `completion-extra-properties'."
+  (mapcar (lambda (port)
+            (let ((record (alist-get port kele--active-port-forwards nil nil #'equal)))
+              (list port
+                    (propertize
+                     (format "%s/%s:"
+                             (oref (car (nthcdr 2 record)) kind)
+                             (car (nthcdr 3 record)))
+                     'face 'completions-annotations)
+                    (propertize
+                     (format " (context: %s, namespace: %s)"
+                             (car (nthcdr 0 record))
+                             (car (nthcdr 1 record)))
+                     'face 'completions-annotations))))
+          ports))
+
 (transient-define-suffix kele-kill-port-forward (port)
   "Kill a port-forward process.
 
@@ -2076,22 +2095,7 @@ The port-forward must have been initiated with
        (error "[kele] No port-forwards active!")
 
     (let* ((completion-extra-properties
-            (list :affixation-function
-                  (lambda (cands)
-                    (mapcar (lambda (cand)
-                              (let ((record (alist-get cand kele--active-port-forwards nil nil #'equal)))
-                                (list cand
-                                      (propertize
-                                       (format "%s/%s:"
-                                               (oref (car (nthcdr 2 record)) kind)
-                                               (car (nthcdr 3 record)))
-                                       'face 'completions-annotations)
-                                      (propertize
-                                       (format " (context: %s, namespace: %s)"
-                                               (car (nthcdr 0 record))
-                                               (car (nthcdr 1 record)))
-                                       'face 'completions-annotations))))
-                            cands))))
+            (list :affixation-function #'kele--port-forward-affixation))
            (port (completing-read "Port-forward to kill: "
                                   (mapcar 'car kele--active-port-forwards))))
       (list port))))
