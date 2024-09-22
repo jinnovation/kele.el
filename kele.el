@@ -2080,11 +2080,12 @@ The port-forward must have been initiated with
                                       (propertize
                                        (format "%s/%s:"
                                                (oref (car (nthcdr 2 record)) kind)
-                                               (car (nthcdr 0 record)))
+                                               (car (nthcdr 3 record))
+                                               )
                                        'face 'completions-annotations)
                                       (propertize
                                        (format " (context: %s, namespace: %s)"
-                                               (car (nthcdr 3 record))
+                                               (car (nthcdr 0 record))
                                                (car (nthcdr 1 record)))
                                        'face 'completions-annotations))))
                             cands))))
