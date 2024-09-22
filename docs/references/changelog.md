@@ -18,6 +18,8 @@ versioning][semver].
   similar to `kubectl get deployments`
 - `kele-resource` now has a keybinding to follow logs for resources that support
   it
+- `kele-resource` now has a suffix for port-forwarding to resources that support
+  it
 
 ## 0.6.0
 
