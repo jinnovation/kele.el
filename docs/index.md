@@ -70,6 +70,19 @@ with Kele.
   (bind-key (kbd "s-k") kele-command-map kele-mode-map))
 ```
 
+By default this will load the package eagerly. This can be useful if you would
+like [modeline integration](./how-tos/integrations.md) to be always present. If,
+instead, you'd like to lazily load the package, try the following, which will
+only load the package when you invoke the prefix keybinding:
+
+```emacs-lisp
+(use-package kele
+  :config
+  (kele-mode 1)
+  :bind-keymap
+  ("s-k" . kele-command-map))
+```
+
 ## About the Name
 
 The name Kele comes from the Mandarin term for cola, 可乐 (*kě lè*). It is
