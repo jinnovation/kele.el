@@ -2027,7 +2027,7 @@ to query for."
                     port)
      :buffer (generate-new-buffer (format " *%s*" proc-name))
      :sentinel
-     (lambda (proc status)
+     (lambda (proc _status)
        (let ((exit-code (process-exit-status proc)))
          (cl-case exit-code
            (0 (message "Successfully terminated port-forward for %s" svc-name))
