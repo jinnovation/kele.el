@@ -2098,10 +2098,6 @@ OBJ is assumed to be a `kele--resource-container'."
                    ports)
         ports))))
 
-(kele--service-ports
- (kele--get-resource (kele--gvk-create :version "v1" :kind "services")
-                     "job-online-photo-score-rest"))
-
 (defun kele--port-forwards-active-p ()
   "Return non-nil if there are any port-forwards active."
   (< 0 (length (mapcar 'car kele--active-port-forwards))))
