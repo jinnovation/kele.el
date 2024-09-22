@@ -110,6 +110,9 @@ pods."
 (defvar kele--loggable-kinds '("pods" "deployments" "jobs" "services")
   "Resource kinds that can be passed to kubectl log.")
 
+(defvar kele--port-forwardable-kinds '("pods" "deployments" "services")
+  "Resource kinds that can be passed to kubectl port-forward.")
+
 ;; TODO (#80): Display in the `kele-get-mode' header what fields were filtered out
 (defcustom kele-filtered-fields '((metadata managedFields)
                                   (metadata annotations kubectl.kubernetes.io/last-applied-configuration))
@@ -1992,15 +1995,15 @@ to query for."
      (list (kele--get-context-arg) ns gvk name)))
   (kele--render-object (kele--get-resource gvk name :namespace namespace :context context)))
 
-(transient-define-suffix kele-service-port-forward (context namespace svc-name port)
+(transient-define-suffix kele-port-forward (context namespace gvk name port)
   :key "F"
   :description "Port forward a service"
   :if
   (lambda ()
     (let-alist (oref transient--prefix scope)
-      (string-equal "services" .kind)))
+      (-contains? kele--port-forwardable-kinds .kind)))
   (interactive
-   (let* ((gvk (kele--gvk-create :kind "services" :version "v1"))
+   (let* ((gvk (kele--get-gvk-arg))
           (context (kele--get-context-arg))
           (ns (kele--get-namespace-arg
                :kind (oref gvk kind)
@@ -2008,13 +2011,13 @@ to query for."
                :use-default nil))
           (cands (kele--fetch-resource-names gvk :namespace ns :context
                                              context))
-          (name (completing-read "Service to port forward to: "
+          (name (completing-read "Resource to port forward to: "
                                  (-cut kele--resources-complete <> <> <> :cands
                                        cands)))
-          ;; TODO: Completion on the service's exposed ports
+          ;; TODO: Completion on the resource's exposed ports
           (port (number-to-string (read-number "Port: "))))
-     (list context ns name port)))
-  (let ((proc-name (format "kele: port-forward (svc/%s, %s, %s, %s)" svc-name context namespace port)))
+     (list context ns gvk name port)))
+  (let ((proc-name (format "kele: port-forward (%s/%s, %s, %s, %s)" (oref gvk kind) name context namespace port)))
     (make-process
      :name proc-name
      :command (list kele-kubectl-executable
@@ -2023,19 +2026,19 @@ to query for."
                     "--namespace"
                     namespace
                     "port-forward"
-                    (format "svc/%s" svc-name)
+                    (format "%s/%s" (oref gvk kind) name)
                     port)
      :buffer (generate-new-buffer (format " *%s*" proc-name))
      :sentinel
      (lambda (proc _status)
        (let ((exit-code (process-exit-status proc)))
          (cl-case exit-code
-           (0 (message "Successfully terminated port-forward for %s" svc-name))
-           (9 (message "Port-forward for %s (port %s) terminated" svc-name port))
-           (t (message "Port-forward process for %s failed with exit code %s" svc-name exit-code)))
+           (0 (message "Successfully terminated port-forward for %s" name))
+           (9 (message "Port-forward for %s (port %s) terminated" name port))
+           (t (message "Port-forward process for %s failed with exit code %s" name exit-code)))
          (kele--kill-process-quietly proc)))
      :noquery t))
-  (message "[kele] Started port-forward for service %s (port %s)" svc-name port))
+  (message "[kele] Started port-forward for %s/%s (port %s)" (oref gvk kind) name port))
 
 
 (transient-define-suffix kele-deployment-restart (context namespace deployment-name)
@@ -2089,7 +2092,7 @@ CONTEXT and NAMESPACE are used to identify where the deployment lives."
                   (propertize it 'face 'warning))
              (propertize "-specific actions" 'face 'transient-heading))))
     (kele-resource-follow-logs)
-    (kele-service-port-forward)
+    (kele-port-forward)
     (kele-deployment-restart)]]
 
   (interactive (let* ((context (kele-current-context-name))
