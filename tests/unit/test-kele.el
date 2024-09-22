@@ -729,7 +729,7 @@ metadata:
                                        (protocol . "TCP")
                                        (port . 8081))]))))))
      :to-equal
-     (((name . "foo") (protocol . "TCP") (port . 8081)))))
+     '(((name . "foo") (protocol . "TCP") (port . 8081)))))
   (it "filters by protocol"
     (expect
      (kele--service-ports
