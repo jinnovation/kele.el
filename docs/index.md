@@ -41,9 +41,9 @@ with Kele.
 
 ## Screenshots
 
-=== "End-to-end"
+=== Overview
 
-    ![](./img/demo.gif)
+    ![](./img/overview.png)
 
 === "Menu bar integration"
 
