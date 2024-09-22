@@ -2063,20 +2063,18 @@ NAMESPACE and CONTEXT are used to identify the resource type to query for."
     proc)
   (message "[kele] Started port-forward for %s/%s (port %s)" (oref gvk kind) name port))
 
-(transient-define-suffix kele-kill-port-forward ()
+(transient-define-suffix kele-kill-port-forward (port)
   "Kill a port-forward process.
 
 The port-forward must have been initiated with
 `kele-port-forward'."
+  :description "Kill a port-forward"
   :inapt-if
   (lambda () (= 0 (length (mapcar 'car kele--active-port-forwards))))
+  (interactive
+   (if (= 0 (length (mapcar 'car kele--active-port-forwards)))
+       (error "[kele] No port-forwards active!")
 
-  :description
-  "Kill a port-forward"
-
-  (interactive)
-  (if (= 0 (length (mapcar 'car kele--active-port-forwards)))
-      (message "[kele] No port-forwards active!")
     (let* ((completion-extra-properties
             (list :affixation-function
                   (lambda (cands)
@@ -2086,8 +2084,7 @@ The port-forward must have been initiated with
                                       (propertize
                                        (format "%s/%s:"
                                                (oref (car (nthcdr 2 record)) kind)
-                                               (car (nthcdr 3 record))
-                                               )
+                                               (car (nthcdr 3 record)))
                                        'face 'completions-annotations)
                                       (propertize
                                        (format " (context: %s, namespace: %s)"
@@ -2095,13 +2092,15 @@ The port-forward must have been initiated with
                                                (car (nthcdr 1 record)))
                                        'face 'completions-annotations))))
                             cands))))
-           (port (completing-read "Port-forward to terminate: "
-                                  (mapcar 'car kele--active-port-forwards)))
-           (record (alist-get port kele--active-port-forwards nil nil #'equal))
-           (proc (car (last record))))
-      (setq kele--active-port-forwards (assoc-delete-all port kele--active-port-forwards #'equal))
-      (kele--kill-process-quietly proc)
-      (message "Terminated port-forward for port %s" port))))
+           (port (completing-read "Port-forward to kill: "
+                                  (mapcar 'car kele--active-port-forwards))))
+      (list port))))
+
+  (let* ((record (alist-get port kele--active-port-forwards nil nil #'equal))
+         (proc (car (last record))))
+    (setq kele--active-port-forwards (assoc-delete-all port kele--active-port-forwards #'equal))
+    (kele--kill-process-quietly proc)
+    (message "Killed port-forward for port %s" port)))
 
 (transient-define-suffix kele-deployment-restart (context namespace deployment-name)
   "Restart DEPLOYMENT-NAME.
