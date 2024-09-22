@@ -720,4 +720,15 @@ metadata:
       (kele-list-kill)
       (expect 'vtable-revert-command :to-have-been-called))))
 
+(describe "`kele--service-ports'"
+  (it "retrieves the port specs"
+    (expect
+     (kele--service-ports
+      (kele--resource-container-create
+       :resource '((spec . ((ports . [((name . "foo")
+                                       (protocol . "TCP")
+                                       (port . 8081))]))))))
+     :to-equal
+     [((name . "foo") (protocol . "TCP") (port . 8081))])))
+
  ;;; test-kele.el ends here

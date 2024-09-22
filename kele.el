@@ -2082,6 +2082,26 @@ PORTS is used according to `completion-extra-properties'."
                      'face 'completions-annotations))))
           ports))
 
+(cl-defun kele--service-ports (obj &key (protocol nil))
+  "Get the exposed ports for service OBJ.
+
+If PROTOCOL is provided, filter for only ports of that protocol.
+
+OBJ is assumed to be a `kele--resource-container'."
+  (let-alist (oref obj resource)
+    (let ((ports .spec.ports))
+      (if protocol
+          (-filter (lambda (port-spec)
+                     (equal
+                      (alist-get 'protocol port-spec)
+                      protocol))
+                   ports)
+        ports))))
+
+(kele--service-ports
+ (kele--get-resource (kele--gvk-create :version "v1" :kind "services")
+                     "job-online-photo-score-rest"))
+
 (defun kele--port-forwards-active-p ()
   "Return non-nil if there are any port-forwards active."
   (< 0 (length (mapcar 'car kele--active-port-forwards))))
