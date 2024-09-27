@@ -2034,9 +2034,16 @@ NAMESPACE and CONTEXT are used to identify the resource type to query for."
                  (format "%s to port-forward to: " (kele--singular gvk))
                  (-cut kele--resources-complete <> <> <> :cands cands)))
 
-          ;; TODO: Completion on the resource's exposed ports
+          (resource (kele--get-resource gvk name :context context :namespace ns))
+
           ;; TODO: Error if the port is already in use
-          (port (number-to-string (read-number "Port: "))))
+          ;; TODO: Extend port completion to all appropriate resource types
+          (port (if (string-equal (oref resource kind) "services")
+                    (completing-read "Port: "
+                                     (-map (lambda (port-spec) (number-to-string (alist-get 'port port-spec)))
+                                           (kele--service-ports resource))
+                                     nil t)
+                  (number-to-string (read-number "Port: ")))))
      (list context ns gvk name port)))
   (let* ((proc-name (format "kele: port-forward (%s/%s, %s, %s, %s)" (oref gvk kind) name context namespace port))
          (proc (make-process
@@ -2081,6 +2088,23 @@ PORTS is used according to `completion-extra-properties'."
                              (car (nthcdr 1 record)))
                      'face 'completions-annotations))))
           ports))
+
+(cl-defun kele--service-ports (obj &key (protocol nil))
+  "Get the exposed ports for service OBJ.
+
+If PROTOCOL is provided, filter for only ports of that protocol.
+
+OBJ is assumed to be a `kele--resource-container' containing a
+Service resource."
+  (let-alist (oref obj resource)
+    (let ((ports .spec.ports))
+      (if protocol
+          (-filter (lambda (port-spec)
+                     (equal
+                      (alist-get 'protocol port-spec)
+                      protocol))
+                   (append ports '()))
+        (append ports '())))))
 
 (defun kele--port-forwards-active-p ()
   "Return non-nil if there are any port-forwards active."
