@@ -1179,7 +1179,7 @@ question.
 
 If NAMESPACE is provided, return only resources belonging to that
 namespace.  If NAMESPACE is provided for non-namespaced
-GVK,throws an error.
+GVK, throws an error.
 
 If CONTEXT is not provided, use the current context."
   (when (and namespace
