@@ -1,6 +1,6 @@
 ;;; kele.el --- Spritzy Kubernetes cluster management -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2022-2023 Jonathan Jin
+;; Copyright (C) 2022-2025 Jonathan Jin
 
 ;; Author: Jonathan Jin <me@jonathanj.in>
 
