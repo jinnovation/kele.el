@@ -1744,7 +1744,28 @@ Otherwise, simply `kele-get' the resource at point."
                                     "Multiple"
                                   (let-alist (elt .metadata.ownerReferences 0)
                                     (format "%s/%s" .kind .name)))))))))
-    (namespaces . (("Status" . (lambda (r) (let-alist r .status.phase)))))
+    ;; NB(@jinnovation): A namespace can be in one of two phaces: Active or
+    ;; Terminating.
+    ;;
+    ;; See: https://github.com/kubernetes/design-proposals-archive/blob/main/architecture/namespaces.md#phases
+    (namespaces . (("Phase" . (lambda (r)
+                                 (let-alist r
+                                   ;; TODO: On cursor hover, display info about
+                                   ;; the implications of the phase. For
+                                   ;; example, for Terminating, explain that no
+                                   ;; add'l resources can be created in that
+                                   ;; namespace during that time.
+                                   ;;
+                                   ;; Maybe a good use case for Eldoc?
+                                   (propertize .status.phase 'face
+                                               (cond ((string-equal
+                                                       .status.phase "Active")
+                                                      'success)
+                                                     ((string-equal
+                                                       .status.phase
+                                                       "Terminating")
+                                                      'warning)
+                                                     (t 'default))))))))
     (secrets . (("Type" . (lambda (r) (alist-get 'type r)))))
     (configmaps . (("Data" . (lambda (r)
                                (length (map-keys (alist-get 'data r)))))))
@@ -1769,7 +1790,7 @@ Otherwise, simply `kele-get' the resource at point."
                     ("Up-to-date" . (lambda (r)
                                       (let-alist r .status.updatedReplicas)))
                     ("Available" . (lambda (r) (let-alist r
-  .status.readyReplicas))))))
+                                                 .status.readyReplicas))))))
   "Alist containing column specifications for `kele-list'.
 
 Keys are symbols representing the plural form of Kubernetes
@@ -1812,9 +1833,9 @@ If NAMESPACE is nil, displays resources for all namespaces."
      :getter
      (lambda (object column vtable)
        (when-let* ((column-specs (append
-                            `(("GVK" . (lambda (_) (kele--string ,gvk))))
-                            (alist-get nil kele--list-columns)
-                            (alist-get (intern (oref gvk kind)) kele--list-columns)))
+                                  `(("GVK" . (lambda (_) (kele--string ,gvk))))
+                                  (alist-get nil kele--list-columns)
+                                  (alist-get (intern (oref gvk kind)) kele--list-columns)))
                    (colname (vtable-column vtable column))
                    (f (alist-get colname column-specs nil nil #'string-equal)))
          (funcall f object))))))
