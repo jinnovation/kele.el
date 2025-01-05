@@ -1215,49 +1215,6 @@ If CONTEXT is not provided, use the current context."
           data)
       (signal 'error (format "Failed to fetch %s/%s/%s" (oref gvk group) (oref gvk version) (oref gvk kind))))))
 
-
-(cl-defun kele--list-resources (gvk &key namespace context)
-  "Return the List of the resources of type GVK.
-
-  Return value is an alist mirroring the Kubernetes List type of
-  the type in question.
-
-  If NAMESPACE is provided, return only resources belonging to that
-  namespace.  If NAMESPACE is provided for non-namespaced GVK,
-  throws an error.
-
-  If CONTEXT is not provided, use the current context."
-  (when (and namespace
-             (not (kele--resource-namespaced-p
-                   kele--global-discovery-cache
-                   (kele--gv-string gvk)
-                   (oref gvk kind))))
-    (user-error "Attempted to fetch un-namespaced resource `%s' as namespaced" (oref gvk kind)))
-
-  (let* ((ctx (or context (kele-current-context-name)))
-         (port (kele--proxy-record-port
-                (proxy-start kele--global-proxy-manager ctx)))
-         (url (format "http://localhost:%s/%s/%s"
-                      port
-                      (if (oref gvk group)
-                          (format "apis/%s/%s" (oref gvk group) (oref gvk version))
-                        (format "api/%s" (oref gvk version)))
-                      (oref gvk kind))))
-    ;; Block on proxy readiness
-    (proxy-get kele--global-proxy-manager ctx :wait t)
-    (if-let* ((data (kele--retry (lambda ()
-                                   (plz 'get url
-                                     :as #'json-read)))))
-        (let ((filtered-items (->> (append  (alist-get 'items data) '())
-                                   (-filter (lambda (item)
-                                              (if (not namespace) t
-                                                (let-alist item
-                                                  (equal .metadata.namespace namespace))))))))
-          (setf (cdr (assoc 'items data)) filtered-items)
-          data)
-
-      (signal 'error (format "Failed to fetch %s/%s/%s" (oref gvk group) (oref gvk version) (oref gvk kind))))))
-
 (cl-defun kele--fetch-resource-names (gvk &key namespace context)
   "Fetch names of resources belonging to GVK.
 
@@ -1265,12 +1222,14 @@ If NAMESPACE is provided, return only resources belonging to that namespace.  If
 NAMESPACE is provided for non-namespaced KIND, throws an error.
 
 If CONTEXT is not provided, use the current context."
-  (let* ((resource-list (kele--list-resources
-                         gvk
-                        :namespace namespace
-                        :context context))
-         (items (append (alist-get 'items resource-list) '())))
-    (-map (lambda (item) (let-alist item .metadata.name)) items)))
+  (let* ((resource-table (kele--tabulate-resources
+                          gvk
+                          :namespace namespace
+                          :context context)))
+    (-map (lambda (row)
+            (let-alist row
+              .object.metadata.name))
+          (alist-get 'rows resource-table))))
 
 (cl-defun kele--render-object (object &optional buffer)
   "Render OBJECT in a buffer as YAML.
