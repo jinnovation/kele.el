@@ -1205,7 +1205,7 @@ If CONTEXT is not provided, use the current context."
     (if-let* ((data (kele--retry (lambda ()
                                    (plz 'get url
                                      :as #'json-read
-                                     :headers '(("Accept" . "application/json;as=Table;g=meta.k8s.io;v=v1, application/json")))))))
+                                     :headers headers)))))
         (let ((filtered-items (->> (append  (alist-get 'rows data) '())
                                    (-filter (lambda (row)
                                               (if (not namespace) t
