@@ -1728,6 +1728,8 @@ Otherwise, simply `kele-get' the resource at point."
     (define-key map (kbd "g") #'kele-list-refresh)
     map))
 
+;; TODO: Let each entry also optionally contain the column spec, e.g. :width and
+;; :align parameters
 (defvar kele--list-columns
   '((nil . (("Name" . (lambda (r)
                         (let-alist r .metadata.name)))
@@ -1809,6 +1811,7 @@ serve to further specify the resources to list.
 If NAMESPACE is nil, displays resources for all namespaces."
   (let ((columns
          (append
+          ;; FIXME: Pull these from the nil-key entries in kele--list-columns
           '((:name "Name" :width 30 :align left)
             (:name "Namespace" :width 20 :align left)
             (:name "GVK" :width 10 :align left)
