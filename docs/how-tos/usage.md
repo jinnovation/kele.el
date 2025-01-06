@@ -88,7 +88,6 @@ s-k r <kind name> l
 
 This is bound to `kele-list`.
 
-<!-- TODO: Update this screenshot -->
 ![](./img/kele-list.png)
 
 This will list all resources of the specified group-version and kind in a
