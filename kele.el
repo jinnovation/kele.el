@@ -1789,12 +1789,11 @@ https://kubernetes.io/docs/reference/using-api/api-concepts/#receiving-resources
      :columns column-specs
      :keymap kele-list-table-map
      :getter
-     ;; TODO: Style the Status column based on Running, Error, Completed, etc.
      (lambda (object column vtable)
        (let* ((colname (vtable-column vtable column))
               (col-index (-find-index (-partial #'string-equal colname)
                                       colnames)))
-         (kele--style-column colname (let-alist object (elt .cells col-index))))))))
+         (kele--style-column colname (elt (alist-get 'cells object) col-index)))))))
 
 (define-derived-mode kele-list-mode fundamental-mode "Kele: List"
   "Major mode for listing multiple resources of a single kind."
