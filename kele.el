@@ -1793,6 +1793,12 @@ https://kubernetes.io/docs/reference/using-api/api-concepts/#receiving-resources
        (let* ((colname (vtable-column vtable column))
               (col-index (-find-index (-partial #'string-equal colname)
                                       colnames)))
+         ;; TODO: On cursor hover on specific columns, display relevant
+         ;; documentation. For example, in the Phase column for namespaces, when
+         ;; the value is "Terminating", can explain that no add'l resources can
+         ;; be created in that namespace during that time.
+         ;;
+         ;; Maybe a good use case for Eldoc?
          (kele--style-column colname (elt (alist-get 'cells object) col-index)))))))
 
 (define-derived-mode kele-list-mode fundamental-mode "Kele: List"
