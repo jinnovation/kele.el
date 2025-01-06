@@ -1777,11 +1777,25 @@ https://kubernetes.io/docs/reference/using-api/api-concepts/#receiving-resources
                                                      resource-table)
                                           '()))))
          (column-specs (-map (lambda (colname)
-                               `(:name ,colname :width 30 :align left))
+                               (let* ((col-index (-find-index (-partial
+                                                               #'string-equal
+                                                               colname)
+                                                              colnames))
+                                      (maxlen (apply #'max (-map (lambda (row)
+                                                                   (length
+                                                                    (elt (alist-get
+                                                                          'cells row)
+                                                                         col-index)))
+                                                                 (alist-get 'rows resource-table)))))
+                                 `(:name ,colname
+                                         ;; TODO: Make max column width configurable
+                                         :width ,(min 40 (max maxlen (length colname)))
+                                         :align left)))
                              colnames)))
     (make-vtable
      :insert nil
      :use-header-line nil
+     :divider-width 3
      :objects-function
      (lambda ()
        (alist-get 'rows resource-table))
