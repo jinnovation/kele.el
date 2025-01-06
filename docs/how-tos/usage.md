@@ -88,10 +88,15 @@ s-k r <kind name> l
 
 This is bound to `kele-list`.
 
+<!-- TODO: Update this screenshot -->
 ![](./img/kele-list.png)
 
 This will list all resources of the specified group-version and kind in a
-separate buffer in a table. From here, you can:
+separate buffer in a table. Kele uses [server-side
+printing](https://kubernetes.io/docs/reference/using-api/api-concepts/#receiving-resources-as-tables),
+which means that any resource-specific columns that `kubectl` would print -- for
+example, the "Status" column for Pods -- will be tabulated here as well. From
+here, you can:
 
 - Click any of the header columns to sort the list;
 - Click or hit `RET` on any of the entries to display its full manifest in a
