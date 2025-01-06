@@ -1788,6 +1788,7 @@ https://kubernetes.io/docs/reference/using-api/api-concepts/#receiving-resources
      :sort-by '((0 ascend (1 ascend)))
      :columns column-specs
      :keymap kele-list-table-map
+     :face 'default
      :getter
      (lambda (object column vtable)
        (let* ((colname (vtable-column vtable column))
