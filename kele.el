@@ -1878,7 +1878,9 @@ KIND is not namespaced, returns an error."
 
       (let ((inhibit-read-only t))
         (erase-buffer)
-        (insert "Context: " context "\n")
+        (insert (propertize "Context: " 'face 'header-line) context "\n")
+        (insert (propertize "Namespace: " 'face 'header-line) (or namespace "<all namespaces>") "\n")
+        (insert (propertize "Kind: " 'face 'header-line) kind "\n")
         (insert "\n")
         (vtable-insert (kele--vtable-tabulate gvk context namespace)))
       (kele-list-mode))
