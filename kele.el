@@ -1734,6 +1734,26 @@ Otherwise, simply `kele-get' the resource at point."
     (define-key map (kbd "g") #'kele-list-refresh)
     map))
 
+;; TODO: Document how people can customize this to add styling for CRD-specific
+;; columns.
+(defvar kele-column-faces
+  '((Status . ((Active . success)
+               (Running . success)
+               (Error . error)
+               (Terminating . warning)
+               (ImagePullBackOff . warning)
+               (Completed . kele-disabled-face))))
+  "Alist associated column names and their values to specific faces.")
+
+(defun kele--style-column (colname value)
+  "Style column VALUE based on the COLNAME."
+  (propertize (if (stringp value) value (prin1-to-string value))
+              'face
+              (if-let* ((column-faces (alist-get (intern colname) kele--column-faces))
+                        (value-style (alist-get (intern value) column-faces)))
+                  value-style
+                'default)))
+
 (defun kele--vtable-tabulate (gvk context namespace)
   "Construct an interactive vtable listing resources of GVK.
 
@@ -1774,7 +1794,7 @@ https://kubernetes.io/docs/reference/using-api/api-concepts/#receiving-resources
        (let* ((colname (vtable-column vtable column))
               (col-index (-find-index (-partial #'string-equal colname)
                                       colnames)))
-         (let-alist object (elt .cells col-index)))))))
+         (kele--style-column colname (let-alist object (elt .cells col-index))))))))
 
 (define-derived-mode kele-list-mode fundamental-mode "Kele: List"
   "Major mode for listing multiple resources of a single kind."
