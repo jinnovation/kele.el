@@ -1680,7 +1680,7 @@ prompting and the function simply returns the single option."
 (defun kele--list-get-at-point ()
   "`kele-get's the current object at point."
   (let-alist (vtable-current-object)
-    (kele-get kele--list-context .metadata.namespace kele--list-gvk .metadata.name)))
+    (kele-get kele--list-context .object.metadata.namespace kele--list-gvk .object.metadata.name)))
 
 (defun kele-list-table-dwim ()
   "Run the default action on `kele-list' table entries.
@@ -1749,7 +1749,7 @@ Otherwise, simply `kele-get' the resource at point."
   "Style column VALUE based on the COLNAME."
   (propertize (if (stringp value) value (prin1-to-string value))
               'face
-              (if-let* ((column-faces (alist-get (intern colname) kele--column-faces))
+              (if-let* ((column-faces (alist-get (intern colname) kele-column-faces))
                         (value-style (alist-get (intern value) column-faces)))
                   value-style
                 'default)))
