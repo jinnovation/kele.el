@@ -1691,8 +1691,10 @@ resource.
 Otherwise, simply `kele-get' the resource at point."
   (interactive nil kele-list-mode)
   (let* ((tbl (vtable-current-table))
-        (col (vtable-current-column))
-        (colname (vtable-column tbl col)))
+         (col (vtable-current-column))
+         (colname (vtable-column tbl col)))
+    ;; FIXME: Incorporate the Owner column (and custom columns in general) back
+    ;; in
     (if (string-equal colname "Owner(s)")
         (let-alist (vtable-current-object)
           ;; TODO: Implement selection for multi-owner
