@@ -136,13 +136,19 @@ NAMESPACE GVK NAME PROCESS).")
   "Which major mode to use for YAML highlighting.
 
 Set to nil to disable YAML highlighting."
-  :type '(choice nil symbol))
+  :type '(choice nil symbol)
+  :group 'kele)
+
+(defcustom kele-max-column-width 40
+  "Maximum width to use for column display in `kele-list-mode'."
+  :type 'integer
+  :group 'kele)
 
 (define-error 'kele-cache-lookup-error
-  "Kele failed to find the requested resource in the cache.")
+              "Kele failed to find the requested resource in the cache.")
 (define-error 'kele-request-error "Kele failed in querying the Kubernetes API")
 (define-error 'kele-ambiguous-groupversion-error
-  "Found multiple group-versions associated with the given resource")
+              "Found multiple group-versions associated with the given resource")
 
 (defface kele-disabled-face
   '((t (:inherit 'font-lock-comment-face)))
@@ -1794,8 +1800,9 @@ https://kubernetes.io/docs/reference/using-api/api-concepts/#receiving-resources
          (column-specs (-map (lambda (colname)
                                `(:name
                                  ,colname
-                                 ;; TODO: Make max column width configurable
-                                 :width ,(min 40 (max (funcall f-max-len colname) (length colname)))
+                                 :width ,(min
+                                          kele-max-column-width
+                                          (max (funcall f-max-len colname) (length colname)))
                                  :align left))
                              colnames)))
     (make-vtable
