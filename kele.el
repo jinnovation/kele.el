@@ -1778,21 +1778,25 @@ https://kubernetes.io/docs/reference/using-api/api-concepts/#receiving-resources
                                   (append (alist-get 'columnDefinitions
                                                      resource-table)
                                           '()))))
+         (f-max-len (lambda (colname)
+                      (let ((col-index (-find-index (-partial
+                                                     #'string-equal
+                                                     colname)
+                                                    colnames)))
+                        (->> (alist-get 'rows resource-table)
+                             (-map (lambda (row)
+                                     (length
+                                      (prin1-to-string
+                                       (elt (alist-get
+                                             'cells row)
+                                            col-index)))))
+                             (apply #'max)))))
          (column-specs (-map (lambda (colname)
-                               (let* ((col-index (-find-index (-partial
-                                                               #'string-equal
-                                                               colname)
-                                                              colnames))
-                                      (maxlen (apply #'max (-map (lambda (row)
-                                                                   (length
-                                                                    (elt (alist-get
-                                                                          'cells row)
-                                                                         col-index)))
-                                                                 (alist-get 'rows resource-table)))))
-                                 `(:name ,colname
-                                         ;; TODO: Make max column width configurable
-                                         :width ,(min 40 (max maxlen (length colname)))
-                                         :align left)))
+                               `(:name
+                                 ,colname
+                                 ;; TODO: Make max column width configurable
+                                 :width ,(min 40 (max (funcall f-max-len colname) (length colname)))
+                                 :align left))
                              colnames)))
     (make-vtable
      :insert nil
