@@ -1806,21 +1806,28 @@ https://kubernetes.io/docs/reference/using-api/api-concepts/#receiving-resources
      (lambda ()
        (alist-get 'rows resource-table))
      :sort-by '((0 ascend (1 ascend)))
-     :columns column-specs
+     :columns (if namespace
+                  column-specs
+                ;; FIXME: Apply max-length logic to namespace col as well
+                (append '((:name "Namespace" :width 20 :align left)) column-specs))
      :keymap kele-list-table-map
      :face 'default
      :getter
      (lambda (object column vtable)
        (let* ((colname (vtable-column vtable column))
               (col-index (-find-index (-partial #'string-equal colname)
-                                      colnames)))
+                                      colnames))
+              (col-value (cond (col-index
+                                (elt (alist-get 'cells object) col-index))
+                               ((string-equal colname "Namespace")
+                                (let-alist object .object.metadata.namespace)))))
          ;; TODO: On cursor hover on specific columns, display relevant
          ;; documentation. For example, in the Phase column for namespaces, when
          ;; the value is "Terminating", can explain that no add'l resources can
          ;; be created in that namespace during that time.
          ;;
          ;; Maybe a good use case for Eldoc?
-         (kele--style-column colname (elt (alist-get 'cells object) col-index)))))))
+         (kele--style-column colname col-value))))))
 
 (define-derived-mode kele-list-mode fundamental-mode "Kele: List"
   "Major mode for listing multiple resources of a single kind."
