@@ -148,7 +148,7 @@ Set to nil to disable YAML highlighting."
   "Found multiple group-versions associated with the given resource")
 
 (defface kele-disabled-face
-  '((t (:inherit 'font-lock-comment-face)))
+  '((t (:inherit font-lock-comment-face)))
   "Face used for disabled or not-applicable values."
   :group 'kele)
 
