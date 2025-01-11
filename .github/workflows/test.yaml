@@ -13,6 +13,7 @@ jobs:
       matrix:
         emacs_version:
         - 29.3
+        - release-snapshot
         kubectl_version:
         - v1.26.1
         - v1.25.6
