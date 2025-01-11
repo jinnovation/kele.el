@@ -656,6 +656,8 @@ metadata:
   (describe "when called in a Transient buffer"
     (before-each
       (setq transient-current-command t))
+    (after-each
+      (setq transient-current-command nil))
     (describe "when the current command has a `--groupversion' arg"
       (before-each
         (spy-on 'transient-args :and-return-value '("--groupversion=foo")))
