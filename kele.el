@@ -1617,9 +1617,10 @@ In order of priority, this function attempts the following:
   namespaced, return nil;
 
 - Otherwise, ask the user to select a namespace using PROMPT."
-  (let ((transient-arg-maybe (->> transient-current-command
-                                  (transient-args)
-                                  (transient-arg-value "--namespace="))))
+  (let ((transient-arg-maybe (when transient-current-command
+                               (->> transient-current-command
+                                    (transient-args)
+                                    (transient-arg-value "--namespace=")))))
     (cond
      ((or transient-arg-maybe permit-nil) transient-arg-maybe)
      ((or (not (and group-version kind)) use-default)
