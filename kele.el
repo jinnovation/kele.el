@@ -686,7 +686,7 @@ returns nil."
 (cl-defmethod proxy-active-p ((manager kele--proxy-manager)
                               context)
   "Return non-nil if a proxy serve is active for CONTEXT in MANAGER."
-  (when-let (res (assoc context (oref manager records)))
+  (when-let* (res (assoc context (oref manager records)))
     (cdr res)))
 
 (defvar kele--global-proxy-manager (kele--proxy-manager))
@@ -1472,10 +1472,10 @@ Also resets any specified peer arguments on the same prefix that
   match any element of `:resettees' on OBJ."
   (cl-call-next-method obj val)
   (dolist (arg (oref obj resettees))
-    (when-let ((obj (cl-find-if (lambda (obj)
-                                  (and (slot-boundp obj 'argument)
-                                       (equal (oref obj argument) arg)))
-                                transient--suffixes)))
+    (when-let* ((obj (cl-find-if (lambda (obj)
+                                   (and (slot-boundp obj 'argument)
+                                        (equal (oref obj argument) arg)))
+                                 transient--suffixes)))
       (transient-init-value obj))))
 
 (defclass kele--transient-infix (kele--transient-infix-resetter
