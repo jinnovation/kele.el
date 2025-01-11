@@ -5,8 +5,7 @@ name: test
     branches:
     - main
   pull_request:
-    branches:
-    - main
+    branches: {}
 jobs:
   build-and-test:
     timeout-minutes: 5
