@@ -1596,9 +1596,10 @@ Defaults to the currently active context as set in
 
 First checks the current Transient command's arguments if set.
 Otherwise, returns the current context name from kubeconfig."
-  (or (transient-arg-value "--context=" (transient-args
+  (if transient-current-command
+      (transient-arg-value "--context=" (transient-args
                                          transient-current-command))
-      (kele-current-context-name)))
+    (kele-current-context-name)))
 
 (cl-defun kele--get-namespace-arg (&key (permit-nil nil) use-default group-version kind (prompt "Namespace: "))
   "Get the value to use for Kubernetes namespace.
