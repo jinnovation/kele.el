@@ -5,7 +5,6 @@ on:  # yamllint disable-line rule:truthy
     branches:
     - main
   pull_request:
-    branches: {}
 jobs:
   build-and-test:
     timeout-minutes: 5
