@@ -414,7 +414,8 @@
       (kele--render-object fake-obj (current-buffer))
       (expect (buffer-string) :to-equal "kind: FakeKind
 metadata:
-  name: fake-name")))
+  name: fake-name
+")))
 
   (it "respects `kele-filtered-fields'"
     (setq fake-obj '((kind . "FakeKind")
@@ -425,7 +426,8 @@ metadata:
         (kele--render-object fake-obj (current-buffer))
         (expect (buffer-string) :to-equal "kind: FakeKind
 metadata:
-  name: fake-name"))))
+  name: fake-name
+"))))
 
   (describe "buffer titling"
     (describe "when input is `kele--resource-container'"
