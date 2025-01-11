@@ -139,7 +139,7 @@ NAMESPACE GVK NAME PROCESS).")
   "Which major mode to use for YAML highlighting.
 
 Set to nil to disable YAML highlighting."
-  :type '(choice nil symbol))
+  :type '(choice (const nil) symbol))
 
 (define-error 'kele-cache-lookup-error
   "Kele failed to find the requested resource in the cache.")
