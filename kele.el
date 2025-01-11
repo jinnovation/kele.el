@@ -686,8 +686,7 @@ returns nil."
 (cl-defmethod proxy-active-p ((manager kele--proxy-manager)
                               context)
   "Return non-nil if a proxy serve is active for CONTEXT in MANAGER."
-  (when-let* ((res (assoc context (oref manager records))))
-    (cdr res)))
+  (cdr (assoc context (oref manager records))))
 
 (defvar kele--global-proxy-manager (kele--proxy-manager))
 
