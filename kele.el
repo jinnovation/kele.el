@@ -430,12 +430,12 @@ If CONTEXT is nil, use the current context."
   "Look up the namespaced-ness of GROUP-VERSION TYPE in CACHE.
 
 If CONTEXT is not provided, the current context is used."
-  (if-let ((namespaced-p
-            (->> (kele--get-resource-lists-for-context cache (or context (kele-current-context-name)))
-                 (-first (lambda (resource-list) (equal (alist-get 'groupVersion resource-list) group-version)))
-                 (alist-get 'resources)
-                 (-first (lambda (resource) (equal (alist-get 'name resource) type)))
-                 (alist-get 'namespaced))))
+  (if-let* ((namespaced-p
+             (->> (kele--get-resource-lists-for-context cache (or context (kele-current-context-name)))
+                  (-first (lambda (resource-list) (equal (alist-get 'groupVersion resource-list) group-version)))
+                  (alist-get 'resources)
+                  (-first (lambda (resource) (equal (alist-get 'name resource) type)))
+                  (alist-get 'namespaced))))
       (not (eq :false namespaced-p))
     (signal 'kele-cache-lookup-error `(,context ,group-version ,type))))
 
