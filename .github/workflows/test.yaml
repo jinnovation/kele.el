@@ -1,89 +1,89 @@
 ---
 name: test
-on:
+"on":
   push:
     branches:
-      - main
+    - main
   pull_request:
     branches:
-      - main
+    - main
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         emacs_version:
-          - 29.3
+        - 29.3
         kubectl_version:
-          - v1.26.1
-          - v1.25.6
-          - v1.24.10
-          - v1.23.12
+        - v1.26.1
+        - v1.25.6
+        - v1.24.10
+        - v1.23.12
         include:
-          - emacs_version: snapshot
-            ignore_error: true
+        - emacs_version: snapshot
+          ignore_error: true
     env:
       EMACS_VERSION: ${{ matrix.emacs_version }}
     steps:
-      - name: Setup Emacs
-        uses: purcell/setup-emacs@master
-        with:
-          version: ${{ matrix.emacs_version }}
-      - name: Setup Python (for Cask)
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.10'
-          architecture: 'x64'
-      - name: Setup Cask
-        uses: conao3/setup-cask@master
-        with:
-          version: "snapshot"
-      - uses: actions/checkout@v3
-      - name: Install
-        id: install
-        continue-on-error: ${{ matrix.ignore_error != '' && matrix.ignore_error }}
-        run: |
-          emacs --version
-          cask build --verbose
-          make compile
+    - name: Setup Emacs
+      uses: purcell/setup-emacs@master
+      with:
+        version: ${{ matrix.emacs_version }}
+    - name: Setup Python (for Cask)
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.10'
+        architecture: 'x64'
+    - name: Setup Cask
+      uses: conao3/setup-cask@master
+      with:
+        version: "snapshot"
+    - uses: actions/checkout@v3
+    - name: Install
+      id: install
+      continue-on-error: ${{ matrix.ignore_error != '' && matrix.ignore_error }}
+      run: |
+        emacs --version
+        cask build --verbose
+        make compile
 
-      - name: Run unit and static tests
-        if: steps.install.outcome == 'success' && steps.install.conclusion == 'success'
-        run: |
-          make testall
+    - name: Run unit and static tests
+      if: steps.install.outcome == 'success' && steps.install.conclusion == 'success'
+      run: |
+        make testall
 
-      - name: Setup integration test cluster
-        id: kind
-        uses: helm/kind-action@v1.4.0
-        with:
-          config: tests/test-cluster.yaml
-          cluster_name: kele-test-cluster0
-          kubectl_version: ${{ matrix.kubectl_version }}
+    - name: Setup integration test cluster
+      id: kind
+      uses: helm/kind-action@v1.4.0
+      with:
+        config: tests/test-cluster.yaml
+        cluster_name: kele-test-cluster0
+        kubectl_version: ${{ matrix.kubectl_version }}
 
-      # See #69
-      - name: Try populating discovery cache
-        id: discovery
-        if: steps.kind.outcome == 'success' && steps.kind.conclusion == 'success'
-        run: |
-          kubectl -v=10 cluster-info
+    # See #69
+    - name: Try populating discovery cache
+      id: discovery
+      if: steps.kind.outcome == 'success' && steps.kind.conclusion == 'success'
+      run: |
+        kubectl -v=10 cluster-info
 
-      - name: Run integration tests
-        if: steps.kind.outcome == 'success' && steps.kind.conclusion == 'success'
-        uses: nick-fields/retry@v2
-        with:
-          # at least one test is flaky. See #40
-          max_attempts: 6
-          timeout_minutes: 3
-          on_retry_command: rm ./coverage/integration/lcov-buttercup.info
-          command: |
-            cask exec buttercup -L . tests/integration/
+    - name: Run integration tests
+      if: steps.kind.outcome == 'success' && steps.kind.conclusion == 'success'
+      uses: nick-fields/retry@v2
+      with:
+        # at least one test is flaky. See #40
+        max_attempts: 6
+        timeout_minutes: 3
+        on_retry_command: rm ./coverage/integration/lcov-buttercup.info
+        command: |
+          cask exec buttercup -L . tests/integration/
 
-      - name: Upload coverage
-        if: steps.install.outcome == 'success' && steps.install.conclusion == 'success'
-        uses: codecov/codecov-action@v4
-        with:
-          env_vars: EMACS_VERSION
-          files: ./coverage/unit/lcov-buttercup.info,./coverage/integration/lcov-buttercup.info
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: true
-          verbose: true
+    - name: Upload coverage
+      if: steps.install.outcome == 'success' && steps.install.conclusion == 'success'
+      uses: codecov/codecov-action@v4
+      with:
+        env_vars: EMACS_VERSION
+        files: ./coverage/unit/lcov-buttercup.info,./coverage/integration/lcov-buttercup.info
+        token: ${{ secrets.CODECOV_TOKEN }}
+        fail_ci_if_error: true
+        verbose: true
