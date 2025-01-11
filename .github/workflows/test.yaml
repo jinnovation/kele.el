@@ -14,14 +14,13 @@ jobs:
         emacs_version:
         - 29.3
         - release-snapshot
-        kubectl_version: &kubectl_versions
+        kubectl_version:
         - v1.26.1
         - v1.25.6
         - v1.24.10
         - v1.23.12
         include:
         - emacs_version: snapshot
-          kubectl_version: *kubectl_versions
           ignore_error: true
     env:
       EMACS_VERSION: ${{ matrix.emacs_version }}
