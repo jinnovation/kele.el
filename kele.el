@@ -1289,8 +1289,8 @@ context and namespace in its name."
         (curr alist))
     (dolist (key keys)
       (setq prev curr)
-      (setq curr (if-let ((list-p (listp curr))
-                          (res (assq key curr)))
+      (setq curr (if-let* ((list-p (listp curr))
+                           (res (assq key curr)))
                      (cdr res)
                    nil)))
     (when curr
