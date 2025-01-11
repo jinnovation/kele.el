@@ -1294,7 +1294,7 @@ context and namespace in its name."
                      (cdr res)
                    nil)))
     (when curr
-      (setq _ (assq-delete-all (car (last keys)) prev)))
+      (assq-delete-all (car (last keys)) prev))
     alist))
 
 (defvar kele--context-keymap nil
