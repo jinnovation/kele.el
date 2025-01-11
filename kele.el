@@ -136,7 +136,7 @@ NAMESPACE GVK NAME PROCESS).")
   "Which major mode to use for YAML highlighting.
 
 Set to nil to disable YAML highlighting."
-  :type '(choice nil symbol))
+  :type '(choice (const nil) symbol))
 
 (define-error 'kele-cache-lookup-error
   "Kele failed to find the requested resource in the cache.")
@@ -145,7 +145,7 @@ Set to nil to disable YAML highlighting."
   "Found multiple group-versions associated with the given resource")
 
 (defface kele-disabled-face
-  '((t (:inherit 'font-lock-comment-face)))
+  '((t (:inherit font-lock-comment-face)))
   "Face used for disabled or not-applicable values."
   :group 'kele)
 
