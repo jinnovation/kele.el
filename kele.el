@@ -762,8 +762,8 @@ to complete.  Returned value may not be up to date."
 
 (defun kele--context-cluster-name (context-name)
   "Get the name of the cluster of the context named CONTEXT-NAME."
-  (if-let ((context (-first (lambda (elem) (string= (alist-get 'name elem) context-name))
-                            (alist-get 'contexts (oref kele--global-kubeconfig-cache contents)))))
+  (if-let* ((context (-first (lambda (elem) (string= (alist-get 'name elem) context-name))
+                             (alist-get 'contexts (oref kele--global-kubeconfig-cache contents)))))
       (alist-get 'cluster (alist-get 'context context))
     (error "Could not find context of name %s" context-name)))
 
@@ -961,7 +961,7 @@ If value is nil, the namespaces need to be fetched directly.")
 If the namespaces are cached, return the cached value.
 
 If CACHE is non-nil, cache the fetched namespaces."
-  (if-let ((cached-namespaces (alist-get (intern context) kele--namespaces-cache)))
+  (if-let* ((cached-namespaces (alist-get (intern context) kele--namespaces-cache)))
       cached-namespaces
     (let* ((gvk (kele--gvk-create :version "v1" :kind "namespaces"))
            (namespaces (kele--fetch-resource-names gvk :context context)))
@@ -1425,7 +1425,7 @@ Assumes that the current Transient prefix's :scope is an alist w/ `context' key.
   ;; FIXME: Make this resilient to the prefix's scope not having a context
   ;; value.  If not present (or the scope is not an alist or the scope is not
   ;; defined), default to current context.
-  (if-let ((context (alist-get 'context (oref transient--prefix scope))))
+  (if-let* ((context (alist-get 'context (oref transient--prefix scope))))
       (kele--namespaces-complete
        :context context
        :prompt prompt
