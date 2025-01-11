@@ -14,14 +14,12 @@ jobs:
         emacs_version:
         - 29.3
         - release-snapshot
+        - snapshot
         kubectl_version:
         - v1.26.1
         - v1.25.6
         - v1.24.10
         - v1.23.12
-        include:
-        - emacs_version: snapshot
-          ignore_error: true
     env:
       EMACS_VERSION: ${{ matrix.emacs_version }}
     steps:
@@ -47,14 +45,12 @@ jobs:
         make compile
 
     - name: Run unit and static tests
-      continue-on-error: ${{ matrix.ignore_error != '' && matrix.ignore_error }}
       run: |
         make testall
 
     - name: Setup integration test cluster
       id: kind
       uses: helm/kind-action@v1.4.0
-      continue-on-error: ${{ matrix.ignore_error != '' && matrix.ignore_error }}
       with:
         config: tests/test-cluster.yaml
         cluster_name: kele-test-cluster0
@@ -63,15 +59,10 @@ jobs:
     # See #69
     - name: Try populating discovery cache
       id: discovery
-      if: steps.kind.outcome == 'success'
-      continue-on-error: ${{ matrix.ignore_error != '' && matrix.ignore_error }}
       run: |
         kubectl -v=10 cluster-info
 
     - name: Run integration tests
-      continue-on-error: ${{ matrix.ignore_error != '' && matrix.ignore_error }}
-      id: integration
-      if: steps.discovery.outcome == 'success'
       uses: nick-fields/retry@v2
       with:
         # at least one test is flaky. See #40
@@ -82,7 +73,6 @@ jobs:
           cask exec buttercup -L . tests/integration/
 
     - name: Upload coverage
-      if: steps.integration.outcome == 'success' && steps.integration.conclusion == 'success'
       uses: codecov/codecov-action@v4
       with:
         env_vars: EMACS_VERSION
