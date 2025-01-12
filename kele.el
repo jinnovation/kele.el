@@ -139,7 +139,7 @@ NAMESPACE GVK NAME PROCESS).")
   "Which major mode to use for YAML highlighting.
 
 Set to nil to disable YAML highlighting."
-  :type '(choice (const nil) symbol))
+  :type '(choice (const nil) symbol)
   :group 'kele)
 
 (defcustom kele-max-column-width 40
@@ -845,9 +845,9 @@ as."
                         'face 'warning)))
   (interactive
    (let ((ctx (if (and transient--prefix
-                      (slot-boundp transient--prefix 'scope))
-                 (oref transient--prefix scope)
-               (kele-current-context-name))))
+                       (slot-boundp transient--prefix 'scope))
+                  (oref transient--prefix scope)
+                (kele-current-context-name))))
      (list
       (kele--namespaces-complete :context ctx))))
   (kele-namespace-switch-for-context
@@ -1499,11 +1499,11 @@ Also resets any specified peer arguments on the same prefix that
   ;; NB(@jinnovation): At some point we might need to expand this class to
   ;; include the "no value is a value" case, but that's not today. :D
   ((options
-   :initarg :options
-   :initform (lambda () nil)
-   :type function
-   :documentation
-   "Function that returns the options for this infix to cycle through.
+    :initarg :options
+    :initform (lambda () nil)
+    :type function
+    :documentation
+    "Function that returns the options for this infix to cycle through.
 
 The car will be the default value.")))
 
@@ -2140,11 +2140,11 @@ The port-forward must have been initiated with
   (interactive
    (if (not (kele--port-forwards-active-p))
        (error "[kele] No port-forwards active!")
-    (let* ((completion-extra-properties
-            (list :affixation-function #'kele--port-forward-affixation))
-           (port (completing-read "Port-forward to kill: "
-                                  (mapcar 'car kele--active-port-forwards))))
-      (list port))))
+     (let* ((completion-extra-properties
+             (list :affixation-function #'kele--port-forward-affixation))
+            (port (completing-read "Port-forward to kill: "
+                                   (mapcar 'car kele--active-port-forwards))))
+       (list port))))
 
   (let* ((record (alist-get port kele--active-port-forwards nil nil #'equal))
          (proc (car (last record))))
@@ -2190,9 +2190,9 @@ CONTEXT and NAMESPACE are used to identify where the deployment lives."
    (kele--namespace-infix)]
 
   [["General Actions"
-   (kele-get)
-   (kele-delete)
-   (kele-list)]
+    (kele-get)
+    (kele-delete)
+    (kele-list)]
 
    [:description
     (lambda ()
@@ -2287,8 +2287,8 @@ The `scope' is the current context name."
     (kele-namespace-switch-for-current-context)
     (kele--toggle-proxy-current-context)]
    ["Actions"
-   (kele-context-rename)
-   (kele-context-delete)]
+    (kele-context-rename)
+    (kele-context-delete)]
    ["Files"
     (kele-find-kubeconfig)]]
   (interactive)
@@ -2305,25 +2305,25 @@ The `scope' is the current context name."
   (transient-setup 'kele-ports nil nil :scope (kele-current-context-name)))
 
 (easy-menu-define kele-menu-map kele-mode-map
-  "Menu for Kubernetes management.
+"Menu for Kubernetes management.
 
 Similar to `kele-dispatch'."
-   '("Kubernetes"
-     ("Configuration"
+'("Kubernetes"
+  ("Configuration"
 
-      ;; placeholder for dynamic fill-in (see `kele--update-contexts-menu')
-      ["Switch context to..."
-       nil
-       :help "Waiting for kubeconfig sync to complete..."
-       :enable nil]
-      ["Switch namespace for current context to..."
-       nil
-       :help "Waiting for kubeconfig sync to complete..."
-       :enable nil]
-      "---"
-      ["Find config file"
-       kele-find-kubeconfig
-       :help "Open the active kubeconfig file in a buffer"])))
+   ;; placeholder for dynamic fill-in (see `kele--update-contexts-menu')
+   ["Switch context to..."
+    nil
+    :help "Waiting for kubeconfig sync to complete..."
+    :enable nil]
+   ["Switch namespace for current context to..."
+    nil
+    :help "Waiting for kubeconfig sync to complete..."
+    :enable nil]
+   "---"
+   ["Find config file"
+    kele-find-kubeconfig
+    :help "Open the active kubeconfig file in a buffer"])))
 
 (defun kele--update-contexts-menu ()
   "Fill in the context-switch sub-menu with candidate contexts."
