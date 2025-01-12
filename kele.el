@@ -1751,15 +1751,6 @@ Otherwise, simply `kele-get' the resource at point."
                (Completed . kele-disabled-face))))
   "Alist associated column names and their values to specific faces.")
 
-(defun kele--style-column (colname value)
-  "Style column VALUE based on the COLNAME."
-  (propertize (if (stringp value) value (prin1-to-string value))
-              'face
-              (if-let* ((column-faces (alist-get (intern colname) kele-column-faces))
-                        (value-style (alist-get (intern value) column-faces)))
-                  value-style
-                'default)))
-
 (defun kele--vtable-tabulate (gvk context namespace)
   "Construct an interactive vtable listing resources of GVK.
 
@@ -1838,7 +1829,12 @@ https://kubernetes.io/docs/reference/using-api/api-concepts/#receiving-resources
      :face 'default
      :formatter
      (lambda (value index table)
-       (kele--style-column (vtable-column table index) value))
+       (propertize (if (stringp value) value (prin1-to-string value))
+                   'face
+                   (if-let* ((column-faces (alist-get (intern (vtable-column table index)) kele-column-faces))
+                             (value-style (alist-get (intern value) column-faces)))
+                       value-style
+                     'default)))
      :getter
      (lambda (object column vtable)
        (let* ((colname (vtable-column vtable column))
