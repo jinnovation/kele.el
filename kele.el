@@ -1775,6 +1775,16 @@ https://kubernetes.io/docs/reference/using-api/api-concepts/#receiving-resources
                           gvk
                           :context context
                           :namespace namespace))
+         (no-owners (->> (alist-get 'rows resource-table)
+                         (-map (lambda (row)
+                                 (length (let-alist row
+                                           .object.metadata.ownerReferences))))
+                         (-none-p (lambda (num-owners) (> num-owners 0)))))
+         (no-namespaces (->> (alist-get 'rows resource-table)
+                             (-map (lambda (row)
+                                     (let-alist row
+                                       .object.metadata.namespace)))
+                             (-none-p #'identity)))
          (colnames (-map (lambda (coldef)
                            (let-alist coldef .name))
                          (-filter (lambda (coldef)
@@ -1814,8 +1824,8 @@ https://kubernetes.io/docs/reference/using-api/api-concepts/#receiving-resources
      :columns (append
                ;; FIXME: Apply max-length logic to namespace and owner cols as
                ;; well
-               (unless namespace '((:name "Namespace" :width 15 :align left)))
-               '((:name "Owner(s)" :width 10 :align left))
+               (unless (or namespace no-namespaces) '((:name "Namespace" :width 15 :align left)))
+               (unless no-owners '((:name "Owner(s)" :width 10 :align left)))
                column-specs)
      :keymap kele-list-table-map
      :face 'default
@@ -1832,8 +1842,10 @@ https://kubernetes.io/docs/reference/using-api/api-concepts/#receiving-resources
                                 (let* ((owners (let-alist object
                                                  .object.metadata.ownerReferences))
                                        (owner (elt owners 0)))
-                                  (format "%s/%s" (alist-get 'kind owner)
-                                          (alist-get 'name owner)))))))
+                                  (if-let* ((kind (alist-get 'kind owner))
+                                            (name (alist-get 'name owner)))
+                                      (format "%s/%s" kind name)
+                                    "N/A"))))))
          ;; TODO: On cursor hover on specific columns, display relevant
          ;; documentation. For example, in the Phase column for namespaces, when
          ;; the value is "Terminating", can explain that no add'l resources can
