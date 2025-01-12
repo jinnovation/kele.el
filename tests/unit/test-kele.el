@@ -412,6 +412,7 @@
   (it "renders the value as YAML"
     (with-temp-buffer
       (kele--render-object fake-obj (current-buffer))
+      ;; For some reason --render-object adds in an add'l newline on Emacs 31
       (expect (buffer-string) :to-match (rx "kind: FakeKind
 metadata:
   name: fake-name" (zero-or-more whitespace)))))
@@ -423,6 +424,7 @@ metadata:
     (let ((kele-filtered-fields '((metadata foo))))
       (with-temp-buffer
         (kele--render-object fake-obj (current-buffer))
+        ;; For some reason --render-object adds in an add'l newline on Emacs 31
         (expect (buffer-string) :to-match (rx "kind: FakeKind
 metadata:
   name: fake-name" (zero-or-more whitespace))))))
