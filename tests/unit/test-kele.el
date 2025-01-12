@@ -412,9 +412,10 @@
   (it "renders the value as YAML"
     (with-temp-buffer
       (kele--render-object fake-obj (current-buffer))
-      (expect (buffer-string) :to-equal "kind: FakeKind
+      ;; For some reason --render-object adds in an add'l newline on Emacs 31
+      (expect (buffer-string) :to-match (rx "kind: FakeKind
 metadata:
-  name: fake-name")))
+  name: fake-name" (zero-or-more whitespace)))))
 
   (it "respects `kele-filtered-fields'"
     (setq fake-obj '((kind . "FakeKind")
@@ -423,9 +424,10 @@ metadata:
     (let ((kele-filtered-fields '((metadata foo))))
       (with-temp-buffer
         (kele--render-object fake-obj (current-buffer))
-        (expect (buffer-string) :to-equal "kind: FakeKind
+        ;; For some reason --render-object adds in an add'l newline on Emacs 31
+        (expect (buffer-string) :to-match (rx "kind: FakeKind
 metadata:
-  name: fake-name"))))
+  name: fake-name" (zero-or-more whitespace))))))
 
   (describe "buffer titling"
     (describe "when input is `kele--resource-container'"
@@ -656,6 +658,8 @@ metadata:
   (describe "when called in a Transient buffer"
     (before-each
       (setq transient-current-command t))
+    (after-each
+      (setq transient-current-command nil))
     (describe "when the current command has a `--groupversion' arg"
       (before-each
         (spy-on 'transient-args :and-return-value '("--groupversion=foo")))

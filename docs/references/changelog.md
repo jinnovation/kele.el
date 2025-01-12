@@ -24,6 +24,13 @@ versioning][semver].
   created using `kele-port-forward`
 - Rename `kele-proxy` to `kele-ports`
 
+### Changed
+
+- Renamed `kele-after-context-switch-hook` to
+  `kele-context-after-switch-functions`. Each member of this variable is now
+  expected to take the new context name as the sole argument (previously, they
+  took no arguments).
+
 ## 0.6.0
 
 ### Added
