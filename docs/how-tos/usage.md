@@ -139,7 +139,7 @@ Kele commands involving Kubernetes [contexts] center around the `s-k c` prefix (
 !!! tip
 
     If you have functions that need to run after switching to a new context in
-    order to use it, `kele-after-context-switch-hook` is available to use. This
+    order to use it, `kele-context-after-switch-functions` is available to use. This
     can be useful for, say, re-authenticating with the new context before
     interacting with it.
 
