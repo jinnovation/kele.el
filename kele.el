@@ -2305,25 +2305,25 @@ The `scope' is the current context name."
   (transient-setup 'kele-ports nil nil :scope (kele-current-context-name)))
 
 (easy-menu-define kele-menu-map kele-mode-map
-"Menu for Kubernetes management.
+  "Menu for Kubernetes management.
 
 Similar to `kele-dispatch'."
-'("Kubernetes"
-  ("Configuration"
+  '("Kubernetes"
+    ("Configuration"
 
-   ;; placeholder for dynamic fill-in (see `kele--update-contexts-menu')
-   ["Switch context to..."
-    nil
-    :help "Waiting for kubeconfig sync to complete..."
-    :enable nil]
-   ["Switch namespace for current context to..."
-    nil
-    :help "Waiting for kubeconfig sync to complete..."
-    :enable nil]
-   "---"
-   ["Find config file"
-    kele-find-kubeconfig
-    :help "Open the active kubeconfig file in a buffer"])))
+     ;; placeholder for dynamic fill-in (see `kele--update-contexts-menu')
+     ["Switch context to..."
+      nil
+      :help "Waiting for kubeconfig sync to complete..."
+      :enable nil]
+     ["Switch namespace for current context to..."
+      nil
+      :help "Waiting for kubeconfig sync to complete..."
+      :enable nil]
+     "---"
+     ["Find config file"
+      kele-find-kubeconfig
+      :help "Open the active kubeconfig file in a buffer"])))
 
 (defun kele--update-contexts-menu ()
   "Fill in the context-switch sub-menu with candidate contexts."
