@@ -1825,10 +1825,20 @@ https://kubernetes.io/docs/reference/using-api/api-concepts/#receiving-resources
                ;; FIXME: Apply max-length logic to namespace and owner cols as
                ;; well
                (unless (or namespace no-namespaces) '((:name "Namespace" :width 15 :align left)))
-               (unless no-owners '((:name "Owner(s)" :width 10 :align left)))
+               (unless no-owners
+                 '((:name "Owner(s)"
+                    :width 10
+                    :align left
+                    :formatter (lambda (value)
+                                 (if (string-equal value "N/A")
+                                     (propertize value 'face 'kele-disabled-face)
+                                   value)))))
                column-specs)
      :keymap kele-list-table-map
      :face 'default
+     :formatter
+     (lambda (value index table)
+       (kele--style-column (vtable-column table index) value))
      :getter
      (lambda (object column vtable)
        (let* ((colname (vtable-column vtable column))
@@ -1852,7 +1862,7 @@ https://kubernetes.io/docs/reference/using-api/api-concepts/#receiving-resources
          ;; be created in that namespace during that time.
          ;;
          ;; Maybe a good use case for Eldoc?
-         (kele--style-column colname col-value))))))
+         col-value)))))
 
 (define-derived-mode kele-list-mode fundamental-mode "Kele: List"
   "Major mode for listing multiple resources of a single kind."
