@@ -433,12 +433,12 @@ If CONTEXT is nil, use the current context."
   "Look up the namespaced-ness of GROUP-VERSION TYPE in CACHE.
 
 If CONTEXT is not provided, the current context is used."
-  (if-let ((namespaced-p
-            (->> (kele--get-resource-lists-for-context cache (or context (kele-current-context-name)))
-                 (-first (lambda (resource-list) (equal (alist-get 'groupVersion resource-list) group-version)))
-                 (alist-get 'resources)
-                 (-first (lambda (resource) (equal (alist-get 'name resource) type)))
-                 (alist-get 'namespaced))))
+  (if-let* ((namespaced-p
+             (->> (kele--get-resource-lists-for-context cache (or context (kele-current-context-name)))
+                  (-first (lambda (resource-list) (equal (alist-get 'groupVersion resource-list) group-version)))
+                  (alist-get 'resources)
+                  (-first (lambda (resource) (equal (alist-get 'name resource) type)))
+                  (alist-get 'namespaced))))
       (not (eq :false namespaced-p))
     (signal 'kele-cache-lookup-error `(,context ,group-version ,type))))
 
@@ -689,8 +689,7 @@ returns nil."
 (cl-defmethod proxy-active-p ((manager kele--proxy-manager)
                               context)
   "Return non-nil if a proxy serve is active for CONTEXT in MANAGER."
-  (when-let (res (assoc context (oref manager records)))
-    (cdr res)))
+  (cdr (assoc context (oref manager records))))
 
 (defvar kele--global-proxy-manager (kele--proxy-manager))
 
@@ -766,8 +765,8 @@ to complete.  Returned value may not be up to date."
 
 (defun kele--context-cluster-name (context-name)
   "Get the name of the cluster of the context named CONTEXT-NAME."
-  (if-let ((context (-first (lambda (elem) (string= (alist-get 'name elem) context-name))
-                            (alist-get 'contexts (oref kele--global-kubeconfig-cache contents)))))
+  (if-let* ((context (-first (lambda (elem) (string= (alist-get 'name elem) context-name))
+                             (alist-get 'contexts (oref kele--global-kubeconfig-cache contents)))))
       (alist-get 'cluster (alist-get 'context context))
     (error "Could not find context of name %s" context-name)))
 
@@ -966,7 +965,7 @@ If value is nil, the namespaces need to be fetched directly.")
 If the namespaces are cached, return the cached value.
 
 If CACHE is non-nil, cache the fetched namespaces."
-  (if-let ((cached-namespaces (alist-get (intern context) kele--namespaces-cache)))
+  (if-let* ((cached-namespaces (alist-get (intern context) kele--namespaces-cache)))
       cached-namespaces
     (let* ((gvk (kele--gvk-create :version "v1" :kind "namespaces"))
            (namespaces (kele--fetch-resource-names gvk :context context)))
@@ -1281,10 +1280,8 @@ context and namespace in its name."
                      :resource (kele--resource-container-resource object)
                      :namespace (kele--resource-container-namespace object)))
         (put 'kele--current-resource-buffer-context 'permanent-local t))
-
       (when kele-yaml-highlighting-mode
         (funcall kele-yaml-highlighting-mode))
-
       (kele-get-mode 1))
     (select-window (display-buffer buf))))
 
@@ -1294,12 +1291,12 @@ context and namespace in its name."
         (curr alist))
     (dolist (key keys)
       (setq prev curr)
-      (setq curr (if-let ((list-p (listp curr))
-                          (res (assq key curr)))
+      (setq curr (if-let* ((list-p (listp curr))
+                           (res (assq key curr)))
                      (cdr res)
                    nil)))
     (when curr
-      (assq-delete-all (car (last keys)) prev))
+      (ignore (assq-delete-all (car (last keys)) prev)))
     alist))
 
 (defvar kele--context-keymap nil
@@ -1430,7 +1427,7 @@ Assumes that the current Transient prefix's :scope is an alist w/ `context' key.
   ;; FIXME: Make this resilient to the prefix's scope not having a context
   ;; value.  If not present (or the scope is not an alist or the scope is not
   ;; defined), default to current context.
-  (if-let ((context (alist-get 'context (oref transient--prefix scope))))
+  (if-let* ((context (alist-get 'context (oref transient--prefix scope))))
       (kele--namespaces-complete
        :context context
        :prompt prompt
@@ -1476,10 +1473,10 @@ Also resets any specified peer arguments on the same prefix that
   match any element of `:resettees' on OBJ."
   (cl-call-next-method obj val)
   (dolist (arg (oref obj resettees))
-    (when-let ((obj (cl-find-if (lambda (obj)
-                                  (and (slot-boundp obj 'argument)
-                                       (equal (oref obj argument) arg)))
-                                transient--suffixes)))
+    (when-let* ((obj (cl-find-if (lambda (obj)
+                                   (and (slot-boundp obj 'argument)
+                                        (equal (oref obj argument) arg)))
+                                 transient--suffixes)))
       (transient-init-value obj))))
 
 (defclass kele--transient-infix (kele--transient-infix-resetter
@@ -1603,10 +1600,9 @@ Defaults to the currently active context as set in
 
 First checks the current Transient command's arguments if set.
 Otherwise, returns the current context name from kubeconfig."
-  (if-let* ((cmd transient-current-command)
-            (args (transient-args cmd))
-            (value (transient-arg-value "--context=" args)))
-      value
+  (if transient-current-command
+      (transient-arg-value "--context=" (transient-args
+                                         transient-current-command))
     (kele-current-context-name)))
 
 (cl-defun kele--get-namespace-arg (&key (permit-nil nil) use-default group-version kind (prompt "Namespace: "))
@@ -1625,9 +1621,10 @@ In order of priority, this function attempts the following:
   namespaced, return nil;
 
 - Otherwise, ask the user to select a namespace using PROMPT."
-  (let ((transient-arg-maybe (->> transient-current-command
-                                  (transient-args)
-                                  (transient-arg-value "--namespace="))))
+  (let ((transient-arg-maybe (when transient-current-command
+                               (->> transient-current-command
+                                    (transient-args)
+                                    (transient-arg-value "--namespace=")))))
     (cond
      ((or transient-arg-maybe permit-nil) transient-arg-maybe)
      ((or (not (and group-version kind)) use-default)
