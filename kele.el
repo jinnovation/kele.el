@@ -1262,6 +1262,7 @@ context and namespace in its name."
                                      kele-filtered-fields)))
     (with-current-buffer buf
       (let ((inhibit-read-only t))
+        (message "%s" whitespace-style)
         (erase-buffer)
         (insert (yaml-encode filtered-obj))
         (whitespace-cleanup)
