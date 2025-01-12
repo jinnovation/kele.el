@@ -33,6 +33,7 @@
 (require 'treesit)
 (require 'vtable)
 (require 'url-parse)
+(require 'whitespace)
 (require 'yaml)
 
 (declare-function yaml-mode "yaml-mode")
@@ -1262,7 +1263,7 @@ context and namespace in its name."
                                      kele-filtered-fields)))
     (with-current-buffer buf
       (let ((inhibit-read-only t))
-        (message "%s" whitespace-style)
+        (message "foo: %s" whitespace-style)
         (erase-buffer)
         (insert (yaml-encode filtered-obj))
         (whitespace-cleanup)
