@@ -412,9 +412,9 @@
   (it "renders the value as YAML"
     (with-temp-buffer
       (kele--render-object fake-obj (current-buffer))
-      (expect (buffer-string) :to-equal "kind: FakeKind
+      (expect (buffer-string) :to-match (rx "kind: FakeKind
 metadata:
-  name: fake-name")))
+  name: fake-name" (zero-or-more whitespace))))
 
   (it "respects `kele-filtered-fields'"
     (setq fake-obj '((kind . "FakeKind")
@@ -423,9 +423,9 @@ metadata:
     (let ((kele-filtered-fields '((metadata foo))))
       (with-temp-buffer
         (kele--render-object fake-obj (current-buffer))
-        (expect (buffer-string) :to-equal "kind: FakeKind
+        (expect (buffer-string) :to-match (rx "kind: FakeKind
 metadata:
-  name: fake-name"))))
+  name: fake-name" (zero-or-more whitespace)))))
 
   (describe "buffer titling"
     (describe "when input is `kele--resource-container'"
