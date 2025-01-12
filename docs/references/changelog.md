@@ -23,6 +23,11 @@ versioning][semver].
 - Implemented `kele-kill-port-forward` for terminating port-forwards that were
   created using `kele-port-forward`
 - Rename `kele-proxy` to `kele-ports`
+- Implemented [server-side printing] for `kele-list`. This means that, for all
+  resource types, `kele-list` now prints all "resource-specific" columns, just
+  like `kubectl get` does
+
+[server-side printing]: https://kubernetes.io/docs/reference/using-api/api-concepts/#receiving-resources-as-tables
 
 ### Changed
 
