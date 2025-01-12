@@ -41,17 +41,17 @@ with Kele.
 
 ## Screenshots
 
-=== "Overview"
+=== "Resource listing"
+
+    ![](./img/kele-list.png)
+
+=== "Resource-specific actions"
 
     ![](./img/overview.png)
 
 === "Menu bar integration"
 
     ![](./img/menu-bar.png)
-
-=== "Resource listing"
-
-    ![](./img/kele-list.png)
 
 === "`doom-modeline` integration"
 

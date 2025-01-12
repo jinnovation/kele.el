@@ -139,13 +139,19 @@ NAMESPACE GVK NAME PROCESS).")
   "Which major mode to use for YAML highlighting.
 
 Set to nil to disable YAML highlighting."
-  :type '(choice (const nil) symbol))
+  :type '(choice (const nil) symbol)
+  :group 'kele)
+
+(defcustom kele-max-column-width 40
+  "Maximum width to use for column display in `kele-list-mode'."
+  :type 'integer
+  :group 'kele)
 
 (define-error 'kele-cache-lookup-error
-  "Kele failed to find the requested resource in the cache.")
+              "Kele failed to find the requested resource in the cache.")
 (define-error 'kele-request-error "Kele failed in querying the Kubernetes API")
 (define-error 'kele-ambiguous-groupversion-error
-  "Found multiple group-versions associated with the given resource")
+              "Found multiple group-versions associated with the given resource")
 
 (defface kele-disabled-face
   '((t (:inherit font-lock-comment-face)))
@@ -839,9 +845,9 @@ as."
                         'face 'warning)))
   (interactive
    (let ((ctx (if (and transient--prefix
-                      (slot-boundp transient--prefix 'scope))
-                 (oref transient--prefix scope)
-               (kele-current-context-name))))
+                       (slot-boundp transient--prefix 'scope))
+                  (oref transient--prefix scope)
+                (kele-current-context-name))))
      (list
       (kele--namespaces-complete :context ctx))))
   (kele-namespace-switch-for-context
@@ -1174,15 +1180,15 @@ Nil value for group denotes the core API."
   (let ((split (s-split "/" group-version)))
     (if (length= split 1) (list nil (car split)) split)))
 
-(cl-defun kele--list-resources (gvk &key namespace context)
-  "Return the List of the resources of type GVK.
+(cl-defun kele--tabulate-resources (gvk &key namespace context)
+  "Return the Table of the resources of type GVK.
 
-Return value is an alist mirroring the Kubernetes List type of
-the type in question.
+Return value is an alist mirroring the Kubernetes Table type for the resource in
+question.
 
 If NAMESPACE is provided, return only resources belonging to that
-namespace.  If NAMESPACE is provided for non-namespaced GVK,
-throws an error.
+namespace.  If NAMESPACE is provided for non-namespaced
+GVK, throws an error.
 
 If CONTEXT is not provided, use the current context."
   (when (and namespace
@@ -1190,7 +1196,8 @@ If CONTEXT is not provided, use the current context."
                    kele--global-discovery-cache
                    (kele--gv-string gvk)
                    (oref gvk kind))))
-    (user-error "Attempted to fetch un-namespaced resource `%s' as namespaced" (oref gvk kind)))
+    (user-error "Attempted to fetch un-namespaced resource `%s' as namespaced"
+                (oref gvk kind)))
 
   (let* ((ctx (or context (kele-current-context-name)))
          (port (kele--proxy-record-port
@@ -1200,18 +1207,21 @@ If CONTEXT is not provided, use the current context."
                       (if (oref gvk group)
                           (format "apis/%s/%s" (oref gvk group) (oref gvk version))
                         (format "api/%s" (oref gvk version)))
-                      (oref gvk kind))))
+                      (oref gvk kind)))
+         (headers '(("Accept" . "application/json;as=Table;g=meta.k8s.io;v=v1,application/json"))))
     ;; Block on proxy readiness
     (proxy-get kele--global-proxy-manager ctx :wait t)
-    (if-let* ((data (kele--retry (lambda () (plz 'get url :as #'json-read)))))
-        (let ((filtered-items (->> (append  (alist-get 'items data) '())
-                                   (-filter (lambda (item)
+    (if-let* ((data (kele--retry (lambda ()
+                                   (plz 'get url
+                                     :as #'json-read
+                                     :headers headers)))))
+        (let ((filtered-items (->> (append  (alist-get 'rows data) '())
+                                   (-filter (lambda (row)
                                               (if (not namespace) t
-                                                (let-alist item
-                                                  (equal .metadata.namespace namespace))))))))
-          (setf (cdr (assoc 'items data)) filtered-items)
+                                                (let-alist row
+                                                  (equal .object.metadata.namespace namespace))))))))
+          (setf (cdr (assoc 'rows data)) filtered-items)
           data)
-
       (signal 'error (format "Failed to fetch %s/%s/%s" (oref gvk group) (oref gvk version) (oref gvk kind))))))
 
 (cl-defun kele--fetch-resource-names (gvk &key namespace context)
@@ -1221,12 +1231,14 @@ If NAMESPACE is provided, return only resources belonging to that namespace.  If
 NAMESPACE is provided for non-namespaced KIND, throws an error.
 
 If CONTEXT is not provided, use the current context."
-  (let* ((resource-list (kele--list-resources
-                         gvk
-                        :namespace namespace
-                        :context context))
-         (items (append (alist-get 'items resource-list) '())))
-    (-map (lambda (item) (let-alist item .metadata.name)) items)))
+  (let* ((resource-table (kele--tabulate-resources
+                          gvk
+                          :namespace namespace
+                          :context context)))
+    (-map (lambda (row)
+            (let-alist row
+              .object.metadata.name))
+          (alist-get 'rows resource-table))))
 
 (cl-defun kele--render-object (object &optional buffer)
   "Render OBJECT in a buffer as YAML.
@@ -1487,11 +1499,11 @@ Also resets any specified peer arguments on the same prefix that
   ;; NB(@jinnovation): At some point we might need to expand this class to
   ;; include the "no value is a value" case, but that's not today. :D
   ((options
-   :initarg :options
-   :initform (lambda () nil)
-   :type function
-   :documentation
-   "Function that returns the options for this infix to cycle through.
+    :initarg :options
+    :initform (lambda () nil)
+    :type function
+    :documentation
+    "Function that returns the options for this infix to cycle through.
 
 The car will be the default value.")))
 
@@ -1675,7 +1687,7 @@ prompting and the function simply returns the single option."
 (defun kele--list-get-at-point ()
   "`kele-get's the current object at point."
   (let-alist (vtable-current-object)
-    (kele-get kele--list-context .metadata.namespace kele--list-gvk .metadata.name)))
+    (kele-get kele--list-context .object.metadata.namespace kele--list-gvk .object.metadata.name)))
 
 (defun kele-list-table-dwim ()
   "Run the default action on `kele-list' table entries.
@@ -1686,23 +1698,22 @@ resource.
 Otherwise, simply `kele-get' the resource at point."
   (interactive nil kele-list-mode)
   (let* ((tbl (vtable-current-table))
-        (col (vtable-current-column))
-        (colname (vtable-column tbl col)))
+         (col (vtable-current-column))
+         (colname (vtable-column tbl col)))
     (if (string-equal colname "Owner(s)")
         (let-alist (vtable-current-object)
-          ;; TODO: Implement selection for multi-owner
-          (cond ((>= (length .metadata.ownerReferences) 1)
+          (cond ((>= (length .object.metadata.ownerReferences) 1)
                  (kele-get
                   kele--list-context
-                  .metadata.namespace
+                  .object.metadata.namespace
                   (kele--gvk-create :kind
                                     (alist-get 'name
                                                (kele--get-discovery-resource
                                                 kele--global-discovery-cache
-                                                (alist-get 'kind (elt .metadata.ownerReferences 0))
+                                                (alist-get 'kind (elt .object.metadata.ownerReferences 0))
                                                 :lookup-key
                                                 'kind)))
-                  (alist-get 'name (elt .metadata.ownerReferences 0))))
+                  (alist-get 'name (elt .object.metadata.ownerReferences 0))))
                 (t (kele--list-get-at-point))))
       (kele--list-get-at-point))))
 
@@ -1729,120 +1740,125 @@ Otherwise, simply `kele-get' the resource at point."
     (define-key map (kbd "g") #'kele-list-refresh)
     map))
 
-;; TODO: Let each entry also optionally contain the column spec, e.g. :width and
-;; :align parameters
-(defvar kele--list-columns
-  '((nil . (("Name" . (lambda (r)
-                        (let-alist r .metadata.name)))
-            ("Namespace" . (lambda (r) (let-alist r
-                                         (if (not .metadata.namespace)
-                                             (propertize "N/A" 'face 'kele-disabled-face)
-                                           .metadata.namespace))))
-            ("Created" . (lambda (r) (let-alist r .metadata.creationTimestamp)))
-            ("Owner(s)" . (lambda (r)
-                            (let-alist r
-                              (if (not .metadata.ownerReferences)
-                                  (propertize "N/A" 'face 'kele-disabled-face)
-                                (if (> (length .metadata.ownerReferences) 1)
-                                    "Multiple"
-                                  (let-alist (elt .metadata.ownerReferences 0)
-                                    (format "%s/%s" .kind .name)))))))))
-    ;; NB(@jinnovation): A namespace can be in one of two phaces: Active or
-    ;; Terminating.
-    ;;
-    ;; See: https://github.com/kubernetes/design-proposals-archive/blob/main/architecture/namespaces.md#phases
-    (namespaces . (("Phase" . (lambda (r)
-                                 (let-alist r
-                                   ;; TODO: On cursor hover, display info about
-                                   ;; the implications of the phase. For
-                                   ;; example, for Terminating, explain that no
-                                   ;; add'l resources can be created in that
-                                   ;; namespace during that time.
-                                   ;;
-                                   ;; Maybe a good use case for Eldoc?
-                                   (propertize .status.phase 'face
-                                               (cond ((string-equal
-                                                       .status.phase "Active")
-                                                      'success)
-                                                     ((string-equal
-                                                       .status.phase
-                                                       "Terminating")
-                                                      'warning)
-                                                     (t 'default))))))))
-    (secrets . (("Type" . (lambda (r) (alist-get 'type r)))))
-    (configmaps . (("Data" . (lambda (r)
-                               (length (map-keys (alist-get 'data r)))))))
-    (pods . (("Ready" . (lambda (r)
-                          (let-alist r (format "%s/%s"
-                                               (->> .status.containerStatuses
-                                                    (-map (lambda (status)
-                                                            (alist-get 'ready status)))
-                                                    (-non-nil)
-                                                    (length))
-                                               (length .status.containerStatuses)))))
-             ("Status" . (lambda (r)
-                           (let-alist r .status.phase)))
-             ("Restarts" . (lambda (r)
-                             (let-alist r
-                               (->> .status.containerStatuses
-                                    (-map (lambda (status)
-                                            (alist-get 'restartCount status)))
-                                    (-sum)))))))
-    (deployments . (("Ready" . (lambda (r)
-                                 (let-alist r (format "%s/%s" .status.readyReplicas .status.replicas))))
-                    ("Up-to-date" . (lambda (r)
-                                      (let-alist r .status.updatedReplicas)))
-                    ("Available" . (lambda (r) (let-alist r
-                                                 .status.readyReplicas))))))
-  "Alist containing column specifications for `kele-list'.
+;; TODO: Document how people can customize this to add styling for CRD-specific
+;; columns.
+(defvar kele-column-faces
+  '((Status . ((Active . success)
+               (Running . success)
+               (Error . error)
+               (Terminating . warning)
+               (ImagePullBackOff . warning)
+               (Completed . kele-disabled-face))))
+  "Alist associated column names and their values to specific faces.")
 
-Keys are symbols representing the plural form of Kubernetes
-resource kinds, e.g. `deployments'.  Values are alists mapping
-column names to unary functions that take the resource object and
-return the corresponding value.
-
-The nil key contains columns general to all resources.")
-
-(defun kele--make-list-vtable (gvk context namespace)
+(defun kele--vtable-tabulate (gvk context namespace)
   "Construct an interactive vtable listing resources of GVK.
 
 CONTEXT and NAMESPACE are according to Kubernetes conventions and
 serve to further specify the resources to list.
 
-If NAMESPACE is nil, displays resources for all namespaces."
-  (let ((columns
-         (append
-          ;; FIXME: Pull these from the nil-key entries in kele--list-columns
-          '((:name "Name" :width 30 :align left)
-            (:name "Namespace" :width 20 :align left)
-            (:name "GVK" :width 10 :align left)
-            (:name "Owner(s)" :width 20 :align left)
-            (:name "Created" :width 30 :align left))
-          (mapcar (lambda (key)
-                    `(:name ,key :width ,(length key) :align left))
-                  (map-keys (alist-get (intern (oref gvk kind)) kele--list-columns))))))
+If NAMESPACE is nil, displays resources for all namespaces.
+
+Uses server rendering to retrieve the columns and their values.  For more
+details, see:
+https://kubernetes.io/docs/reference/using-api/api-concepts/#receiving-resources-as-tables."
+  (let* ((resource-table (kele--tabulate-resources
+                          gvk
+                          :context context
+                          :namespace namespace))
+         (no-owners (->> (alist-get 'rows resource-table)
+                         (-map (lambda (row)
+                                 (length (let-alist row
+                                           .object.metadata.ownerReferences))))
+                         (-none-p (lambda (num-owners) (> num-owners 0)))))
+         (no-namespaces (->> (alist-get 'rows resource-table)
+                             (-map (lambda (row)
+                                     (let-alist row
+                                       .object.metadata.namespace)))
+                             (-none-p #'identity)))
+         (colnames (-map (lambda (coldef)
+                           (let-alist coldef .name))
+                         (-filter (lambda (coldef)
+                                    (let-alist coldef (= .priority 0)))
+                                  (append (alist-get 'columnDefinitions
+                                                     resource-table)
+                                          '()))))
+         (f-max-len (lambda (colname)
+                      (let ((col-index (-find-index (-partial
+                                                     #'string-equal
+                                                     colname)
+                                                    colnames)))
+                        (->> (alist-get 'rows resource-table)
+                             (-map (lambda (row)
+                                     (length
+                                      (prin1-to-string
+                                       (elt (alist-get
+                                             'cells row)
+                                            col-index)))))
+                             (apply #'max)))))
+         (column-specs (-map (lambda (colname)
+                               `(:name
+                                 ,colname
+                                 :width ,(min
+                                          kele-max-column-width
+                                          (max (funcall f-max-len colname) (length colname)))
+                                 :align left))
+                             colnames)))
     (make-vtable
      :insert nil
      :use-header-line nil
+     :divider-width 3
      :objects-function
      (lambda ()
-       (let ((resource-list (kele--list-resources
-                             gvk
-                             :context context
-                             :namespace namespace)))
-         (alist-get 'items resource-list)))
-     :sort-by '((0 ascend) (1 ascend))
-     :columns columns
+       (alist-get 'rows resource-table))
+     :sort-by '((0 ascend (1 ascend)))
+     :columns (append
+               ;; FIXME: Apply max-length logic to namespace and owner cols as
+               ;; well
+               (unless (or namespace no-namespaces) '((:name "Namespace" :width 15 :align left)))
+               (unless no-owners
+                 '((:name "Owner(s)"
+                    :width 10
+                    :align left
+                    :formatter (lambda (value)
+                                 (if (string-equal value "N/A")
+                                     (propertize value 'face 'kele-disabled-face)
+                                   value)))))
+               column-specs)
      :keymap kele-list-table-map
+     :face 'default
+     :formatter
+     (lambda (value index table)
+       (propertize (if (stringp value) value (prin1-to-string value))
+                   'face
+                   (if-let* ((column-faces (alist-get (intern (vtable-column table index)) kele-column-faces))
+                             (value-style (alist-get (intern value) column-faces)))
+                       value-style
+                     'default)))
      :getter
      (lambda (object column vtable)
-       (when-let* ((column-specs (append
-                                  `(("GVK" . (lambda (_) (kele--string ,gvk))))
-                                  (alist-get nil kele--list-columns)
-                                  (alist-get (intern (oref gvk kind)) kele--list-columns)))
-                   (colname (vtable-column vtable column))
-                   (f (alist-get colname column-specs nil nil #'string-equal)))
-         (funcall f object))))))
+       (let* ((colname (vtable-column vtable column))
+              (col-index (-find-index (-partial #'string-equal colname)
+                                      colnames))
+              (col-value (cond (col-index
+                                (elt (alist-get 'cells object) col-index))
+                               ((string-equal colname "Namespace")
+                                (let-alist object .object.metadata.namespace))
+                               ((string-equal colname "Owner(s)")
+                                (let* ((owners (let-alist object
+                                                 .object.metadata.ownerReferences))
+                                       (owner (elt owners 0)))
+                                  (if-let* ((kind (alist-get 'kind owner))
+                                            (name (alist-get 'name owner)))
+                                      (format "%s/%s" kind name)
+                                    "N/A"))))))
+         ;; TODO: On cursor hover on specific columns, display relevant
+         ;; documentation. For example, in the Phase column for namespaces, when
+         ;; the value is "Terminating", can explain that no add'l resources can
+         ;; be created in that namespace during that time.
+         ;;
+         ;; Maybe a good use case for Eldoc?
+         col-value)))))
 
 (define-derived-mode kele-list-mode fundamental-mode "Kele: List"
   "Major mode for listing multiple resources of a single kind."
@@ -1926,9 +1942,11 @@ KIND is not namespaced, returns an error."
 
       (let ((inhibit-read-only t))
         (erase-buffer)
-        (insert "Context: " context "\n")
+        (insert (propertize "Context: " 'face 'header-line) context "\n")
+        (insert (propertize "Namespace: " 'face 'header-line) (or namespace "<all namespaces>") "\n")
+        (insert (propertize "Kind: " 'face 'header-line) kind "\n")
         (insert "\n")
-        (vtable-insert (kele--make-list-vtable gvk context namespace)))
+        (vtable-insert (kele--vtable-tabulate gvk context namespace)))
       (kele-list-mode))
     (select-window (display-buffer buf))))
 
@@ -2145,11 +2163,11 @@ The port-forward must have been initiated with
   (interactive
    (if (not (kele--port-forwards-active-p))
        (error "[kele] No port-forwards active!")
-    (let* ((completion-extra-properties
-            (list :affixation-function #'kele--port-forward-affixation))
-           (port (completing-read "Port-forward to kill: "
-                                  (mapcar 'car kele--active-port-forwards))))
-      (list port))))
+     (let* ((completion-extra-properties
+             (list :affixation-function #'kele--port-forward-affixation))
+            (port (completing-read "Port-forward to kill: "
+                                   (mapcar 'car kele--active-port-forwards))))
+       (list port))))
 
   (let* ((record (alist-get port kele--active-port-forwards nil nil #'equal))
          (proc (car (last record))))
@@ -2195,9 +2213,9 @@ CONTEXT and NAMESPACE are used to identify where the deployment lives."
    (kele--namespace-infix)]
 
   [["General Actions"
-   (kele-get)
-   (kele-delete)
-   (kele-list)]
+    (kele-get)
+    (kele-delete)
+    (kele-list)]
 
    [:description
     (lambda ()
@@ -2292,8 +2310,8 @@ The `scope' is the current context name."
     (kele-namespace-switch-for-current-context)
     (kele--toggle-proxy-current-context)]
    ["Actions"
-   (kele-context-rename)
-   (kele-context-delete)]
+    (kele-context-rename)
+    (kele-context-delete)]
    ["Files"
     (kele-find-kubeconfig)]]
   (interactive)
@@ -2313,22 +2331,22 @@ The `scope' is the current context name."
   "Menu for Kubernetes management.
 
 Similar to `kele-dispatch'."
-   '("Kubernetes"
-     ("Configuration"
+  '("Kubernetes"
+    ("Configuration"
 
-      ;; placeholder for dynamic fill-in (see `kele--update-contexts-menu')
-      ["Switch context to..."
-       nil
-       :help "Waiting for kubeconfig sync to complete..."
-       :enable nil]
-      ["Switch namespace for current context to..."
-       nil
-       :help "Waiting for kubeconfig sync to complete..."
-       :enable nil]
-      "---"
-      ["Find config file"
-       kele-find-kubeconfig
-       :help "Open the active kubeconfig file in a buffer"])))
+     ;; placeholder for dynamic fill-in (see `kele--update-contexts-menu')
+     ["Switch context to..."
+      nil
+      :help "Waiting for kubeconfig sync to complete..."
+      :enable nil]
+     ["Switch namespace for current context to..."
+      nil
+      :help "Waiting for kubeconfig sync to complete..."
+      :enable nil]
+     "---"
+     ["Find config file"
+      kele-find-kubeconfig
+      :help "Open the active kubeconfig file in a buffer"])))
 
 (defun kele--update-contexts-menu ()
   "Fill in the context-switch sub-menu with candidate contexts."
