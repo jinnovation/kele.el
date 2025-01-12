@@ -1700,23 +1700,20 @@ Otherwise, simply `kele-get' the resource at point."
   (let* ((tbl (vtable-current-table))
          (col (vtable-current-column))
          (colname (vtable-column tbl col)))
-    ;; FIXME: Incorporate the Owner column (and custom columns in general) back
-    ;; in
     (if (string-equal colname "Owner(s)")
         (let-alist (vtable-current-object)
-          ;; TODO: Implement selection for multi-owner
-          (cond ((>= (length .metadata.ownerReferences) 1)
+          (cond ((>= (length .object.metadata.ownerReferences) 1)
                  (kele-get
                   kele--list-context
-                  .metadata.namespace
+                  .object.metadata.namespace
                   (kele--gvk-create :kind
                                     (alist-get 'name
                                                (kele--get-discovery-resource
                                                 kele--global-discovery-cache
-                                                (alist-get 'kind (elt .metadata.ownerReferences 0))
+                                                (alist-get 'kind (elt .object.metadata.ownerReferences 0))
                                                 :lookup-key
                                                 'kind)))
-                  (alist-get 'name (elt .metadata.ownerReferences 0))))
+                  (alist-get 'name (elt .object.metadata.ownerReferences 0))))
                 (t (kele--list-get-at-point))))
       (kele--list-get-at-point))))
 
@@ -1814,10 +1811,12 @@ https://kubernetes.io/docs/reference/using-api/api-concepts/#receiving-resources
      (lambda ()
        (alist-get 'rows resource-table))
      :sort-by '((0 ascend (1 ascend)))
-     :columns (if namespace
-                  column-specs
-                ;; FIXME: Apply max-length logic to namespace col as well
-                (append '((:name "Namespace" :width 20 :align left)) column-specs))
+     :columns (append
+               ;; FIXME: Apply max-length logic to namespace and owner cols as
+               ;; well
+               (unless namespace '((:name "Namespace" :width 15 :align left)))
+               '((:name "Owner(s)" :width 10 :align left))
+               column-specs)
      :keymap kele-list-table-map
      :face 'default
      :getter
@@ -1828,7 +1827,13 @@ https://kubernetes.io/docs/reference/using-api/api-concepts/#receiving-resources
               (col-value (cond (col-index
                                 (elt (alist-get 'cells object) col-index))
                                ((string-equal colname "Namespace")
-                                (let-alist object .object.metadata.namespace)))))
+                                (let-alist object .object.metadata.namespace))
+                               ((string-equal colname "Owner(s)")
+                                (let* ((owners (let-alist object
+                                                 .object.metadata.ownerReferences))
+                                       (owner (elt owners 0)))
+                                  (format "%s/%s" (alist-get 'kind owner)
+                                          (alist-get 'name owner)))))))
          ;; TODO: On cursor hover on specific columns, display relevant
          ;; documentation. For example, in the Phase column for namespaces, when
          ;; the value is "Terminating", can explain that no add'l resources can
