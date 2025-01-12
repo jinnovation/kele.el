@@ -15,7 +15,9 @@ versioning][semver].
 
 - `kele-list` now supports kind-specific columns. For example, listing
   Deployments will now show columns `READY`, `UP-TO-DATE`, and `AVAILABLE`,
-  similar to `kubectl get deployments`
+  similar to `kubectl get deployments`. This is done via [server-side printing],
+  meaning that you are guaranteed to see exactly the same thing as you'd get
+  with `kubectl`
 - `kele-resource` now has a keybinding to follow logs for resources that support
   it
 - `kele-resource` now has a suffix for port-forwarding to resources that support
@@ -23,9 +25,6 @@ versioning][semver].
 - Implemented `kele-kill-port-forward` for terminating port-forwards that were
   created using `kele-port-forward`
 - Rename `kele-proxy` to `kele-ports`
-- Implemented [server-side printing] for `kele-list`. This means that, for all
-  resource types, `kele-list` now prints all "resource-specific" columns, just
-  like `kubectl get` does
 
 [server-side printing]: https://kubernetes.io/docs/reference/using-api/api-concepts/#receiving-resources-as-tables
 
