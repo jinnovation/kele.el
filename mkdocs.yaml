@@ -10,6 +10,9 @@ repo_url: https://github.com/jinnovation/kele.el
 
 nav:
 - Home: index.md
+- Recipes:
+  - recipes/index.md
+  - recipes/context-auth.md
 - How-Tos:
   - how-tos/usage.md
   - how-tos/customization.md
