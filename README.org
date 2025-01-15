@@ -7,8 +7,6 @@
 #+html: <a href="https://codecov.io/gh/jinnovation/kele.el" > <img src="https://codecov.io/gh/jinnovation/kele.el/branch/main/graph/badge.svg?token=LR7RDREPZF"/> </a>
 #+html: <a href="https://github.com/jinnovation/kele.el/actions"> <img src="https://github.com/jinnovation/kele.el/workflows/test/badge.svg?branch=main"/></a>
 
-[[file:docs/img/kele-list.png]]
-
 Kele (/kě lè/, or /kə-ˈlə/) ("Kubernetes Enablement Layer for Emacs")
 is a Kubernetes cluster management package. It empowers you to perform
 operations as coarse or fine-grained as you need, *fast*, and get back to your
@@ -21,6 +19,15 @@ configs.
 *For full documentation, please visit [[https://jonathanj.in/kele.el][jonathanj.in/kele.el]]*.
 
 /Kele is not an official Kubernetes project./
+
+* Highlights
+
+ | Feature                     | Screenshot                      |
+ |-----------------------------+---------------------------------|
+ | Resource listing            | [[file:docs/img/kele-list.png]]     |
+ | Resource-specific actions   | [[file:docs/img/overview.png]]      |
+ | Menu bar integration        | [[file:docs/img/menu-bar.png]]      |
+ | `doom-modeline` integration | [[file:docs/img/doom-modeline.png]] |
 
 * Getting Started
 
