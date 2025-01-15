@@ -511,6 +511,10 @@ If BOOTSTRAP is non-nil, perform an initial read."
   "Stop polling for CACHE."
   (cancel-timer (oref cache timer)))
 
+(defun kele--parse-yaml (s)
+  "Parse YAML string S in a standard way."
+  (yaml-parse-string s :object-type 'alist :sequence-type 'list)
+  )
 (defvar kele--enabled nil
   "Flag indicating whether Kele has already been enabled or not.
 
@@ -543,9 +547,7 @@ retval into `async-wait'."
                     (require 'yaml)
                     (require 'f)
                     ,(async-inject-variables "kele-kubeconfig-path")
-                    (yaml-parse-string (f-read kele-kubeconfig-path)
-                                       :object-type 'alist
-                                       :sequence-type 'list))
+                    (kele--parse-yaml (f-read kele-kubeconfig-path)))
                  func-complete)))
 
 (cl-defmethod kele--cache-start ((cache kele--kubeconfig-cache) &key bootstrap)
@@ -2131,6 +2133,13 @@ PORTS is used according to `completion-extra-properties'."
                              (car (nthcdr 1 record)))
                      'face 'completions-annotations))))
           ports))
+
+(cl-defun kele--get-ports-for-resource (obj)
+  "Get the exposed ports for the resource OBJ.
+
+OBJ must be a `kele--resource-container'."
+  (pcase (alist-get 'kind (oref obj resource))
+    ("Service" (kele--service-ports obj))))
 
 (cl-defun kele--service-ports (obj &key (protocol nil))
   "Get the exposed ports for service OBJ.
