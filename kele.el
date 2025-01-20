@@ -513,8 +513,8 @@ If BOOTSTRAP is non-nil, perform an initial read."
 
 (defun kele--parse-yaml (s)
   "Parse YAML string S in a standard way."
-  (yaml-parse-string s :object-type 'alist :sequence-type 'list)
-  )
+  (yaml-parse-string s :object-type 'alist :sequence-type 'list))
+
 (defvar kele--enabled nil
   "Flag indicating whether Kele has already been enabled or not.
 

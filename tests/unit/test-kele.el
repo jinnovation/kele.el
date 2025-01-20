@@ -725,51 +725,43 @@ metadata:
       (expect 'vtable-revert-command :to-have-been-called))))
 
 (describe "`kele--get-ports-for-resource'"
-  (dolist (var '(("Service"
-                  "
-kind: Service
-spec:
-  ports:
-  - name: foo
-    protocol: TCP
-    port: 8081
-"
-                  '(((protocol . "TCP")
-                     (port . 8081)
-                     (name . "foo"))))
-                 ("Deployment" "
-kind: Deployment
-apiVersion: \"apps/v1\"
-spec:
-  template:
-    spec:
-      containers:
-      - name: container0
-        ports:
-        - name: whatever
-          containerPort: 1234
-          protocol: TCP
-        - name: foo
-          containerPort: 5678
-          protocol: TCP
-      - name: fluentbit
-        ports:
-        - name: rest
-          containerPort: 8081
-          protocol: TCP
-        - name: foo
-          containerPort: 9999
-          protocol: TCP
-"
-                  '(((protocol . "TCP") (port . 1234) (name . "whatever"))
-                    ((protocol . "TCP") (port . 5678) (name . "foo"))
-                    ((protocol . "TCP") (port . 8081) (name . "rest"))
-                    ((protocol . "TCP") (port . 9999) (name . "foo"))))))
-    (it (format "retrieves ports for %s" (car var))
-      (expect (kele--get-ports-for-resource
-               (kele--resource-container-create
-                :resource (kele--parse-yaml (nth 1 var))))
-              :to-have-same-items-as (nth 2 var)))))
+  (it "retrieves ports for Deployment"
+    (expect (kele--get-ports-for-resource
+             (kele--resource-container-create
+              :resource
+              '((kind . "Deployment")
+                (apiVersion . "apps/v1")
+                (spec . ((template . ((spec . ((containers . (((name . "container0")
+                                                               (ports . (((name . "whatever")
+                                                                          (containerPort . 1234)
+                                                                          (protocol . "TCP"))
+                                                                         ((name . "foo")
+                                                                          (containerPort . 5678)
+                                                                          (protocol . "TCP")))))
+                                                              ((name . "fluentbit")
+                                                               (ports . (((name . "rest")
+                                                                          (containerPort . 8081)
+                                                                          (protocol . "TCP"))
+                                                                         ((name . "foo")
+                                                                          (containerPort . 9999)
+                                                                          (protocol
+                                                                           . "TCP"))))))))))))))))
+            :to-have-same-items-as
+            (list '((name . "whatever") (port . 1234) (protocol . "TCP"))
+                  '((name . "foo") (port . 5678) (protocol . "TCP")))))
+  (it "retrieves ports for Service"
+    (expect
+     (kele--get-ports-for-resource (kele--resource-container-create
+                                    :resource '((kind . "Service")
+                                                (spec . ((ports . (((name . "whatever")
+                                                                    (protocol . "TCP")
+                                                                    (port . 9999))
+                                                                   ((name . "foo")
+                                                                    (protocol . "TCP")
+                                                                    (port . 8081)))))))))
+     :to-have-same-items-as
+     (list '((name . "foo") (protocol . "TCP") (port . 8081))
+           '((name . "whatever") (protocol . "TCP") (port . 9999))))))
 
 (describe "`kele--service-ports'"
   (it "retrieves the port specs"
