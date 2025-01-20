@@ -2086,7 +2086,7 @@ NAMESPACE and CONTEXT are used to identify the resource type to query for."
           (port (if (string-equal (oref resource kind) "services")
                     (completing-read "Port: "
                                      (-map (lambda (port-spec) (number-to-string (alist-get 'port port-spec)))
-                                           (kele--service-ports resource))
+                                           (kele--get-ports-for-resource resource))
                                      nil t)
                   (number-to-string (read-number "Port: ")))))
      (list context ns gvk name port)))
@@ -2137,7 +2137,10 @@ PORTS is used according to `completion-extra-properties'."
 (cl-defun kele--get-ports-for-resource (obj)
   "Get the exposed ports for the resource OBJ.
 
-OBJ must be a `kele--resource-container'."
+OBJ must be a `kele--resource-container'.
+
+Return value is a list of alists consisting of keys `name',
+`protocol', and `port'."
   (pcase (alist-get 'kind (oref obj resource))
     ("Service" (kele--service-ports obj))))
 

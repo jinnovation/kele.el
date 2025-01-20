@@ -744,8 +744,7 @@ metadata:
                                                                           (protocol . "TCP"))
                                                                          ((name . "foo")
                                                                           (containerPort . 9999)
-                                                                          (protocol
-                                                                           . "TCP"))))))))))))))))
+                                                                          (protocol . "TCP"))))))))))))))))
             :to-have-same-items-as
             (list '((name . "whatever") (port . 1234) (protocol . "TCP"))
                   '((name . "foo") (port . 5678) (protocol . "TCP")))))
