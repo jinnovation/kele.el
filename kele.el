@@ -2281,7 +2281,7 @@ CONTEXT and NAMESPACE are used to identify where the deployment lives."
   ["Work with..."
    ("c" "Configurations" kele-config)
    ("r" "Resources" kele-resource)
-   ("p" "Proxy servers" kele-proxy)])
+   ("p" "Proxy servers" kele-ports)])
 
 (transient-define-suffix kele--toggle-proxy-current-context (context)
   :key "p"
