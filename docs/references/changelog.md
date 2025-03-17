@@ -28,6 +28,10 @@ versioning][semver].
 
 [server-side printing]: https://kubernetes.io/docs/reference/using-api/api-concepts/#receiving-resources-as-tables
 
+### Fixed
+
+- Fixed `kele-transient` using non-existent `kele-proxy` instead of `kele-ports`
+
 ### Changed
 
 - Renamed `kele-after-context-switch-hook` to
