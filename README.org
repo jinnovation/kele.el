@@ -51,4 +51,4 @@ configs.
 
 * Stargazers over time
 
-  [[https://starchart.cc/jinnovation/kele.el][file:https://starchart.cc/jinnovation/kele.el.svg]]
+  [[https://starchart.cc/jinnovation/kele.el][file:https://starchart.cc/jinnovation/kele.el.svg?variant=adaptive]]
