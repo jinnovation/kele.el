@@ -148,13 +148,13 @@ Set to nil to disable YAML highlighting."
   :group 'kele)
 
 (define-error 'kele-cache-lookup-error
-              "Kele failed to find the requested resource in the cache.")
+    "Kele failed to find the requested resource in the cache.")
 (define-error 'kele-request-error "Kele failed in querying the Kubernetes API")
 (define-error 'kele-ambiguous-groupversion-error
-              "Found multiple group-versions associated with the given resource")
+    "Found multiple group-versions associated with the given resource")
 
 (defface kele-disabled-face
-  '((t (:inherit font-lock-comment-face)))
+    '((t (:inherit font-lock-comment-face)))
   "Face used for disabled or not-applicable values."
   :group 'kele)
 
@@ -327,10 +327,10 @@ with the filesystem.")
 
 (cl-defmethod kele--wait ((cache kele--kubeconfig-cache)
                           &key
-                          (count 10)
-                          (wait 1)
-                          (timeout 100)
-                          (msg "Waiting for kubeconfig update to finish..."))
+                            (count 10)
+                            (wait 1)
+                            (timeout 100)
+                            (msg "Waiting for kubeconfig update to finish..."))
   "Wait for CACHE to finish updating.
 
 COUNT, WAIT, and TIMEOUT are as defined in `kele--retry'.
@@ -338,8 +338,8 @@ COUNT, WAIT, and TIMEOUT are as defined in `kele--retry'.
 MSG is the progress reporting message to display."
   (when (oref cache update-in-progress)
     (kele--with-progress msg
-      (kele--retry (lambda () (not (oref cache update-in-progress)))
-                   :count count :wait wait :timeout timeout))))
+        (kele--retry (lambda () (not (oref cache update-in-progress)))
+         :count count :wait wait :timeout timeout))))
 
 (defun kele--get-host-for-context (&optional context)
   "Get host for CONTEXT."
@@ -563,8 +563,8 @@ contents."
     (kele--cache-update cache)))
 
 (cl-defstruct (kele--gvk
-               (:constructor kele--gvk-create)
-               (:copier nil))
+                (:constructor kele--gvk-create)
+                (:copier nil))
   "Group-Version-Kind object.
 
 GROUP and VERSION are not always set.  KIND is always set."
@@ -596,8 +596,8 @@ the current context."
    :context (or context (kele-current-context-name))))
 
 (cl-defstruct (kele--proxy-record
-               (:constructor kele--proxy-record-create)
-               (:copier nil))
+                (:constructor kele--proxy-record-create)
+                (:copier nil))
   "Record of a proxy server process.
 
 PROCESS is the process itself.
@@ -653,16 +653,16 @@ existing process *regardless of the value of PORT*."
       record
     (kele--with-progress (format "Starting proxy server process for `%s'..."
                                  context)
-      (let* ((selected-port (or port (kele--random-port)))
-             (record (kele--proxy-record-create
-                      :process (kele--proxy-process context :port selected-port :wait nil)
-                      :timer (when ephemeral
-                               (run-with-timer kele-proxy-ttl nil (-partial #'proxy-stop
-                                                                            manager
-                                                                            context)))
-                      :port selected-port)))
-        (oset manager records (cons `(,context . ,record) (oref manager records)))
-        record))))
+        (let* ((selected-port (or port (kele--random-port)))
+               (record (kele--proxy-record-create
+                        :process (kele--proxy-process context :port selected-port :wait nil)
+                        :timer (when ephemeral
+                                 (run-with-timer kele-proxy-ttl nil (-partial #'proxy-stop
+                                                                              manager
+                                                                              context)))
+                        :port selected-port)))
+          (oset manager records (cons `(,context . ,record) (oref manager records)))
+          record))))
 
 (cl-defmethod proxy-get ((manager kele--proxy-manager)
                          context
@@ -868,7 +868,7 @@ as."
 STR, PRED, and ACTION are as defined in completion functions."
   (if (eq action 'metadata)
       '(metadata (annotation-function . kele--context-annotate)
-                 (category . kele-context))
+        (category . kele-context))
     (complete-with-action action (kele-context-names) str pred)))
 
 (defun kele--contexts-read (prompt initial-input history)
@@ -892,7 +892,7 @@ node `(elisp)Programmed Completion'."
                         'warning)))
   (interactive (list (completing-read "Context: " #'kele--contexts-complete)))
   (kele--with-progress (format "Switching to use context `%s'..." context)
-    (kele-kubectl-do "config" "use-context" context)
+      (kele-kubectl-do "config" "use-context" context)
     (run-hooks 'kele-after-context-switch-hook)
     (run-hook-with-args 'kele-context-after-switch-functions context)))
 
@@ -914,7 +914,7 @@ node `(elisp)Programmed Completion'."
   :description "Delete a context"
   (interactive (list (completing-read "Context: " #'kele--contexts-complete)))
   (kele--with-progress (format "Deleting context `%s'..." context)
-    (kele-kubectl-do "config" "delete-context" context)))
+      (kele-kubectl-do "config" "delete-context" context)))
 
 (cl-defun kele-proxy-stop (context)
   "Clean up the proxy for CONTEXT."
@@ -1003,8 +1003,8 @@ Returns the passed-in list of namespaces."
   namespace-names)
 
 (cl-defstruct (kele--resource-container
-               (:constructor kele--resource-container-create)
-               (:copier nil))
+                (:constructor kele--resource-container-create)
+                (:copier nil))
   "Container associating a Kubernetes RESOURCE with its CONTEXT and NAMESPACE.
 
 RESOURCE is expected to be an alist representing the Kubernetes
@@ -1042,13 +1042,13 @@ throws an error."
          (time (current-time-string))
          (group-versions
           (cond
-           ((and (oref gvk group) (oref gvk version)) (list (format "%s/%s"
-                                                                    (oref gvk group)
-                                                                    (oref gvk version))))
-           ((and (oref gvk version) (not (oref gvk group))) (list (oref gvk version)))
-           (t (kele--get-groupversions-for-type kele--global-discovery-cache
-                                                (oref gvk kind)
-                                                :context context)))))
+            ((and (oref gvk group) (oref gvk version)) (list (format "%s/%s"
+                                                                     (oref gvk group)
+                                                                     (oref gvk version))))
+            ((and (oref gvk version) (not (oref gvk group))) (list (oref gvk version)))
+            (t (kele--get-groupversions-for-type kele--global-discovery-cache
+                                                 (oref gvk kind)
+                                                 :context context)))))
 
     (when (> (length group-versions) 1)
       (signal 'kele-ambiguous-groupversion-error group-versions))
@@ -1085,9 +1085,9 @@ throws an error."
         (error (signal 'kele-request-error (error-message-string err)))))))
 
 (cl-defstruct (kele--resource-buffer-context
-               (:constructor kele--resource-buffer-context-create)
-               (:copier nil)
-               (:include kele--resource-container))
+                (:constructor kele--resource-buffer-context-create)
+                (:copier nil)
+                (:include kele--resource-container))
   "Contextual metadata for a `kele-get-mode' buffer."
   filtered-paths)
 
@@ -1104,7 +1104,7 @@ throws an error."
     (kele-refetch . "re-fetch the resource")))
 
 (define-minor-mode kele-get-mode
-  "Enable some Kele features in resource-viewing buffers.
+    "Enable some Kele features in resource-viewing buffers.
 
 Kele resource buffers are created when you run `kele-get'.  They
 show the requested Kubernetes object manifest.
@@ -1139,9 +1139,9 @@ show the requested Kubernetes object manifest.
                                  name
                                  namespace
                                  context)
-      (kele--render-object
-       (kele--get-resource gvk name :namespace namespace :context context)
-       (current-buffer)))))
+        (kele--render-object
+         (kele--get-resource gvk name :namespace namespace :context context)
+         (current-buffer)))))
 
 (defun kele--get-insert-header ()
   "Insert header into a `kele-get-mode' buffer."
@@ -1423,7 +1423,7 @@ This is idempotent."
 
 ;;;###autoload
 (define-minor-mode kele-mode
-  "Minor mode to enable listening on Kubernetes configs."
+    "Minor mode to enable listening on Kubernetes configs."
   :global t
   :keymap kele-mode-map
   :group 'kele
@@ -1638,16 +1638,16 @@ In order of priority, this function attempts the following:
                                     (transient-args)
                                     (transient-arg-value "--namespace=")))))
     (cond
-     ((or transient-arg-maybe permit-nil) transient-arg-maybe)
-     ((or (not (and group-version kind)) use-default)
-      (kele--default-namespace-for-context (kele--get-context-arg)))
-     ((not (kele--resource-namespaced-p
-            kele--global-discovery-cache
-            group-version
-            kind))
-      nil)
-     (t (completing-read prompt
-                         (kele--get-namespaces (kele--get-context-arg)))))))
+      ((or transient-arg-maybe permit-nil) transient-arg-maybe)
+      ((or (not (and group-version kind)) use-default)
+       (kele--default-namespace-for-context (kele--get-context-arg)))
+      ((not (kele--resource-namespaced-p
+             kele--global-discovery-cache
+             group-version
+             kind))
+       nil)
+      (t (completing-read prompt
+                          (kele--get-namespaces (kele--get-context-arg)))))))
 
 (cl-defun kele--get-groupversion-arg (&optional kind)
   "Get the group-version to use for a command.
@@ -1861,10 +1861,10 @@ https://kubernetes.io/docs/reference/using-api/api-concepts/#receiving-resources
          col-value)))))
 
 (define-derived-mode kele-list-mode fundamental-mode "Kele: List"
-  "Major mode for listing multiple resources of a single kind."
-  :group 'kele
-  :interactive nil
-  (read-only-mode 1))
+                     "Major mode for listing multiple resources of a single kind."
+                     :group 'kele
+                     :interactive nil
+                     (read-only-mode 1))
 
 (defun kele--vtable-beginning-of-table ()
   "Backport of `vtable-beginning-of-table' from Emacs HEAD.
@@ -1889,12 +1889,12 @@ See bug#58712.  Remove when Emacs 30 is released."
   "Refresh the `kele-list-mode' buffer."
   (interactive nil kele-list-mode)
   (kele--with-progress "[kele] Updating list buffer"
-    (save-excursion
-      (point-min)
-      (while-let ((match (text-property-search-forward 'vtable)))
-        (goto-char (prop-match-beginning match))
-        (vtable-revert-command)
-        (goto-char (prop-match-end match))))))
+      (save-excursion
+        (point-min)
+        (while-let ((match (text-property-search-forward 'vtable)))
+          (goto-char (prop-match-beginning match))
+          (vtable-revert-command)
+          (goto-char (prop-match-end match))))))
 
 (transient-define-suffix kele-list (group-version kind context namespace)
   "List all resources of a given GROUP-VERSION and KIND.
@@ -2385,9 +2385,9 @@ Similar to `kele-dispatch'."
 
 (cl-defun kele--mk-self-subject-access-review
     (&key resource
-          (group "*")
-          (verb 'get)
-          (version "*"))
+       (group "*")
+       (verb 'get)
+       (version "*"))
   "Stub out a SelfSubjectAccessReview for GROUP, RESOURCE, and VERB.
 
 Return the resulting SelfSubjectAccessReview in alist form."
@@ -2414,8 +2414,8 @@ If CONTEXT is not provided, uses current context."
     ;; Block on proxy readiness
     (proxy-get kele--global-proxy-manager ctx :wait t)
     (--> (plz
-           'post
-           url
+             'post
+             url
            :headers '(("Content-Type" . "application/json"))
            :body (json-encode (kele--mk-self-subject-access-review
                                :resource resource

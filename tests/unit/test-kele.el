@@ -337,7 +337,7 @@
 
     (it "fetches by kind"
       (expect (kele--get-discovery-resource kele--global-discovery-cache
-      "AmbiguousThingFoo" :lookup-key 'kind)
+                                            "AmbiguousThingFoo" :lookup-key 'kind)
               :to-be-truthy)))
 
   (describe "kele--get-singular-for-plural"
@@ -348,7 +348,7 @@
     (it "fetches singularName"
       (expect
        (kele--get-singular-for-plural kele--global-discovery-cache
-      "ambiguousthings")
+                                      "ambiguousthings")
        :to-equal
        "ambiguousthing"))
 
