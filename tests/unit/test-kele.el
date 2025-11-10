@@ -161,7 +161,7 @@
     (expect (oref kele--global-proxy-manager records) :to-equal nil)
     (expect kele--active-port-forwards :to-equal nil)))
 
-(describe "kele-context-rename with cache invalidation"
+(describe "kele-context-rename"
   (before-each
     (spy-on 'kele-kubectl-do)
     (spy-on 'kele--invalidate-caches-for-context-rename))
@@ -171,7 +171,7 @@
     (expect 'kele--invalidate-caches-for-context-rename
             :to-have-been-called-with "old-context" "new-context")))
 
-(describe "kele-context-delete with cache invalidation"
+(describe "kele-context-delete"
   (before-each
     (spy-on 'kele-kubectl-do)
     (spy-on 'kele--invalidate-caches-for-context-delete))
