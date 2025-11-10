@@ -1004,14 +1004,14 @@ Returns the passed-in list of namespaces."
 (defun kele--invalidate-caches-for-context-rename (old-name new-name)
   "Update all caches when context OLD-NAME is renamed to NEW-NAME."
   ;; Update namespaces cache
-  (when-let ((cached-ns (alist-get (intern old-name) kele--namespaces-cache)))
+  (when-let* ((cached-ns (alist-get (intern old-name) kele--namespaces-cache)))
     (setq kele--namespaces-cache
           (assoc-delete-all (intern old-name) kele--namespaces-cache))
     (add-to-list 'kele--namespaces-cache
                  `(,(intern new-name) . ,cached-ns)))
 
   ;; Update proxy manager records
-  (when-let ((proxy-record (cdr (assoc old-name (oref kele--global-proxy-manager records)))))
+  (when-let* ((proxy-record (cdr (assoc old-name (oref kele--global-proxy-manager records)))))
     (oset kele--global-proxy-manager records
           (assoc-delete-all old-name (oref kele--global-proxy-manager records)))
     (oset kele--global-proxy-manager records
