@@ -31,6 +31,7 @@ versioning][semver].
 ### Fixed
 
 - Fixed `kele-transient` using non-existent `kele-proxy` instead of `kele-ports`
+- Context rename and delete operations now properly update all affected caches
 
 ### Changed
 
