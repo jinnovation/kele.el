@@ -1030,13 +1030,10 @@ Returns the passed-in list of namespaces."
 
 (defun kele--invalidate-caches-for-context-delete (context)
   "Clear all caches when CONTEXT is deleted."
-  ;; Clear namespaces cache
   (kele--clear-namespaces-for-context context)
 
-  ;; Stop and clean up proxy
   (proxy-stop kele--global-proxy-manager context)
 
-  ;; Kill all port-forwards associated with this context
   (dolist (record kele--active-port-forwards)
     (when (equal (nth 1 record) context)
       (let ((port (nth 0 record))
@@ -1044,8 +1041,6 @@ Returns the passed-in list of namespaces."
         (kele--kill-process-quietly proc)
         (setq kele--active-port-forwards
               (assoc-delete-all port kele--active-port-forwards #'equal)))))
-
-  ;; Note: Discovery cache is keyed by host, not context name, so no cleanup needed
   )
 
 (cl-defstruct (kele--resource-container
