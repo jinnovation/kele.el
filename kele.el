@@ -1003,14 +1003,12 @@ Returns the passed-in list of namespaces."
 
 (defun kele--invalidate-caches-for-context-rename (old-name new-name)
   "Update all caches when context OLD-NAME is renamed to NEW-NAME."
-  ;; Update namespaces cache
   (when-let* ((cached-ns (alist-get (intern old-name) kele--namespaces-cache)))
     (setq kele--namespaces-cache
           (assoc-delete-all (intern old-name) kele--namespaces-cache))
     (add-to-list 'kele--namespaces-cache
                  `(,(intern new-name) . ,cached-ns)))
 
-  ;; Update proxy manager records
   (when-let* ((proxy-record (cdr (assoc old-name (oref kele--global-proxy-manager records)))))
     (oset kele--global-proxy-manager records
           (assoc-delete-all old-name (oref kele--global-proxy-manager records)))
@@ -1018,7 +1016,6 @@ Returns the passed-in list of namespaces."
           (cons (cons new-name proxy-record)
                 (oref kele--global-proxy-manager records))))
 
-  ;; Update active port-forwards (structure: (port context namespace gvk name proc))
   (setq kele--active-port-forwards
         (mapcar (lambda (record)
                   (if (equal (nth 1 record) old-name)
@@ -1029,20 +1026,14 @@ Returns the passed-in list of namespaces."
                             (nth 4 record)   ; name
                             (nth 5 record))  ; proc
                     record))
-                kele--active-port-forwards))
-
-  ;; Note: Discovery cache is keyed by host, not context name, so no update needed
-  )
+                kele--active-port-forwards)))
 
 (defun kele--invalidate-caches-for-context-delete (context)
   "Clear all caches when CONTEXT is deleted."
-  ;; Clear namespaces cache
   (kele--clear-namespaces-for-context context)
 
-  ;; Stop and clean up proxy
   (proxy-stop kele--global-proxy-manager context)
 
-  ;; Kill all port-forwards associated with this context
   (dolist (record kele--active-port-forwards)
     (when (equal (nth 1 record) context)
       (let ((port (nth 0 record))
@@ -1050,8 +1041,6 @@ Returns the passed-in list of namespaces."
         (kele--kill-process-quietly proc)
         (setq kele--active-port-forwards
               (assoc-delete-all port kele--active-port-forwards #'equal)))))
-
-  ;; Note: Discovery cache is keyed by host, not context name, so no cleanup needed
   )
 
 (cl-defstruct (kele--resource-container
