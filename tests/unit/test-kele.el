@@ -90,6 +90,97 @@
             :to-have-been-called-with
             "config" "rename-context" "foo" "bar")))
 
+(describe "kele--invalidate-caches-for-context-rename"
+  (before-each
+    (setq kele--namespaces-cache nil)
+    (setq kele--global-proxy-manager (kele--proxy-manager))
+    (setq kele--active-port-forwards nil))
+
+  (it "updates namespace cache"
+    (setq kele--namespaces-cache '((old-context . ("ns1" "ns2" "ns3"))))
+    (kele--invalidate-caches-for-context-rename "old-context" "new-context")
+    (expect (alist-get 'old-context kele--namespaces-cache) :to-equal nil)
+    (expect (alist-get 'new-context kele--namespaces-cache) :to-equal '("ns1" "ns2" "ns3")))
+
+  (it "updates proxy manager records"
+    (let ((fake-record (kele--proxy-record-create :process 'fake-proc :port 9999)))
+      (oset kele--global-proxy-manager records (list (cons "old-context" fake-record)))
+      (kele--invalidate-caches-for-context-rename "old-context" "new-context")
+      (expect (assoc "old-context" (oref kele--global-proxy-manager records)) :to-equal nil)
+      (expect (cdr (assoc "new-context" (oref kele--global-proxy-manager records))) :to-equal fake-record)))
+
+  (it "updates active port-forwards context field"
+    (setq kele--active-port-forwards
+          (list (list "8080" "old-context" "default" 'fake-gvk "pod1" 'fake-proc)
+                (list "8081" "other-context" "kube-system" 'fake-gvk "pod2" 'fake-proc)))
+    (kele--invalidate-caches-for-context-rename "old-context" "new-context")
+    (expect (nth 1 (car kele--active-port-forwards)) :to-equal "new-context")
+    (expect (nth 1 (cadr kele--active-port-forwards)) :to-equal "other-context"))
+
+  (it "handles empty caches gracefully"
+    (kele--invalidate-caches-for-context-rename "old-context" "new-context")
+    (expect kele--namespaces-cache :to-equal nil)
+    (expect (oref kele--global-proxy-manager records) :to-equal nil)))
+
+(describe "kele--invalidate-caches-for-context-delete"
+  (before-each
+    (setq kele--namespaces-cache nil)
+    (setq kele--global-proxy-manager (kele--proxy-manager))
+    (setq kele--active-port-forwards nil)
+    (spy-on 'kele--kill-process-quietly))
+
+  (it "clears namespace cache"
+    (setq kele--namespaces-cache '((context-to-delete . ("ns1" "ns2"))
+                                   (other-context . ("ns3"))))
+    (kele--invalidate-caches-for-context-delete "context-to-delete")
+    (expect (alist-get 'context-to-delete kele--namespaces-cache) :to-equal nil)
+    (expect (alist-get 'other-context kele--namespaces-cache) :to-equal '("ns3")))
+
+  (it "stops and cleans up proxy"
+    (let ((fake-record (kele--proxy-record-create :process 'fake-proc :port 9999)))
+      (oset kele--global-proxy-manager records (list (cons "context-to-delete" fake-record)))
+      (kele--invalidate-caches-for-context-delete "context-to-delete")
+      (expect (assoc "context-to-delete" (oref kele--global-proxy-manager records)) :to-equal nil)
+      (expect 'kele--kill-process-quietly :to-have-been-called-with 'fake-proc)))
+
+  (it "kills all port-forwards for the context"
+    (setq kele--active-port-forwards
+          (list (list "8080" "context-to-delete" "default" 'fake-gvk "pod1" 'fake-proc1)
+                (list "8081" "other-context" "kube-system" 'fake-gvk "pod2" 'fake-proc2)
+                (list "8082" "context-to-delete" "test" 'fake-gvk "pod3" 'fake-proc3)))
+    (kele--invalidate-caches-for-context-delete "context-to-delete")
+    (expect (length kele--active-port-forwards) :to-equal 1)
+    (expect (nth 1 (car kele--active-port-forwards)) :to-equal "other-context")
+    (expect 'kele--kill-process-quietly :to-have-been-called-times 2)
+    (expect 'kele--kill-process-quietly :to-have-been-called-with 'fake-proc1)
+    (expect 'kele--kill-process-quietly :to-have-been-called-with 'fake-proc3))
+
+  (it "handles empty caches gracefully"
+    (kele--invalidate-caches-for-context-delete "context-to-delete")
+    (expect kele--namespaces-cache :to-equal nil)
+    (expect (oref kele--global-proxy-manager records) :to-equal nil)
+    (expect kele--active-port-forwards :to-equal nil)))
+
+(describe "kele-context-rename"
+  (before-each
+    (spy-on 'kele-kubectl-do)
+    (spy-on 'kele--invalidate-caches-for-context-rename))
+
+  (it "calls cache invalidation after rename"
+    (kele-context-rename "old-context" "new-context")
+    (expect 'kele--invalidate-caches-for-context-rename
+            :to-have-been-called-with "old-context" "new-context")))
+
+(describe "kele-context-delete"
+  (before-each
+    (spy-on 'kele-kubectl-do)
+    (spy-on 'kele--invalidate-caches-for-context-delete))
+
+  (it "calls cache invalidation after delete"
+    (kele-context-delete "context-to-delete")
+    (expect 'kele--invalidate-caches-for-context-delete
+            :to-have-been-called-with "context-to-delete")))
+
 (describe "kele-current-namespace"
   (before-each
     (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))

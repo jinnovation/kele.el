@@ -896,7 +896,6 @@ node `(elisp)Programmed Completion'."
     (run-hooks 'kele-after-context-switch-hook)
     (run-hook-with-args 'kele-context-after-switch-functions context)))
 
-;; TODO(#176): Update `kele--namespace-cache'
 (transient-define-suffix kele-context-rename (old-name new-name)
   "Rename context named OLD-NAME to NEW-NAME."
   :key "r"
@@ -905,16 +904,16 @@ node `(elisp)Programmed Completion'."
                                       #'kele--contexts-complete
                                       nil t nil nil (kele-current-context-name))
                      (read-from-minibuffer "Rename to: ")))
-  ;; TODO(#176): This needs to update `kele--global-proxy-manager' as well.
-  (kele-kubectl-do "config" "rename-context" old-name new-name))
+  (kele-kubectl-do "config" "rename-context" old-name new-name)
+  (kele--invalidate-caches-for-context-rename old-name new-name))
 
-;; TODO(#176): Update `kele--namespace-cache'
 (transient-define-suffix kele-context-delete (context)
   :key "d"
   :description "Delete a context"
   (interactive (list (completing-read "Context: " #'kele--contexts-complete)))
   (kele--with-progress (format "Deleting context `%s'..." context)
-      (kele-kubectl-do "config" "delete-context" context)))
+      (kele-kubectl-do "config" "delete-context" context))
+  (kele--invalidate-caches-for-context-delete context))
 
 (cl-defun kele-proxy-stop (context)
   "Clean up the proxy for CONTEXT."
@@ -1001,6 +1000,47 @@ Returns the passed-in list of namespaces."
        #'kele--clear-namespaces-for-context
        context)))
   namespace-names)
+
+(defun kele--invalidate-caches-for-context-rename (old-name new-name)
+  "Update all caches when context OLD-NAME is renamed to NEW-NAME."
+  (when-let* ((cached-ns (alist-get (intern old-name) kele--namespaces-cache)))
+    (setq kele--namespaces-cache
+          (assoc-delete-all (intern old-name) kele--namespaces-cache))
+    (add-to-list 'kele--namespaces-cache
+                 `(,(intern new-name) . ,cached-ns)))
+
+  (when-let* ((proxy-record (cdr (assoc old-name (oref kele--global-proxy-manager records)))))
+    (oset kele--global-proxy-manager records
+          (assoc-delete-all old-name (oref kele--global-proxy-manager records)))
+    (oset kele--global-proxy-manager records
+          (cons (cons new-name proxy-record)
+                (oref kele--global-proxy-manager records))))
+
+  (setq kele--active-port-forwards
+        (mapcar (lambda (record)
+                  (if (equal (nth 1 record) old-name)
+                      (list (nth 0 record)  ; port
+                            new-name         ; NEW context name
+                            (nth 2 record)   ; namespace
+                            (nth 3 record)   ; gvk
+                            (nth 4 record)   ; name
+                            (nth 5 record))  ; proc
+                    record))
+                kele--active-port-forwards)))
+
+(defun kele--invalidate-caches-for-context-delete (context)
+  "Clear all caches when CONTEXT is deleted."
+  (kele--clear-namespaces-for-context context)
+
+  (proxy-stop kele--global-proxy-manager context)
+
+  (dolist (record kele--active-port-forwards)
+    (when (equal (nth 1 record) context)
+      (let ((port (nth 0 record))
+            (proc (nth 5 record)))
+        (kele--kill-process-quietly proc)
+        (setq kele--active-port-forwards
+              (assoc-delete-all port kele--active-port-forwards #'equal))))))
 
 (cl-defstruct (kele--resource-container
                 (:constructor kele--resource-container-create)
