@@ -1029,10 +1029,7 @@ Returns the passed-in list of namespaces."
                             (nth 4 record)   ; name
                             (nth 5 record))  ; proc
                     record))
-                kele--active-port-forwards))
-
-  ;; Note: Discovery cache is keyed by host, not context name, so no update needed
-  )
+                kele--active-port-forwards)))
 
 (defun kele--invalidate-caches-for-context-delete (context)
   "Clear all caches when CONTEXT is deleted."
