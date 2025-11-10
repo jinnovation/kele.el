@@ -1040,8 +1040,7 @@ Returns the passed-in list of namespaces."
             (proc (nth 5 record)))
         (kele--kill-process-quietly proc)
         (setq kele--active-port-forwards
-              (assoc-delete-all port kele--active-port-forwards #'equal)))))
-  )
+              (assoc-delete-all port kele--active-port-forwards #'equal))))))
 
 (cl-defstruct (kele--resource-container
                 (:constructor kele--resource-container-create)
