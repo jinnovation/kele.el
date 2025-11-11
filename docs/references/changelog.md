@@ -39,6 +39,9 @@ versioning][semver].
   `kele-context-after-switch-functions`. Each member of this variable is now
   expected to take the new context name as the sole argument (previously, they
   took no arguments).
+- `kele-delete` now warns you when you're about to delete a "dangerous"
+  resource, e.g. namespaces that can have unintended cascading effects when
+  deleted
 
 ## 0.6.0
 
