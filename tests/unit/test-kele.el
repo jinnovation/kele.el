@@ -815,6 +815,68 @@ metadata:
       (kele-list-kill)
       (expect 'vtable-revert-command :to-have-been-called))))
 
+(describe "`kele--confirm-dangerous-deletion'"
+  (it "returns t when user enters the correct name"
+    (spy-on 'read-string :and-return-value "test-namespace")
+    (expect (kele--confirm-dangerous-deletion "namespaces" "test-namespace" "test-context")
+            :to-be t))
+  (it "returns nil when user enters incorrect name"
+    (spy-on 'read-string :and-return-value "wrong-name")
+    (expect (kele--confirm-dangerous-deletion "namespaces" "test-namespace" "test-context")
+            :to-be nil))
+  (it "returns nil when user enters empty string"
+    (spy-on 'read-string :and-return-value "")
+    (expect (kele--confirm-dangerous-deletion "namespaces" "test-namespace" "test-context")
+            :to-be nil))
+  (it "prompts with the correct message"
+    (spy-on 'read-string :and-return-value "test-namespace")
+    (kele--confirm-dangerous-deletion "namespaces" "test-namespace" "test-context")
+    (expect 'read-string :to-have-been-called-with
+            "This will delete namespaces 'test-namespace' in context 'test-context'.\nType the namespaces name to confirm: ")))
+
+(describe "`kele-delete' with dangerous resources"
+  (before-each
+    (setq kele-confirm-deletions t)
+    (setq kele-dangerous-resources '("namespaces" "persistentvolumes"))
+    (spy-on 'kele-kubectl-do-sync))
+  (it "requires two confirmations for dangerous resources"
+    (spy-on 'yes-or-no-p :and-return-value t)
+    (spy-on 'kele--confirm-dangerous-deletion :and-return-value t)
+    (kele-delete "test-context" "default" "v1" "namespaces" "test-ns")
+    (expect 'yes-or-no-p :to-have-been-called)
+    (expect 'kele--confirm-dangerous-deletion :to-have-been-called-with
+            "namespaces" "test-ns" "test-context")
+    (expect 'kele-kubectl-do-sync :to-have-been-called))
+  (it "aborts deletion if user declines first confirmation for dangerous resources"
+    (spy-on 'yes-or-no-p :and-return-value nil)
+    (spy-on 'kele--confirm-dangerous-deletion)
+    (kele-delete "test-context" "default" "v1" "namespaces" "test-ns")
+    (expect 'yes-or-no-p :to-have-been-called)
+    (expect 'kele--confirm-dangerous-deletion :not :to-have-been-called)
+    (expect 'kele-kubectl-do-sync :not :to-have-been-called))
+  (it "aborts deletion if user declines second confirmation for dangerous resources"
+    (spy-on 'yes-or-no-p :and-return-value t)
+    (spy-on 'kele--confirm-dangerous-deletion :and-return-value nil)
+    (kele-delete "test-context" "default" "v1" "namespaces" "test-ns")
+    (expect 'yes-or-no-p :to-have-been-called)
+    (expect 'kele--confirm-dangerous-deletion :to-have-been-called)
+    (expect 'kele-kubectl-do-sync :not :to-have-been-called))
+  (it "only requires single confirmation for non-dangerous resources"
+    (spy-on 'yes-or-no-p :and-return-value t)
+    (spy-on 'kele--confirm-dangerous-deletion)
+    (kele-delete "test-context" "default" "v1" "pods" "test-pod")
+    (expect 'yes-or-no-p :to-have-been-called)
+    (expect 'kele--confirm-dangerous-deletion :not :to-have-been-called)
+    (expect 'kele-kubectl-do-sync :to-have-been-called))
+  (it "bypasses all confirmations when kele-confirm-deletions is nil"
+    (setq kele-confirm-deletions nil)
+    (spy-on 'yes-or-no-p)
+    (spy-on 'kele--confirm-dangerous-deletion)
+    (kele-delete "test-context" "default" "v1" "namespaces" "test-ns")
+    (expect 'yes-or-no-p :not :to-have-been-called)
+    (expect 'kele--confirm-dangerous-deletion :not :to-have-been-called)
+    (expect 'kele-kubectl-do-sync :to-have-been-called)))
+
 (describe "`kele--service-ports'"
   (it "retrieves the port specs"
     (expect
