@@ -133,6 +133,13 @@ NAMESPACE GVK NAME PROCESS).")
   :type 'boolean
   :group 'kele)
 
+(defcustom kele-dangerous-resources '("namespaces" "persistentvolumes" "clusterroles" "clusterrolebindings")
+  "List of Kubernetes resource kinds requiring enhanced deletion confirmation.
+These resources will require the user to type the full resource name to
+confirm deletion, in addition to the standard yes-or-no confirmation."
+  :type '(repeat string)
+  :group 'kele)
+
 (defcustom kele-yaml-highlighting-mode
   (cond ((featurep 'yaml-mode) 'yaml-mode)
         ((and (featurep 'yaml-ts-mode) (treesit-ready-p 'yaml)) 'yaml-ts-mode))
@@ -2003,6 +2010,14 @@ if it's set.  Otherwise, prompts user for input."
                        (kele--get-resource-types-for-context
                         (kele--get-context-arg)))))
 
+(defun kele--confirm-dangerous-deletion (kind name context)
+  "Confirm deletion of dangerous resource KIND named NAME in CONTEXT.
+Requires the user to type the full resource name to proceed.  Returns
+non-nil if the user typed the correct name, nil otherwise."
+  (let ((prompt (format "This will delete %s '%s' in context '%s'.\nType the %s name to confirm: "
+                        kind name context kind)))
+    (string= name (read-string prompt))))
+
 (transient-define-suffix kele-delete (context namespace _group-version kind name)
   "Delete resource KIND named NAME.
 
@@ -2023,13 +2038,16 @@ instead of \"pod.\""
            :verb 'delete
            :resource .kind
            :context .context)
-          (format "Delete a single %s" (propertize
-                                        (kele--get-singular-for-plural
-                                         kele--global-discovery-cache
-                                         .kind
-                                         :context .context)
-                                        'face
-                                        'warning))
+          (let ((resource-name (propertize
+                                (kele--get-singular-for-plural
+                                 kele--global-discovery-cache
+                                 .kind
+                                 :context .context)
+                                'face
+                                'warning)))
+            (if (member .kind kele-dangerous-resources)
+                (propertize (format "Delete a single %s (DANGEROUS!)" resource-name) 'face 'error)
+              (format "Delete a single %s" resource-name)))
         (format "Don't have permission to delete %s" .kind))))
   (interactive
    (-let* ((kind (kele--get-kind-arg))
@@ -2049,9 +2067,14 @@ instead of \"pod.\""
                                                  <> :cands cands))))
      (list (kele--get-context-arg) ns gv kind name)))
   (if (or (not kele-confirm-deletions)
-          (yes-or-no-p
-           (format "Delete %s/%s in %s (context %s)?"
-                   kind name namespace context)))
+          (if (member kind kele-dangerous-resources)
+              (and (yes-or-no-p
+                    (format "WARNING: Deleting %s '%s' in %s (context %s) is irreversible and may have cascading effects.  Continue?"
+                            kind name namespace context))
+                   (kele--confirm-dangerous-deletion kind name context))
+            (yes-or-no-p
+             (format "Delete %s/%s in %s (context %s)?"
+                     kind name namespace context))))
       (kele-kubectl-do-sync `("delete"
                               "--namespace" ,namespace
                               "--context" ,context
