@@ -2038,13 +2038,16 @@ instead of \"pod.\""
            :verb 'delete
            :resource .kind
            :context .context)
-          (format "Delete a single %s" (propertize
-                                        (kele--get-singular-for-plural
-                                         kele--global-discovery-cache
-                                         .kind
-                                         :context .context)
-                                        'face
-                                        'warning))
+          (let ((resource-name (propertize
+                                (kele--get-singular-for-plural
+                                 kele--global-discovery-cache
+                                 .kind
+                                 :context .context)
+                                'face
+                                'warning)))
+            (if (member .kind kele-dangerous-resources)
+                (propertize (format "Delete a single %s (DANGEROUS!)" resource-name) 'face 'error)
+              (format "Delete a single %s" resource-name)))
         (format "Don't have permission to delete %s" .kind))))
   (interactive
    (-let* ((kind (kele--get-kind-arg))
