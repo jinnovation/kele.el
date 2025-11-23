@@ -32,6 +32,8 @@ versioning][semver].
 
 - Fixed `kele-transient` using non-existent `kele-proxy` instead of `kele-ports`
 - Context rename and delete operations now properly update all affected caches
+- `kele-get` now correctly renders inapt for resources that don't support the
+  `get` verb (e.g., `bindings`) (#81)
 
 ### Changed
 

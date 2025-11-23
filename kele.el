@@ -489,6 +489,7 @@ retval into `async-wait'."
                                    `(,key . ,api-lists))))))
                  func-complete)))
 
+
 (cl-defmethod kele--resource-has-verb-p ((cache kele--discovery-cache)
                                          group-version kind verb &key context)
   (-contains-p (->> (kele--get-resource-lists-for-context
@@ -1717,9 +1718,12 @@ prompting and the function simply returns the single option."
                                  kind)
                          gvs)))))
 
-(defun kele--get-gvk-arg ()
-  "Get the GVK to use for a command."
-  (-let* ((kind (kele--get-kind-arg))
+(cl-defun kele--get-gvk-arg (&key verb)
+  "Get the GVK to use for a command.
+
+If VERB is provided (e.g. \"get\"), only resource kinds that
+support that verb will be offered as completion candidates."
+  (-let* ((kind (kele--get-kind-arg :verb verb))
           (gv (kele--get-groupversion-arg kind))
           ((group version) (kele--groupversion-split gv)))
     (kele--gvk-create :group group :version version :kind kind)))
@@ -1997,18 +2001,22 @@ KIND is not namespaced, returns an error."
       (kele-list-mode))
     (select-window (display-buffer buf))))
 
-(cl-defun kele--get-kind-arg ()
+(cl-defun kele--get-kind-arg (&key verb)
   "Get the kind to work with.
 
 First checks if the kind is set in the current Transient prefix,
-if it's set.  Otherwise, prompts user for input."
+if it's set.  Otherwise, prompts user for input.
+
+If VERB is provided, only resource kinds that support that verb
+will be offered as completion candidates."
   (or (and transient-current-prefix
            (alist-get 'kind (oref transient-current-prefix scope)))
       (completing-read (format
                         "Choose a kind to work with (context: `%s'): "
                         (kele--get-context-arg))
                        (kele--get-resource-types-for-context
-                        (kele--get-context-arg)))))
+                        (kele--get-context-arg)
+                        :verb verb))))
 
 (defun kele--confirm-dangerous-deletion (kind name context)
   "Confirm deletion of dangerous resource KIND named NAME in CONTEXT.
@@ -2094,19 +2102,32 @@ to query for."
   :inapt-if-not
   (lambda ()
     (let-alist (oref transient--prefix scope)
-      (kele--can-i :verb 'get :resource .kind :context .context)))
+      (and (kele--can-i :verb 'get :resource .kind :context .context)
+           (kele--resource-has-verb-p kele--global-discovery-cache
+                                      (car .group-versions)
+                                      .kind
+                                      "get"
+                                      :context .context))))
   :description
   (lambda ()
     (let-alist (oref transient--prefix scope)
-      (if (kele--can-i :verb 'get :resource .kind :context .context)
-          (format "Get a single %s"
-                  (propertize
-                   (kele--get-singular-for-plural kele--global-discovery-cache .kind :context .context)
-                   'face
-                   'warning))
-        (format "Don't have permission to get %s" .kind))))
+      (cond
+        ((not (kele--resource-has-verb-p kele--global-discovery-cache
+                                         (car .group-versions)
+                                         .kind
+                                         "get"
+                                         :context .context))
+         (format "Resource %s does not support 'get'" .kind))
+        ((not (kele--can-i :verb 'get :resource .kind :context .context))
+         (format "Don't have permission to get %s" .kind))
+        (t
+         (format "Get a single %s"
+                 (propertize
+                  (kele--get-singular-for-plural kele--global-discovery-cache .kind :context .context)
+                  'face
+                  'warning))))))
   (interactive
-   (-let* ((gvk (kele--get-gvk-arg))
+   (-let* ((gvk (kele--get-gvk-arg :verb 'get))
            (ns (kele--get-namespace-arg
                 :group-version (kele--gv-string gvk)
                 :kind (oref gvk kind)
