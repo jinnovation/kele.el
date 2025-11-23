@@ -45,6 +45,10 @@ versioning][semver].
   resource, e.g. namespaces that can have unintended cascading effects when
   deleted
 
+### Removed
+
+- Removed unused dependency `ht`
+
 ## 0.6.0
 
 ### Added
