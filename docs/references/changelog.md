@@ -34,6 +34,8 @@ versioning][semver].
 - Context rename and delete operations now properly update all affected caches
 - `kele-get` now correctly renders inapt for resources that don't support the
   `get` verb (e.g., `bindings`) (#81)
+- `kele-list` now correctly renders inapt for resources that don't support the
+  `list` verb
 
 ### Changed
 

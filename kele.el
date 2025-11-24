@@ -1960,13 +1960,26 @@ KIND is not namespaced, returns an error."
   ;; TODO(#185): Make this account for group + version as well
   (lambda ()
     (let-alist (oref transient--prefix scope)
-      (kele--can-i :verb 'list :resource .kind :context .context)))
+      (and (kele--can-i :verb 'list :resource .kind :context .context)
+           (kele--resource-has-verb-p kele--global-discovery-cache
+                                      (car .group-versions)
+                                      .kind
+                                      "list"
+                                      :context .context))))
   :description
   (lambda ()
     (let-alist (oref transient--prefix scope)
-      (if (kele--can-i :verb 'list :resource .kind :context .context)
-          (format "List all %s" (propertize .kind 'face 'warning))
-        (format "Don't have permission to list %s" .kind))))
+      (cond
+        ((not (kele--resource-has-verb-p kele--global-discovery-cache
+                                         (car .group-versions)
+                                         .kind
+                                         "list"
+                                         :context .context))
+         (format "Resource %s does not support 'list'" .kind))
+        ((not (kele--can-i :verb 'list :resource .kind :context .context))
+         (format "Don't have permission to list %s" .kind))
+        (t
+         (format "List all %s" (propertize .kind 'face 'warning))))))
   (interactive
    (-let* ((kind (kele--get-kind-arg))
            (group-version (kele--get-groupversion-arg kind)))

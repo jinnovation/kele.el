@@ -22,12 +22,12 @@ configs.
 
 * Highlights
 
- | Feature                     | TLDR                                                                                      | Screenshot                      |
- |-----------------------------+-------------------------------------------------------------------------------------------+---------------------------------|
- | Resource listing            | Kele improves upon the `kubectl get` interface with a sortable, color-coded, tabular view | [[file:docs/img/kele-list.png]]     |
- | Resource-specific actions   | Kele provides contextual actions based on the resource you've selected                    | [[file:docs/img/overview.png]]      |
- | Menu bar integration        | Change context and namespace from the GUI menu bar                                        | [[file:docs/img/menu-bar.png]]      |
- | `doom-modeline` integration | Show the active kubectl context + default namespace in the modeline                       | [[file:docs/img/doom-modeline.png]] |
+ | Feature                     | TLDR                                                                                      | Screenshot                                                            |
+ |-----------------------------+-------------------------------------------------------------------------------------------+-----------------------------------------------------------------------|
+ | Resource listing            | Kele improves upon the `kubectl get` interface with a sortable, color-coded, tabular view | [[file:docs/img/kele-list.png]]                                           |
+ | Resource-specific actions   | Kele provides contextual actions based on the resource you've selected                    | [[file:docs/img/overview.png]] [[file:docs/img/resource-transient-inapt.png]] |
+ | Menu bar integration        | Change context and namespace from the GUI menu bar                                        | [[file:docs/img/menu-bar.png]]                                            |
+ | `doom-modeline` integration | Show the active kubectl context + default namespace in the modeline                       | [[file:docs/img/doom-modeline.png]]                                       |
 
 * Getting Started
 
