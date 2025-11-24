@@ -2163,11 +2163,14 @@ NAMESPACE and CONTEXT are used to identify the resource type to query for."
           (resource (kele--get-resource gvk name :context context :namespace ns))
 
           ;; TODO: Error if the port is already in use
-          ;; TODO: Extend port completion to all appropriate resource types
-          (port (if (string-equal (oref resource kind) "services")
+          (available-ports (kele--extract-ports resource))
+          (port (if available-ports
                     (completing-read "Port: "
-                                     (-map (lambda (port-spec) (number-to-string (alist-get 'port port-spec)))
-                                           (kele--service-ports resource))
+                                     (-map (lambda (port-spec)
+                                             (number-to-string
+                                              (or (alist-get 'port port-spec)
+                                                  (alist-get 'containerPort port-spec))))
+                                           available-ports)
                                      nil t)
                   (number-to-string (read-number "Port: ")))))
      (list context ns gvk name port)))
@@ -2231,6 +2234,64 @@ Service resource."
                       protocol))
                    (append ports '()))
         (append ports '())))))
+
+(cl-defun kele--pod-ports (obj &key (protocol nil))
+  "Get the exposed ports for pod OBJ.
+
+If PROTOCOL is provided, filter for only ports of that protocol.
+
+OBJ is assumed to be a `kele--resource-container' containing a
+Pod resource."
+  (let-alist (kele--resource-container-resource obj)
+    (let ((ports (->> .spec.containers
+                      (mapcar (lambda (container)
+                                (append (alist-get 'ports container) '())))
+                      (-flatten-n 1))))
+      (if protocol
+          (-filter (lambda (port-spec)
+                     (equal (alist-get 'protocol port-spec) protocol))
+                   ports)
+        ports))))
+
+(cl-defun kele--deployment-ports (obj &key (protocol nil))
+  "Get the exposed ports for deployment OBJ.
+
+If PROTOCOL is provided, filter for only ports of that protocol.
+
+OBJ is assumed to be a `kele--resource-container' containing a
+Deployment resource."
+  (let-alist (kele--resource-container-resource obj)
+    (let ((ports (->> .spec.template.spec.containers
+                      (mapcar (lambda (container)
+                                (append (alist-get 'ports container) '())))
+                      (-flatten-n 1))))
+      (if protocol
+          (-filter (lambda (port-spec)
+                     (equal (alist-get 'protocol port-spec) protocol))
+                   ports)
+        ports))))
+
+(defvar kele--port-extraction-functions
+  '(("services" . kele--service-ports)
+    ("pods" . kele--pod-ports)
+    ("deployments" . kele--deployment-ports))
+  "Alist mapping resource kinds to their port extraction functions.
+
+Each function should accept a `kele--resource-container' and an
+optional :protocol keyword argument, returning a list of port
+specs (alists).")
+
+(cl-defun kele--extract-ports (resource-container &key (protocol nil))
+  "Extract ports from RESOURCE-CONTAINER based on its kind.
+
+If PROTOCOL is provided, filter for only ports of that protocol.
+
+Returns a list of port spec alists, or nil if the resource kind
+has no registered port extractor."
+  (let* ((kind (kele--resource-container-kind resource-container))
+         (extractor (alist-get kind kele--port-extraction-functions nil nil #'equal)))
+    (when extractor
+      (funcall extractor resource-container :protocol protocol))))
 
 (defun kele--port-forwards-active-p ()
   "Return non-nil if there are any port-forwards active."

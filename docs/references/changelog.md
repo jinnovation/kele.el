@@ -44,6 +44,8 @@ versioning][semver].
 - `kele-delete` now warns you when you're about to delete a "dangerous"
   resource, e.g. namespaces that can have unintended cascading effects when
   deleted
+- Port-forward logic is now generalized across all port-forwardable resource
+  kinds.
 
 ### Removed
 
