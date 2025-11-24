@@ -11,6 +11,8 @@ versioning][semver].
 
 ## Unreleased
 
+## 0.7.0
+
 ### Added
 
 - `kele-list` now supports kind-specific columns. For example, listing
