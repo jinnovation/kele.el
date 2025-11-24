@@ -21,7 +21,7 @@ versioning][semver].
 - `kele-resource` now has a keybinding to follow logs for resources that support
   it
 - `kele-resource` now has a suffix for port-forwarding to resources that support
-  it
+  it, with completion on the given resource's configured ports
 - Implemented `kele-kill-port-forward` for terminating port-forwards that were
   created using `kele-port-forward`
 - Rename `kele-proxy` to `kele-ports`
@@ -44,8 +44,6 @@ versioning][semver].
 - `kele-delete` now warns you when you're about to delete a "dangerous"
   resource, e.g. namespaces that can have unintended cascading effects when
   deleted
-- Port-forward logic is now generalized across all port-forwardable resource
-  kinds.
 
 ### Removed
 
