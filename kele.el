@@ -2382,6 +2382,18 @@ CONTEXT and NAMESPACE are used to identify where the deployment lives."
                   (kele--get-kind-for-plural kele--global-discovery-cache it)
                   (propertize it 'face 'warning))
              (propertize "-specific actions" 'face 'transient-heading))))
+    :if
+    ;; FIXME: We will need to generalize the :if logic here. As is, the :if logic here is coupled to
+    ;; the definitions of the resource-specific actions themselves, meaning that any new action will
+    ;; also need the :if conditional to be updated as well.
+    ;;
+    ;; One way to approach this would be to have an alist mapping kind -> resource-specific
+    ;; suffixes.
+    (lambda ()
+      (let-alist (oref transient--prefix scope)
+        (or (-contains? kele--loggable-kinds .kind)
+            (-contains? kele--port-forwardable-kinds .kind)
+            (string-equal "deployments" .kind))))
     (kele-resource-follow-logs)
     (kele-port-forward)
     (kele-deployment-restart)]]

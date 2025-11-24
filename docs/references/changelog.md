@@ -36,6 +36,8 @@ versioning][semver].
   `get` verb (e.g., `bindings`) (#81)
 - `kele-list` now correctly renders inapt for resources that don't support the
   `list` verb
+- `kele-resource` now no longer displays the resource-specific suffixes section if the chosen
+  resource does not have any such suffix.
 
 ### Changed
 
