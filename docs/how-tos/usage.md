@@ -70,7 +70,13 @@ This is bound to `kele-get`.
     Leaving `--namespace=` unset will list all resources of the selected kind
     across all namespaces for you to choose from.
 
-![](./img/kele-resource.gif)
+=== "Selecting a resource"
+
+    ![](./img/resource-completion.png)
+
+=== "Viewing the chosen resource"
+
+    ![](./img/resource-show.png)
 
 ### Deleting a single resource
 
