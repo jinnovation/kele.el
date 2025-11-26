@@ -14,6 +14,8 @@ versioning][semver].
 ### Added
 
 - `kele-list` buffer now displays the Last Updated time
+- Resource kind completion is now grouped by API group. For example, Deployments, DaemonSets, and
+  ReplicaSets are all grouped under `apps` in the completion buffer.
 
 ### Fixed
 

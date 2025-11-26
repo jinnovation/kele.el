@@ -719,6 +719,59 @@ those that support the given verb."
        (-map (lambda (resource) (alist-get 'name resource)))
        (-uniq)))
 
+(defun kele--extract-group-from-groupversion (group-version)
+  "Extract the API group name from GROUP-VERSION string.
+Returns \"core\" for core API resources (e.g., \"v1\"), or the group
+name for other resources (e.g., \"apps\" from \"apps/v1\")."
+  (if (string-match "^\\([^/]+\\)/" group-version)
+      (match-string 1 group-version)
+    "core"))
+
+(cl-defun kele--get-resource-types-with-groups-for-context (context-name &key verb)
+  "Retrieve resource types for CONTEXT-NAME with their API groups.
+
+Returns an alist where each element is (NAME . GROUP-VERSION-OR-GROUPS).
+NAME is the plural resource name (e.g., \"pods\").
+GROUP-VERSION-OR-GROUPS is either:
+  - A single group-version string (e.g., \"v1\" or \"apps/v1\")
+  - The symbol `multiple' when the resource exists in multiple API groups
+
+If VERB is provided, only resources supporting that verb are included."
+  (let* ((resource-lists (kele--get-resource-lists-for-context
+                          kele--global-discovery-cache
+                          (or context-name (kele-current-context-name))))
+         ;; Collect all (name . group-version) pairs
+         (all-resources
+          (->> resource-lists
+               (-filter (lambda (resource-list)
+                          (equal (alist-get 'kind resource-list) "APIResourceList")))
+               (-mapcat (lambda (list)
+                          (let ((group-version (alist-get 'groupVersion list)))
+                            (->> (alist-get 'resources list)
+                                 (-filter (lambda (resource)
+                                            (if verb
+                                                (-contains-p (alist-get 'verbs resource)
+                                                             (if (stringp verb) verb (symbol-name verb)))
+                                              t)))
+                                 (-map (lambda (resource)
+                                         (cons (alist-get 'name resource) group-version)))))))))
+         ;; Group by resource name to detect resources in multiple API groups
+         (grouped (-group-by #'car all-resources)))
+    ;; For each unique resource name, determine if it exists in multiple API groups
+    (mapcar (lambda (entry)
+              (let* ((name (car entry))
+                     (group-pairs (cdr entry))
+                     ;; Extract unique API group names (without version)
+                     (unique-groups
+                      (->> group-pairs
+                           (-map (lambda (pair) (kele--extract-group-from-groupversion (cdr pair))))
+                           (-uniq))))
+                ;; Mark as 'multiple only if resource exists in different API groups
+                (if (> (length unique-groups) 1)
+                    (cons name 'multiple)
+                  (car group-pairs))))
+            grouped)))
+
 (cl-defun kele-current-context-name (&key (wait t))
   "Get the current context name.
 
@@ -829,6 +882,34 @@ as."
   (if (eq action 'metadata)
       `(metadata (category . ,(or category 'kele-resource)))
     (complete-with-action action cands str pred)))
+
+(defun kele--resource-group-function (candidate transform resource-kinds-with-groups)
+  "Group function for resource kind completion.
+
+CANDIDATE is the resource name.
+TRANSFORM indicates whether to transform the candidate for display."
+  (if transform
+      candidate
+    (let ((group-version (cdr (assoc candidate resource-kinds-with-groups #'string-equal))))
+      (if (eq group-version 'multiple)
+          "Multiple Groups"
+        (kele--extract-group-from-groupversion group-version)))))
+
+(cl-defun kele--resource-kinds-complete (str pred action &key context verb)
+  "Complete input for selection of resource kinds.
+
+STR, PRED, and ACTION are as defined in completion functions.
+CONTEXT is the Kubernetes context to use.
+VERB filters resources by supported verb."
+  (let* ((resource-kinds-with-groups
+          (kele--get-resource-types-with-groups-for-context context :verb verb))
+         (candidates (mapcar #'car resource-kinds-with-groups)))
+    (if (eq action 'metadata)
+        `(metadata
+          (category . kele-resource-kind)
+          (group-function . ,(lambda (candidate transform)
+                               (kele--resource-group-function candidate transform resource-kinds-with-groups))))
+      (complete-with-action action candidates str pred))))
 
 (defun kele-namespace-switch-for-context (context namespace)
   "Switch to NAMESPACE for CONTEXT."
@@ -2027,12 +2108,11 @@ If VERB is provided, only resource kinds that support that verb
 will be offered as completion candidates."
   (or (and transient-current-prefix
            (alist-get 'kind (oref transient-current-prefix scope)))
-      (completing-read (format
-                        "Choose a kind to work with (context: `%s'): "
-                        (kele--get-context-arg))
-                       (kele--get-resource-types-for-context
-                        (kele--get-context-arg)
-                        :verb verb))))
+      (let ((context (kele--get-context-arg)))
+        (completing-read
+         (format "Choose a kind to work with (context: `%s'): " context)
+         (-cut kele--resource-kinds-complete <> <> <>
+               :context context :verb verb)))))
 
 (defun kele--confirm-dangerous-deletion (kind name context)
   "Confirm deletion of dangerous resource KIND named NAME in CONTEXT.
@@ -2424,8 +2504,8 @@ CONTEXT and NAMESPACE are used to identify where the deployment lives."
   (interactive (let* ((context (kele-current-context-name))
                       (kind (completing-read
                              (format "Choose a kind to work with (context: `%s'): " context)
-                             (kele--get-resource-types-for-context
-                              context)))
+                             (lambda (str pred action)
+                               (kele--resource-kinds-complete str pred action :context context :verb nil))))
                       (gvs (kele--get-groupversions-for-type
                             kele--global-discovery-cache
                             kind

@@ -898,4 +898,81 @@ metadata:
      :to-equal
      nil)))
 
+(describe "`kele--get-resource-types-with-groups-for-context'"
+  (before-each
+    (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
+    (async-wait (kele--cache-update kele--global-discovery-cache))
+    (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
+    (async-wait (kele--cache-update kele--global-kubeconfig-cache)))
+
+  (it "returns alist with resource names and group-versions"
+    (let* ((context "development")
+           (result (kele--get-resource-types-with-groups-for-context context)))
+      (expect (listp result) :to-be-truthy)
+      (expect (consp (car result)) :to-be-truthy)
+      (expect (assoc "namespaces" result #'string-equal) :to-be-truthy)
+      (expect (cdr (assoc "namespaces" result #'string-equal)) :to-equal "v1")))
+
+  (it "detects ambiguous resources across multiple groups"
+    (let* ((context "development")
+           (result (kele--get-resource-types-with-groups-for-context context)))
+      (expect (assoc "ambiguousthings" result #'string-equal) :to-be-truthy)
+      (expect (cdr (assoc "ambiguousthings" result #'string-equal)) :to-equal 'multiple))))
+
+(describe "`kele--extract-group-from-groupversion'"
+  (it "extracts group from group-version strings"
+    (expect (kele--extract-group-from-groupversion "apps/v1") :to-equal "apps"))
+  (it "returns 'core' for core API resources"
+    (expect (kele--extract-group-from-groupversion "v1") :to-equal "core")))
+
+(describe "`kele--resource-group-function'"
+  (it "normalizes core API to 'core'"
+    (let ((resource-kinds-with-groups
+           '(("pods" . "v1"))))
+      (expect (kele--resource-group-function "pods" nil resource-kinds-with-groups) :to-equal "core")))
+  (it "extracts just the group name from group-version strings"
+    (let ((resource-kinds-with-groups
+           '(("deployments" . "apps/v1"))))
+      (expect (kele--resource-group-function "deployments" nil resource-kinds-with-groups) :to-equal "apps")))
+  (it "groups ambiguous resources under 'Multiple Groups'"
+    (let ((resource-kinds-with-groups
+           '(("ambiguousthings" . multiple))))
+      (expect (kele--resource-group-function "ambiguousthings" nil resource-kinds-with-groups) :to-equal "Multiple Groups")))
+  (it "transforms candidates when requested"
+    (let ((resource-kinds-with-groups
+           '(("pods" . "v1"))))
+      (expect (kele--resource-group-function "pods" t resource-kinds-with-groups) :to-equal "pods"))))
+
+(describe "`kele--resource-kinds-complete'"
+  (before-each
+    (setq kele-cache-dir (f-expand "./tests/testdata/cache"))
+    (async-wait (kele--cache-update kele--global-discovery-cache))
+    (setq kele-kubeconfig-path (f-expand "./tests/testdata/kubeconfig.yaml"))
+    (async-wait (kele--cache-update kele--global-kubeconfig-cache)))
+
+  (it "returns proper metadata"
+    (let ((metadata (kele--resource-kinds-complete
+                     "" nil 'metadata
+                     :context "development")))
+      (expect (alist-get 'category (cdr metadata)) :to-equal 'kele-resource-kind)
+      (expect (alist-get 'group-function (cdr metadata)) :to-be-truthy)))
+
+  (it "returns candidates for completion"
+    (let ((candidates (kele--resource-kinds-complete
+                       "" nil t
+                       :context "development")))
+      (expect (listp candidates) :to-be-truthy)
+      (expect (member "pods" candidates) :to-be-truthy)
+      (expect (member "namespaces" candidates) :to-be-truthy)))
+
+  (it "filters by verb when provided"
+    (let ((candidates (kele--resource-kinds-complete
+                       "" nil t
+                       :context "development"
+                       :verb 'deletecollection)))
+      (expect (listp candidates) :to-be-truthy)
+      (expect (member "pods" candidates) :to-be-truthy)
+      ;; componentstatuses doesn't support deletecollection
+      (expect (member "componentstatuses" candidates) :not :to-be-truthy))))
+
  ;;; test-kele.el ends here
