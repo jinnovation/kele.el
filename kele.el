@@ -870,18 +870,30 @@ If CONTEXT is not provided, use the current context."
              :category 'kele-namespace))
      nil t initial-input history)))
 
-(cl-defun kele--resources-complete (str pred action &key cands category)
+(cl-defun kele--resources-complete (str pred action &key cands category group-by-namespace)
   "Complete input for selection of resources.
 
 STR, PRED, and ACTION are as defined in completion functions.
 
 CANDS is the collection of completion candidates.
 
-CATEGORY is the category the candidates should be categorized
-as."
+CATEGORY is the category the candidates should be categorized as.
+
+GROUP-BY-NAMESPACE, if non-nil, should be an alist mapping resource names to
+namespaces for grouping.  When provided, resources will be grouped by namespace
+in the completion UI."
   (if (eq action 'metadata)
-      `(metadata (category . ,(or category 'kele-resource)))
-    (complete-with-action action cands str pred)))
+      `(metadata
+        (category . ,(or category 'kele-resource))
+        ,@(when group-by-namespace
+            `((group-function . ,(lambda (candidate transform)
+                                   (kele--resource-namespace-group-function
+                                    candidate transform group-by-namespace))))))
+    (complete-with-action action
+                          (if group-by-namespace
+                              (mapcar #'car group-by-namespace)
+                            cands)
+                          str pred)))
 
 (defun kele--kind-group-function (candidate transform resource-kinds-with-groups)
   "Group function for resource kind completion.
@@ -894,6 +906,17 @@ TRANSFORM indicates whether to transform the candidate for display."
       (if (eq group-version 'multiple)
           "Multiple Groups"
         (kele--extract-group-from-groupversion group-version)))))
+
+(defun kele--resource-namespace-group-function (candidate transform resources-with-namespaces)
+  "Group function for resource namespace completion.
+
+CANDIDATE is the resource name.
+TRANSFORM indicates whether to transform the candidate for display.
+RESOURCES-WITH-NAMESPACES is an alist mapping resource names to namespaces."
+  (if transform
+      candidate
+    (let ((namespace (cdr (assoc candidate resources-with-namespaces #'string-equal))))
+      (or namespace "(Cluster)"))))
 
 (cl-defun kele--resource-kinds-complete (str pred action &key context verb)
   "Complete input for selection of resource kinds.
@@ -1346,21 +1369,29 @@ If CONTEXT is not provided, use the current context."
           data)
       (signal 'error (format "Failed to fetch %s/%s/%s" (oref gvk group) (oref gvk version) (oref gvk kind))))))
 
-(cl-defun kele--fetch-resource-names (gvk &key namespace context)
+(cl-defun kele--fetch-resource-names (gvk &key namespace context with-namespace)
   "Fetch names of resources belonging to GVK.
 
 If NAMESPACE is provided, return only resources belonging to that namespace.  If
 NAMESPACE is provided for non-namespaced KIND, throws an error.
 
-If CONTEXT is not provided, use the current context."
+If CONTEXT is not provided, use the current context.
+
+If WITH-NAMESPACE is non-nil, return an alist of (name . namespace) pairs
+instead of just names.  For cluster-scoped resources, namespace will be nil."
   (let* ((resource-table (kele--tabulate-resources
                           gvk
                           :namespace namespace
                           :context context)))
-    (-map (lambda (row)
-            (let-alist row
-              .object.metadata.name))
-          (alist-get 'rows resource-table))))
+    (if with-namespace
+        (-map (lambda (row)
+                (let-alist row
+                  (cons .object.metadata.name .object.metadata.namespace)))
+              (alist-get 'rows resource-table))
+      (-map (lambda (row)
+              (let-alist row
+                .object.metadata.name))
+            (alist-get 'rows resource-table)))))
 
 (cl-defun kele--render-object (object &optional buffer)
   "Render OBJECT in a buffer as YAML.
@@ -2160,15 +2191,17 @@ instead of \"pod.\""
            (ns (kele--get-namespace-arg
                 :group-version gv
                 :kind kind
+                :permit-nil t
                 :use-default nil))
            (cands (kele--fetch-resource-names (kele--gvk-create
                                                :group group
                                                :version version
                                                :kind kind)
                                               :namespace ns
-                                              :context (kele--get-context-arg)))
+                                              :context (kele--get-context-arg)
+                                              :with-namespace t))
            (name (completing-read "Name: " (-cut kele--resources-complete <> <>
-                                                 <> :cands cands))))
+                                                 <> :group-by-namespace cands))))
      (list (kele--get-context-arg) ns gv kind name)))
   (if (or (not kele-confirm-deletions)
           (if (member kind kele-dangerous-resources)
@@ -2229,8 +2262,8 @@ to query for."
                 :kind (oref gvk kind)
                 :permit-nil t
                 :use-default nil))
-           (cands (kele--fetch-resource-names gvk :namespace ns :context (kele--get-context-arg)))
-           (name (completing-read "Name: " (-cut kele--resources-complete <> <> <> :cands cands))))
+           (cands (kele--fetch-resource-names gvk :namespace ns :context (kele--get-context-arg) :with-namespace t))
+           (name (completing-read "Name: " (-cut kele--resources-complete <> <> <> :group-by-namespace cands))))
      (list (kele--get-context-arg) ns gvk name)))
   (kele--render-object (kele--get-resource gvk name :namespace namespace :context context)))
 
@@ -2271,10 +2304,10 @@ NAMESPACE and CONTEXT are used to identify the resource type to query for."
                :kind (oref gvk kind)
                :group-version (kele--gv-string gvk)
                :use-default nil))
-          (cands (kele--fetch-resource-names gvk :namespace ns :context context))
+          (cands (kele--fetch-resource-names gvk :namespace ns :context context :with-namespace t))
           (name (completing-read
                  (format "%s to port-forward to: " (kele--singular gvk))
-                 (-cut kele--resources-complete <> <> <> :cands cands)))
+                 (-cut kele--resources-complete <> <> <> :group-by-namespace cands)))
 
           (resource (kele--get-resource gvk name :context context :namespace ns))
 
@@ -2452,9 +2485,9 @@ CONTEXT and NAMESPACE are used to identify where the deployment lives."
                :kind (oref gvk kind)
                :group-version (kele--gv-string gvk)
                :use-default nil))
-          (cands (kele--fetch-resource-names gvk :namespace ns :context context))
+          (cands (kele--fetch-resource-names gvk :namespace ns :context context :with-namespace t))
           (name (completing-read "Deployment to restart: "
-                                 (-cut kele--resources-complete <> <> <> :cands cands))))
+                                 (-cut kele--resources-complete <> <> <> :group-by-namespace cands))))
      (list context ns name)))
   ;; TODO: Ask user for confirmation?
   (kele-kubectl-do-sync `("rollout"
@@ -2556,8 +2589,8 @@ CONTEXT and NAMESPACE are used to identify where the deployment lives."
                 :group-version (kele--gv-string gvk)
                 :kind (oref gvk kind)
                 :use-default nil))
-           (cands (kele--fetch-resource-names gvk :namespace ns :context (kele--get-context-arg)))
-           (name (completing-read "Name: " (-cut kele--resources-complete <> <> <> :cands cands))))
+           (cands (kele--fetch-resource-names gvk :namespace ns :context (kele--get-context-arg) :with-namespace t))
+           (name (completing-read "Name: " (-cut kele--resources-complete <> <> <> :group-by-namespace cands))))
      (list (kele--get-context-arg) ns gvk name)))
   (let* ((buf-name (format "*kele: logs: %s/%s*" (kele--string gvk) name))
          (name-func (lambda (_) buf-name))
