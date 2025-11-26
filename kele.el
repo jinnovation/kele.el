@@ -883,7 +883,7 @@ as."
       `(metadata (category . ,(or category 'kele-resource)))
     (complete-with-action action cands str pred)))
 
-(defun kele--resource-group-function (candidate transform resource-kinds-with-groups)
+(defun kele--kind-group-function (candidate transform resource-kinds-with-groups)
   "Group function for resource kind completion.
 
 CANDIDATE is the resource name.
@@ -908,7 +908,7 @@ VERB filters resources by supported verb."
         `(metadata
           (category . kele-resource-kind)
           (group-function . ,(lambda (candidate transform)
-                               (kele--resource-group-function candidate transform resource-kinds-with-groups))))
+                               (kele--kind-group-function candidate transform resource-kinds-with-groups))))
       (complete-with-action action candidates str pred))))
 
 (defun kele-namespace-switch-for-context (context namespace)
