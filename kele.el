@@ -977,6 +977,19 @@ STR, PRED, and ACTION are as defined in completion functions."
         (category . kele-context))
     (complete-with-action action (kele-context-names) str pred)))
 
+(defun kele--contexts-with-active-proxy-complete (str pred action)
+  "Complete input for selection of contexts with active proxies.
+
+STR, PRED, and ACTION are as defined in completion functions."
+  (if (eq action 'metadata)
+      '(metadata (annotation-function . kele--context-annotate)
+        (category . kele-context))
+    (let ((contexts-with-proxy
+           (seq-filter (lambda (context)
+                         (proxy-active-p kele--global-proxy-manager context))
+                       (kele-context-names))))
+      (complete-with-action action contexts-with-proxy str pred))))
+
 (defun kele--contexts-read (prompt initial-input history)
   "Reader function for contexts.
 
@@ -1023,7 +1036,14 @@ node `(elisp)Programmed Completion'."
 
 (cl-defun kele-proxy-stop (context)
   "Clean up the proxy for CONTEXT."
-  (interactive (list (completing-read "Stop proxy for context: " #'kele--contexts-complete)))
+  (interactive
+   (let ((contexts-with-proxy
+          (seq-filter (lambda (ctx)
+                        (proxy-active-p kele--global-proxy-manager ctx))
+                      (kele-context-names))))
+     (if (null contexts-with-proxy)
+         (user-error "No active proxy servers to stop")
+       (list (completing-read "Stop proxy for context: " #'kele--contexts-with-active-proxy-complete)))))
   (proxy-stop kele--global-proxy-manager context))
 
 (cl-defun kele-proxy-start (context &key port (ephemeral t))

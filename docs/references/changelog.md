@@ -21,6 +21,7 @@ versioning][semver].
 
 ### Fixed
 
+- `kele-proxy-stop`: Interactive completion now filters out contexts without active proxy processes
 - `kele-port-forward` is now inapt if the user does not have permission to create port-forwards
 - `kele-resource-follow-logs` is now inapt if the user does not have permission to get pod logs
 
