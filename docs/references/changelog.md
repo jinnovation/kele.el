@@ -11,6 +11,10 @@ versioning][semver].
 
 ## Unreleased
 
+### Added
+
+- `kele-list` buffer now displays the Last Updated time
+
 ### Fixed
 
 - `kele-port-forward` is now inapt if the user does not have permission to create port-forwards

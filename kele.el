@@ -168,7 +168,7 @@ Set to nil to disable YAML highlighting."
   "Execute BODY with a progress reporter using MSG.
 
 Returns the last evaluated value of BODY."
-  (declare (indent defun))
+  (declare (indent 1))
   `(let ((prog (make-progress-reporter ,msg))
          (res (progn ,@body)))
      (progress-reporter-done prog)
@@ -1933,12 +1933,19 @@ See bug#58712.  Remove when Emacs 30 is released."
   "Refresh the `kele-list-mode' buffer."
   (interactive nil kele-list-mode)
   (kele--with-progress "[kele] Updating list buffer"
+    (setq-local kele--list-snapshot-time (current-time))
+    (let ((inhibit-read-only t))
       (save-excursion
-        (point-min)
-        (while-let ((match (text-property-search-forward 'vtable)))
-          (goto-char (prop-match-beginning match))
-          (vtable-revert-command)
-          (goto-char (prop-match-end match))))))
+        (goto-char (point-min))
+        (when (re-search-forward "^Last Updated: " nil t)
+          (delete-region (point) (line-end-position))
+          (insert (format-time-string "%Y-%m-%d %H:%M:%S" kele--list-snapshot-time)))))
+    (save-excursion
+      (point-min)
+      (while-let ((match (text-property-search-forward 'vtable)))
+        (goto-char (prop-match-beginning match))
+        (vtable-revert-command)
+        (goto-char (prop-match-end match))))))
 
 (transient-define-suffix kele-list (group-version kind context namespace)
   "List all resources of a given GROUP-VERSION and KIND.
@@ -1994,14 +2001,17 @@ KIND is not namespaced, returns an error."
     (with-current-buffer buf
       (setq-local kele--list-context context)
       (setq-local kele--list-gvk gvk)
+      (setq-local kele--list-snapshot-time (current-time))
       (put 'kele--list-context 'permanent-local t)
       (put 'kele--list-gvk 'permanent-local t)
+      (put 'kele--list-snapshot-time 'permanent-local t)
 
       (let ((inhibit-read-only t))
         (erase-buffer)
         (insert (propertize "Context: " 'face 'header-line) context "\n")
         (insert (propertize "Namespace: " 'face 'header-line) (or namespace "<all namespaces>") "\n")
         (insert (propertize "Kind: " 'face 'header-line) kind "\n")
+        (insert (propertize "Last Updated: " 'face 'header-line) (format-time-string "%Y-%m-%d %H:%M:%S" kele--list-snapshot-time) "\n")
         (insert "\n")
         (vtable-insert (kele--vtable-tabulate gvk context namespace)))
       (kele-list-mode))
