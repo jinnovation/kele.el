@@ -249,11 +249,9 @@ If WAIT is non-nil, `kele--proxy-process' will wait for the proxy
       (kele--retry (lambda ()
                      ;; /readyz and /livez can sometimes return nil, maybe when
                      ;; the proxy is just starting up. Add retries for these.
-                     (when-let* ((resp-ready (plz 'get ready-addr :as 'response))
-                                 (resp-live (plz 'get live-addr :as 'response))
-                                 (status-ready (plz-response-status resp-ready))
-                                 (status-live (plz-response-status resp-live)))
-                       (and (= 200 status-ready) (= 200 status-live))))
+                     (ignore-errors
+                       (and (= 200 (plz-response-status (plz 'get ready-addr :as 'response)))
+                            (= 200 (plz-response-status (plz 'get live-addr :as 'response))))))
                    :wait 2
                    :count 10))
     proc))
@@ -625,13 +623,9 @@ TIMER, if non-nil, is the cleanup timer."
 Returns nil on any curl error."
   (let ((ready-addr (format "%s/readyz" (kele--url proxy)))
         (live-addr (format "%s/livez" (kele--url proxy))))
-    (condition-case _err
-        (when-let* ((resp-ready (plz 'get ready-addr :as 'response :else 'ignore))
-                    (resp-live (plz 'get live-addr :as 'response :else 'ignore))
-                    (status-ready (plz-response-status resp-ready))
-                    (status-live (plz-response-status resp-live)))
-          (and (= 200 status-ready) (= 200 status-live)))
-      (error nil))))
+    (ignore-errors
+      (and (= 200 (plz-response-status (plz 'get ready-addr :as 'response)))
+           (= 200 (plz-response-status (plz 'get live-addr :as 'response)))))))
 
 (defclass kele--proxy-manager ()
   ((records
