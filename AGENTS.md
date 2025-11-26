@@ -11,3 +11,4 @@
 - In general, base your implementations and designs off of the Magit package. Its implementation can
   be found on GitHub.
 - Use stdlib Emacs packages, functions, and interfaces wherever possible.
+- All messages intended for display to the user should be prefixed with `[kele]` followed by a space

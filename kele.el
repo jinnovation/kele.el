@@ -238,7 +238,7 @@ If WAIT is non-nil, `kele--proxy-process' will wait for the proxy
                 :sentinel
                 (lambda (proc _status)
                   (when (zerop (process-exit-status proc))
-                    (message "Successfully terminated process: %s" proc-name)
+                    (message "[kele] Successfully terminated process: %s" proc-name)
                     (kele--kill-process-quietly proc)))))
          (ready-addr (format "http://localhost:%s/readyz" s-port))
          (live-addr (format "http://localhost:%s/livez" s-port)))
@@ -829,7 +829,7 @@ to complete.  Returned value may not be up to date."
   (if-let* ((context (-first (lambda (elem) (string= (alist-get 'name elem) context-name))
                              (alist-get 'contexts (oref kele--global-kubeconfig-cache contents)))))
       (alist-get 'cluster (alist-get 'context context))
-    (error "Could not find context of name %s" context-name)))
+    (error "[kele] Could not find context of name %s" context-name)))
 
 (defun kele--context-annotate (context-name)
   "Return annotation text for the context named CONTEXT-NAME."
@@ -1042,7 +1042,7 @@ node `(elisp)Programmed Completion'."
                         (proxy-active-p kele--global-proxy-manager ctx))
                       (kele-context-names))))
      (if (null contexts-with-proxy)
-         (user-error "No active proxy servers to stop")
+         (user-error "[kele] No active proxy servers to stop")
        (list (completing-read "Stop proxy for context: " #'kele--contexts-with-active-proxy-complete)))))
   (proxy-stop kele--global-proxy-manager context))
 
@@ -1223,7 +1223,7 @@ throws an error."
                                (car group-versions)
                                (oref gvk kind)
                                :context context)))
-      (user-error "Namespace `%s' specified for un-namespaced resource `%s'; remove namespace and try again" namespace (oref gvk kind)))
+      (user-error "[kele] Namespace `%s' specified for un-namespaced resource `%s'; remove namespace and try again" namespace (oref gvk kind)))
 
     (-let* ((gv (car group-versions))
             (namespace (and (kele--resource-namespaced-p
@@ -1362,7 +1362,7 @@ If CONTEXT is not provided, use the current context."
                    kele--global-discovery-cache
                    (kele--gv-string gvk)
                    (oref gvk kind))))
-    (user-error "Attempted to fetch un-namespaced resource `%s' as namespaced"
+    (user-error "[kele] Attempted to fetch un-namespaced resource `%s' as namespaced"
                 (oref gvk kind)))
 
   (let* ((ctx (or context (kele-current-context-name)))
@@ -1539,10 +1539,10 @@ Ensures various preconditions are met,
 e.g. `kele-kubectl-executable' is actually present."
 
   (when (not (executable-find kele-kubectl-executable))
-    (error "`%s' not found on PATH" kele-kubectl-executable))
+    (error "[kele] `%s' not found on PATH" kele-kubectl-executable))
 
   (when (not (file-exists-p kele-kubeconfig-path))
-    (error "`%s' does not exist; set up kubectl properly and try again" kele-kubeconfig-path)))
+    (error "[kele] `%s' does not exist; set up kubectl properly and try again" kele-kubeconfig-path)))
 
 (defun kele--enable ()
   "Enables Kele functionality.
@@ -1619,7 +1619,7 @@ Assumes that the current Transient prefix's :scope is an alist w/ `context' key.
        :prompt prompt
        :initial-input initial-input
        :history history)
-    (error "Unexpected nil context in `%s'" (oref transient--prefix command))))
+    (error "[kele] Unexpected nil context in `%s'" (oref transient--prefix command))))
 
 (defclass kele--transient-scope-mutator (transient-option)
   ((fn
@@ -2240,7 +2240,7 @@ instead of \"pod.\""
                               ,name)
                             :silent nil
                             :suppress-error nil)
-    (message "Aborted deletion.")))
+    (message "[kele] Aborted deletion.")))
 
 (transient-define-suffix kele-get (context namespace gvk name)
   "Get resource GVK by NAME and display it in a buffer.
@@ -2360,9 +2360,9 @@ NAMESPACE and CONTEXT are used to identify the resource type to query for."
                 (lambda (proc _status)
                   (let ((exit-code (process-exit-status proc)))
                     (cl-case exit-code
-                      (0 (message "Successfully terminated port-forward for %s" name))
-                      (9 (message "Port-forward for %s (port %s) terminated" name port))
-                      (t (message "Port-forward process for %s failed with exit code %s" name exit-code)))
+                      (0 (message "[kele] Successfully terminated port-forward for %s" name))
+                      (9 (message "[kele] Port-forward for %s (port %s) terminated" name port))
+                      (t (message "[kele] Port-forward process for %s failed with exit code %s" name exit-code)))
                     (kele--kill-process-quietly proc)))
                 :noquery t)))
     (add-to-list 'kele--active-port-forwards (list port context namespace gvk name proc))
@@ -2487,7 +2487,7 @@ The port-forward must have been initiated with
          (proc (car (last record))))
     (setq kele--active-port-forwards (assoc-delete-all port kele--active-port-forwards #'equal))
     (kele--kill-process-quietly proc)
-    (message "Killed port-forward for port %s" port)))
+    (message "[kele] Killed port-forward for port %s" port)))
 
 (transient-define-suffix kele-deployment-restart (context namespace deployment-name)
   "Restart DEPLOYMENT-NAME.
