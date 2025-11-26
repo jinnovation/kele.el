@@ -652,8 +652,9 @@ If CONTEXT already has a proxy process active, this function returns the
 existing process *regardless of the value of PORT*."
   (-if-let ((&alist context record) (oref manager records))
       record
-    (kele--with-progress (format "Starting proxy server process for `%s'..."
-                                 context)
+    (kele--with-progress (format "Starting proxy server process for `%s'%s..."
+                                 context
+                                 (if ephemeral (format " (TTL: %ss)" kele-proxy-ttl) ""))
       (let* ((selected-port (or port (kele--random-port)))
              (record (kele--proxy-record-create
                       :process (kele--proxy-process context :port selected-port :wait nil)
