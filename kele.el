@@ -2156,11 +2156,30 @@ to query for."
 NAMESPACE and CONTEXT are used to identify the resource type to query for."
   :key "F"
   :description
-  "Port-forward to..."
+  (lambda ()
+    (let-alist (oref transient--prefix scope)
+      (cond
+        ((not (-contains? kele--port-forwardable-kinds .kind))
+         (format "Resource %s does not support port-forward" .kind))
+        ((not (kele--can-i :verb 'create
+                           :resource "pods"
+                           :group ""
+                           :subresource "portforward"
+                           :context .context))
+         "Don't have permission to create port-forwards")
+        (t "Port-forward to..."))))
   :if
   (lambda ()
     (let-alist (oref transient--prefix scope)
       (-contains? kele--port-forwardable-kinds .kind)))
+  :inapt-if-not
+  (lambda ()
+    (let-alist (oref transient--prefix scope)
+      (kele--can-i :verb 'create
+                   :resource "pods"
+                   :group ""
+                   :subresource "portforward"
+                   :context .context)))
   (interactive
    (let* ((gvk (kele--get-gvk-arg))
           (context (kele--get-context-arg))
@@ -2554,21 +2573,25 @@ Similar to `kele-dispatch'."
 
 (cl-defun kele--mk-self-subject-access-review
     (&key resource
+       subresource
        (group "*")
        (verb 'get)
        (version "*"))
-  "Stub out a SelfSubjectAccessReview for GROUP, RESOURCE, and VERB.
+  "Stub out a SelfSubjectAccessReview for GROUP, RESOURCE, SUBRESOURCE, and VERB.
 
 Return the resulting SelfSubjectAccessReview in alist form."
   `((apiVersion . "authorization.k8s.io/v1")
     (kind . "SelfSubjectAccessReview")
     (spec . ((resourceAttributes . ((group . ,group)
                                     (resource . ,resource)
+                                    (subresource . ,(or subresource ""))
                                     (version . ,version)
                                     (verb . ,(symbol-name verb))))))))
 
-(cl-defun kele--can-i (&key resource group (verb 'get) context)
+(cl-defun kele--can-i (&key resource group (verb 'get) context subresource)
   "Return whether or not user can perform VERB on RESOURCE in GROUP.
+
+If SUBRESOURCE is provided, checks permission on the subresource.
 
 If CONTEXT is not provided, uses current context."
   (let* ((ctx (or context (kele-current-context-name)))
@@ -2589,7 +2612,8 @@ If CONTEXT is not provided, uses current context."
            :body (json-encode (kele--mk-self-subject-access-review
                                :resource resource
                                :group group
-                               :verb verb))
+                               :verb verb
+                               :subresource subresource))
            :as #'json-read)
          (-let (((&alist 'status (&alist 'allowed allowed)) it))
            allowed))))

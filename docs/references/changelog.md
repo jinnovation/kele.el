@@ -11,6 +11,10 @@ versioning][semver].
 
 ## Unreleased
 
+### Fixed
+
+- `kele-port-forward` is now inapt if the user does not have permission to create port-forwards
+
 ## 0.7.0
 
 ### Added
