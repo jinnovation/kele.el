@@ -342,8 +342,8 @@ COUNT, WAIT, and TIMEOUT are as defined in `kele--retry'.
 MSG is the progress reporting message to display."
   (when (oref cache update-in-progress)
     (kele--with-progress msg
-        (kele--retry (lambda () (not (oref cache update-in-progress)))
-         :count count :wait wait :timeout timeout))))
+      (kele--retry (lambda () (not (oref cache update-in-progress)))
+                   :count count :wait wait :timeout timeout))))
 
 (defun kele--get-host-for-context (&optional context)
   "Get host for CONTEXT."
@@ -654,16 +654,16 @@ existing process *regardless of the value of PORT*."
       record
     (kele--with-progress (format "Starting proxy server process for `%s'..."
                                  context)
-        (let* ((selected-port (or port (kele--random-port)))
-               (record (kele--proxy-record-create
-                        :process (kele--proxy-process context :port selected-port :wait nil)
-                        :timer (when ephemeral
-                                 (run-with-timer kele-proxy-ttl nil (-partial #'proxy-stop
-                                                                              manager
-                                                                              context)))
-                        :port selected-port)))
-          (oset manager records (cons `(,context . ,record) (oref manager records)))
-          record))))
+      (let* ((selected-port (or port (kele--random-port)))
+             (record (kele--proxy-record-create
+                      :process (kele--proxy-process context :port selected-port :wait nil)
+                      :timer (when ephemeral
+                               (run-with-timer kele-proxy-ttl nil (-partial #'proxy-stop
+                                                                            manager
+                                                                            context)))
+                      :port selected-port)))
+        (oset manager records (cons `(,context . ,record) (oref manager records)))
+        record))))
 
 (cl-defmethod proxy-get ((manager kele--proxy-manager)
                          context
@@ -893,7 +893,7 @@ node `(elisp)Programmed Completion'."
                         'warning)))
   (interactive (list (completing-read "Context: " #'kele--contexts-complete)))
   (kele--with-progress (format "Switching to use context `%s'..." context)
-      (kele-kubectl-do "config" "use-context" context)
+    (kele-kubectl-do "config" "use-context" context)
     (run-hooks 'kele-after-context-switch-hook)
     (run-hook-with-args 'kele-context-after-switch-functions context)))
 
@@ -913,7 +913,7 @@ node `(elisp)Programmed Completion'."
   :description "Delete a context"
   (interactive (list (completing-read "Context: " #'kele--contexts-complete)))
   (kele--with-progress (format "Deleting context `%s'..." context)
-      (kele-kubectl-do "config" "delete-context" context))
+    (kele-kubectl-do "config" "delete-context" context))
   (kele--invalidate-caches-for-context-delete context))
 
 (cl-defun kele-proxy-stop (context)
@@ -1180,9 +1180,9 @@ show the requested Kubernetes object manifest.
                                  name
                                  namespace
                                  context)
-        (kele--render-object
-         (kele--get-resource gvk name :namespace namespace :context context)
-         (current-buffer)))))
+      (kele--render-object
+       (kele--get-resource gvk name :namespace namespace :context context)
+       (current-buffer)))))
 
 (defun kele--get-insert-header ()
   "Insert header into a `kele-get-mode' buffer."
@@ -2449,7 +2449,27 @@ CONTEXT and NAMESPACE are used to identify where the deployment lives."
   (lambda ()
     (let-alist (oref transient--prefix scope)
       (-contains? kele--loggable-kinds .kind)))
-  :description "Follow logs"
+  :inapt-if-not
+  (lambda ()
+    (let-alist (oref transient--prefix scope)
+      (kele--can-i :verb 'get
+                   :resource "pods"
+                   :group ""
+                   :subresource "log"
+                   :context .context)))
+  :description
+  (lambda ()
+    (let-alist (oref transient--prefix scope)
+      (cond
+        ((not (-contains? kele--loggable-kinds .kind))
+         (format "Resource %s does not support logs" .kind))
+        ((not (kele--can-i :verb 'get
+                           :resource "pods"
+                           :group ""
+                           :subresource "log"
+                           :context .context))
+         "Don't have permission to get logs")
+        (t "Follow logs"))))
   (interactive
    (-let* ((gvk (kele--get-gvk-arg))
            (ns (kele--get-namespace-arg

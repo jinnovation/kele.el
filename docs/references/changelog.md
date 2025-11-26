@@ -18,6 +18,7 @@ versioning][semver].
 ### Fixed
 
 - `kele-port-forward` is now inapt if the user does not have permission to create port-forwards
+- `kele-resource-follow-logs` is now inapt if the user does not have permission to get pod logs
 
 ## 0.7.0
 
