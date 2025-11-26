@@ -62,8 +62,31 @@ quickly as possible and move on with your life") and requires less
 context-switching -- unavoidable with a status-page-centric user interface --
 than [kubel].
 
+## [kubed]
+
+There is considerable overlap in functionality between Kele and Kubed. I highly encourage you to try
+both out and see which fits your workflow best!
+
+[Kubed] is a Kubernetes management package that wraps `kubectl` commands and emphasizes
+comprehensive cluster exploration through a centralized Transient-based interface.
+
+Kele differs fundamentally in its architecture and design philosophy. Rather than wrapping `kubectl`
+commands, Kele communicates directly with the Kubernetes API via HTTP using ephemeral proxy
+processes, implementing its own API client layer with baseline caching of fetched resources and
+metadata. This proxy-based architecture enables its universal support for custom resources from day
+one, treating them identically to core resources through generic implementation
+patterns.
+
+Kele's dynamic permissions detection allows it to gracefully adapt functionality based on
+cluster-reported permissions, making it suitable for users with restricted cluster access while
+maintaining its "piecemeal" philosophy of quickly retrieving targeted information with minimal
+context-switching. Conversely, Kubed is based around "binding" package functionality to resources
+explicitly with the `kubed-define-resource` function, which introduces minor friction to scaling
+Kubed usage to all resources in a cluster.
+
 [kubernetes-el]: https://kubernetes-el.github.io/kubernetes-el
 [kubel]: https://github.com/abrochard/kubel
+[kubed]: https://github.com/eshelyaron/kubed
 [Magit]: https://magit.vc
 [Transient]: https://github.com/magit/transient
 [kubernetes-el-69]: https://github.com/kubernetes-el/kubernetes-el/issues/69
