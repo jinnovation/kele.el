@@ -925,23 +925,23 @@ metadata:
   (it "returns 'core' for core API resources"
     (expect (kele--extract-group-from-groupversion "v1") :to-equal "core")))
 
-(describe "`kele--resource-group-function'"
+(describe "`kele--kind-group-function'"
   (it "normalizes core API to 'core'"
     (let ((resource-kinds-with-groups
            '(("pods" . "v1"))))
-      (expect (kele--resource-group-function "pods" nil resource-kinds-with-groups) :to-equal "core")))
+      (expect (kele--kind-group-function "pods" nil resource-kinds-with-groups) :to-equal "core")))
   (it "extracts just the group name from group-version strings"
     (let ((resource-kinds-with-groups
            '(("deployments" . "apps/v1"))))
-      (expect (kele--resource-group-function "deployments" nil resource-kinds-with-groups) :to-equal "apps")))
+      (expect (kele--kind-group-function "deployments" nil resource-kinds-with-groups) :to-equal "apps")))
   (it "groups ambiguous resources under 'Multiple Groups'"
     (let ((resource-kinds-with-groups
            '(("ambiguousthings" . multiple))))
-      (expect (kele--resource-group-function "ambiguousthings" nil resource-kinds-with-groups) :to-equal "Multiple Groups")))
+      (expect (kele--kind-group-function "ambiguousthings" nil resource-kinds-with-groups) :to-equal "Multiple Groups")))
   (it "transforms candidates when requested"
     (let ((resource-kinds-with-groups
            '(("pods" . "v1"))))
-      (expect (kele--resource-group-function "pods" t resource-kinds-with-groups) :to-equal "pods"))))
+      (expect (kele--kind-group-function "pods" t resource-kinds-with-groups) :to-equal "pods"))))
 
 (describe "`kele--resource-kinds-complete'"
   (before-each
