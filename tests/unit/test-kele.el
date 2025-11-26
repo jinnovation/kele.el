@@ -971,8 +971,8 @@ metadata:
                        :context "development"
                        :verb 'deletecollection)))
       (expect (listp candidates) :to-be-truthy)
-      (expect (member "pods" candidates) :to-be-truthy)
+      (expect "pods" :to-be-in candidates)
       ;; componentstatuses doesn't support deletecollection
-      (expect (member "componentstatuses" candidates) :not :to-be-truthy))))
+      (expect "componentstatuses" :not :to-be-in candidates))))
 
  ;;; test-kele.el ends here
