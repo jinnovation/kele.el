@@ -21,6 +21,8 @@ versioning][semver].
 - `kele-list` now uses collapsible sections with vtables inside, similar to Magit's status buffer.
   The resource kind name is used as the section heading.
 - Added dependency on `magit-section`
+- Added dedicated face `kele-resource-kind-face` for highlighting Kubernetes resource kinds,
+  replacing generic `warning` face usage
 
 ### Fixed
 

@@ -165,6 +165,11 @@ Set to nil to disable YAML highlighting."
   "Face used for disabled or not-applicable values."
   :group 'kele)
 
+(defface kele-resource-kind-face
+    '((t (:inherit warning)))
+  "Face used for highlighting Kubernetes resource kinds."
+  :group 'kele)
+
 (defmacro kele--with-progress (msg &rest body)
   "Execute BODY with a progress reporter using MSG.
 
@@ -2113,7 +2118,7 @@ KIND is not namespaced, returns an error."
         ((not (kele--can-i :verb 'list :resource .kind :context .context))
          (format "Don't have permission to list %s" .kind))
         (t
-         (format "List all %s" (propertize .kind 'face 'warning))))))
+         (format "List all %s" (propertize .kind 'face 'kele-resource-kind-face))))))
   (interactive
    (-let* ((kind (kele--get-kind-arg))
            (group-version (kele--get-groupversion-arg kind)))
@@ -2152,7 +2157,7 @@ KIND is not namespaced, returns an error."
           (magit-insert-section (kele-list-table)
             (magit-insert-heading (format "%s: %s"
                                           (propertize "Resources" 'font-lock-face 'magit-section-heading)
-                                          (propertize kind 'font-lock-face 'warning)))
+                                          (propertize kind 'font-lock-face 'kele-resource-kind-face)))
             (magit-insert-section-body
               (vtable-insert (kele--vtable-tabulate gvk context namespace))
 
