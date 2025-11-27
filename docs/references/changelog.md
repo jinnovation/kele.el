@@ -18,6 +18,9 @@ versioning][semver].
   ReplicaSets are all grouped under `apps` in the completion buffer.
 - Resource name completion is now grouped by namespace for functions like `kele-get` or
   `kele-delete` that operate on a single resource.
+- `kele-list` now uses collapsible sections with vtables inside, similar to Magit's status buffer.
+  The resource kind name is used as the section heading.
+- Added dependency on `magit-section`
 
 ### Fixed
 

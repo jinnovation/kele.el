@@ -8,7 +8,7 @@
 ;; Homepage: https://github.com/jinnovation/kele.el
 ;; Keywords: kubernetes tools
 ;; SPDX-License-Identifier: Apache-2.0
-;; Package-Requires: ((emacs "29.1") (async "1.9.7") (dash "2.19.1") (f "0.20.0") memoize (plz "0.8.0") (s "1.13.0") (yaml "0.5.1"))
+;; Package-Requires: ((emacs "29.1") (async "1.9.7") (dash "2.19.1") (f "0.20.0") (magit-section "4.0.0") memoize (plz "0.8.0") (s "1.13.0") (yaml "0.5.1"))
 
 ;;; Commentary:
 
@@ -24,6 +24,7 @@
 (require 'f)
 (require 'filenotify)
 (require 'json)
+(require 'magit-section)
 (require 'memoize)
 (require 'plz)
 (require 's)
@@ -1999,7 +2000,7 @@ https://kubernetes.io/docs/reference/using-api/api-concepts/#receiving-resources
                     :align left
                     :formatter (lambda (value)
                                  (if (string-equal value "N/A")
-                                     (propertize value 'face 'kele-disabled-face)
+                                     (propertize value 'font-lock-face 'kele-disabled-face)
                                    value)))))
                column-specs)
      :keymap kele-list-table-map
@@ -2007,7 +2008,7 @@ https://kubernetes.io/docs/reference/using-api/api-concepts/#receiving-resources
      :formatter
      (lambda (value index table)
        (propertize (if (stringp value) value (prin1-to-string value))
-                   'face
+                   'font-lock-face
                    (if-let* ((column-faces (alist-get (intern (vtable-column table index)) kele-column-faces))
                              (value-style (alist-get (intern value) column-faces)))
                        value-style
@@ -2037,11 +2038,10 @@ https://kubernetes.io/docs/reference/using-api/api-concepts/#receiving-resources
          ;; Maybe a good use case for Eldoc?
          col-value)))))
 
-(define-derived-mode kele-list-mode fundamental-mode "Kele: List"
+(define-derived-mode kele-list-mode magit-section-mode "Kele: List"
                      "Major mode for listing multiple resources of a single kind."
                      :group 'kele
-                     :interactive nil
-                     (read-only-mode 1))
+                     :interactive nil)
 
 (defun kele--vtable-beginning-of-table ()
   "Backport of `vtable-beginning-of-table' from Emacs HEAD.
@@ -2074,7 +2074,7 @@ See bug#58712.  Remove when Emacs 30 is released."
           (delete-region (point) (line-end-position))
           (insert (format-time-string "%Y-%m-%d %H:%M:%S" kele--list-snapshot-time)))))
     (save-excursion
-      (point-min)
+      (goto-char (point-min))
       (while-let ((match (text-property-search-forward 'vtable)))
         (goto-char (prop-match-beginning match))
         (vtable-revert-command)
@@ -2141,12 +2141,24 @@ KIND is not namespaced, returns an error."
 
       (let ((inhibit-read-only t))
         (erase-buffer)
-        (insert (propertize "Context: " 'face 'header-line) context "\n")
-        (insert (propertize "Namespace: " 'face 'header-line) (or namespace "<all namespaces>") "\n")
-        (insert (propertize "Kind: " 'face 'header-line) kind "\n")
-        (insert (propertize "Last Updated: " 'face 'header-line) (format-time-string "%Y-%m-%d %H:%M:%S" kele--list-snapshot-time) "\n")
-        (insert "\n")
-        (vtable-insert (kele--vtable-tabulate gvk context namespace)))
+        (magit-insert-section (kele-list-root)
+          (magit-insert-section (overview)
+
+            (magit-insert-heading "Overview")
+            (insert (propertize "Context: " 'font-lock-face 'header-line) context "\n")
+            (insert (propertize "Namespace: " 'font-lock-face 'header-line) (or namespace "<all namespaces>") "\n")
+            (insert (propertize "Last Updated: " 'font-lock-face 'header-line) (format-time-string "%Y-%m-%d %H:%M:%S" kele--list-snapshot-time) "\n")
+            (insert "\n"))
+          (magit-insert-section (kele-list-table)
+            (magit-insert-heading (format "%s: %s"
+                                          (propertize "Resources" 'font-lock-face 'magit-section-heading)
+                                          (propertize kind 'font-lock-face 'warning)))
+            (magit-insert-section-body
+              (vtable-insert (kele--vtable-tabulate gvk context namespace))
+
+              ;; NB(@jinnovation)): Needed to ensure that the magit-section properly encapsulates
+              ;; the full vtable and collapses the contents appropriately
+              (vtable-end-of-table)))))
       (kele-list-mode))
     (select-window (display-buffer buf))))
 
