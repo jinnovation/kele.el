@@ -101,6 +101,11 @@ pods."
   :type 'integer
   :group 'kele)
 
+(defcustom kele-all-kinds '("pods" "services" "deployments" "configmaps")
+  "The resource kinds to fetch when \"all\" resources are fetched."
+  :type '(repeat string)
+  :group 'kele)
+
 (defvar kele-context-after-switch-functions nil
   "Functions to run after switching to a new context.
 
@@ -1793,8 +1798,9 @@ Defaults to the currently active context as set in
 First checks the current Transient command's arguments if set.
 Otherwise, returns the current context name from kubeconfig."
   (if transient-current-command
-      (transient-arg-value "--context=" (transient-args
-                                         transient-current-command))
+      (or (transient-arg-value "--context=" (transient-args
+                                             transient-current-command))
+          (kele-current-context-name))
     (kele-current-context-name)))
 
 (cl-defun kele--get-namespace-arg (&key (permit-nil nil) use-default group-version kind (prompt "Namespace: "))
@@ -2085,6 +2091,62 @@ See bug#58712.  Remove when Emacs 30 is released."
         (vtable-revert-command)
         (goto-char (prop-match-end match))))))
 
+(defun kele--list-kinds (context namespace &rest kinds)
+  (magit-insert-section (kele-list-root)
+    (magit-insert-section (overview)
+      (magit-insert-heading "Overview")
+      (insert (propertize "Context: " 'font-lock-face 'header-line) context "\n")
+      (insert (propertize "Namespace: " 'font-lock-face 'header-line) namespace "\n")
+      (insert (propertize "Last Updated: " 'font-lock-face 'header-line) (format-time-string "%Y-%m-%d %H:%M:%S" kele--list-snapshot-time) "\n")
+      (insert "\n"))
+
+    (dolist (kind kinds)
+      (-let* ((gv (car (kele--get-groupversions-for-type
+                        kele--global-discovery-cache
+                        kind
+                        :context context)))
+              ((group version) (kele--groupversion-split gv))
+              (gvk (kele--gvk-create :group group :version version :kind kind)))
+        (condition-case err
+            (magit-insert-section (kele-list-table)
+              (magit-insert-heading (format "%s: %s"
+                                            (propertize "Resources" 'font-lock-face 'magit-section-heading)
+                                            (propertize kind 'font-lock-face 'kele-resource-kind-face)))
+              (magit-insert-section-body
+                (setq-local kele--list-gvk gvk)
+                (put 'kele--list-gvk 'permanent-local t)
+                (vtable-insert (kele--vtable-tabulate gvk context namespace))
+                (vtable-end-of-table)
+                (insert "\n")))
+          (error (message "[kele] Failed to list %s: %s" kind (error-message-string err))))))))
+
+(transient-define-suffix kele-list-all (context namespace)
+  "List all resources in NAMESPACE within CONTEXT.
+
+Resources listed are those defined in `kele-all-kinds'."
+  :key "L"
+  :description
+  (lambda ()
+    (format "List all resources (%s)"
+            (propertize (string-join kele-all-kinds ", ") 'face 'kele-resource-kind-face)))
+  (interactive
+   (list (kele--get-context-arg)
+         (kele--get-namespace-arg :use-default t)))
+  (-let* ((buf (get-buffer-create (format "*kele: all [%s(%s)]*"
+                                          context
+                                          (or namespace "<all namespaces>")))))
+    (with-current-buffer buf
+      (setq-local kele--list-context context)
+      (setq-local kele--list-snapshot-time (current-time))
+      (put 'kele--list-context 'permanent-local t)
+      (put 'kele--list-snapshot-time 'permanent-local t)
+
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (apply #'kele--list-kinds context namespace kele-all-kinds))
+      (kele-list-mode))
+    (select-window (display-buffer buf))))
+
 (transient-define-suffix kele-list (group-version kind context namespace)
   "List all resources of a given GROUP-VERSION and KIND.
 
@@ -2146,24 +2208,7 @@ KIND is not namespaced, returns an error."
 
       (let ((inhibit-read-only t))
         (erase-buffer)
-        (magit-insert-section (kele-list-root)
-          (magit-insert-section (overview)
-
-            (magit-insert-heading "Overview")
-            (insert (propertize "Context: " 'font-lock-face 'header-line) context "\n")
-            (insert (propertize "Namespace: " 'font-lock-face 'header-line) (or namespace "<all namespaces>") "\n")
-            (insert (propertize "Last Updated: " 'font-lock-face 'header-line) (format-time-string "%Y-%m-%d %H:%M:%S" kele--list-snapshot-time) "\n")
-            (insert "\n"))
-          (magit-insert-section (kele-list-table)
-            (magit-insert-heading (format "%s: %s"
-                                          (propertize "Resources" 'font-lock-face 'magit-section-heading)
-                                          (propertize kind 'font-lock-face 'kele-resource-kind-face)))
-            (magit-insert-section-body
-              (vtable-insert (kele--vtable-tabulate gvk context namespace))
-
-              ;; NB(@jinnovation)): Needed to ensure that the magit-section properly encapsulates
-              ;; the full vtable and collapses the contents appropriately
-              (vtable-end-of-table)))))
+        (kele--list-kinds context namespace kind))
       (kele-list-mode))
     (select-window (display-buffer buf))))
 
@@ -2641,10 +2686,12 @@ CONTEXT and NAMESPACE are used to identify where the deployment lives."
 
 (transient-define-prefix kele-dispatch ()
   "Work with Kubernetes clusters and configs."
-  ["Work with..."
-   ("c" "Configurations" kele-config)
-   ("r" "Resources" kele-resource)
-   ("p" "Proxy servers" kele-ports)])
+  [["Work with..."
+    ("c" "Configurations" kele-config)
+    ("r" "Resources" kele-resource)
+    ("p" "Proxy servers" kele-ports)]
+   ["Actions"
+    ("L" kele-list-all)]])
 
 (transient-define-suffix kele--toggle-proxy-current-context (context)
   :key "p"
