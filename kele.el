@@ -1870,6 +1870,9 @@ support that verb will be offered as completion candidates."
 (defvar kele--list-context nil
   "The context corresponding to the current `kele-list-mode' buffer.")
 
+(defvar kele--list-snapshot-time nil
+  "The last updated time for a `kele-list-mode' buffer.")
+
 (defvar kele--list-gvk nil
   "The group-version-kind corresponding to the current `kele-list-mode' buffer.")
 
