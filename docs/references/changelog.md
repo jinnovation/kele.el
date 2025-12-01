@@ -31,6 +31,8 @@ versioning][semver].
 - `kele-proxy-stop`: Interactive completion now filters out contexts without active proxy processes
 - `kele-port-forward` is now inapt if the user does not have permission to create port-forwards
 - `kele-resource-follow-logs` is now inapt if the user does not have permission to get pod logs
+- Fixed a regression where, in `kele-list-mode` buffers created via the `kele-list-all` function,
+  users were unable to `get` a row resource by hitting `RET` on it.
 
 ### Changed
 

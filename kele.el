@@ -1873,13 +1873,14 @@ support that verb will be offered as completion candidates."
 (defvar kele--list-snapshot-time nil
   "The last updated time for a `kele-list-mode' buffer.")
 
-(defvar kele--list-gvk nil
-  "The group-version-kind corresponding to the current `kele-list-mode' buffer.")
-
 (defun kele--list-get-at-point ()
   "`kele-get's the current object at point."
   (let-alist (vtable-current-object)
-    (kele-get kele--list-context .object.metadata.namespace kele--list-gvk .object.metadata.name)))
+    (kele-get
+     kele--list-context
+     .object.metadata.namespace
+     (alist-get 'gvk (oref (magit-section-at) value))
+     .object.metadata.name)))
 
 (defun kele-list-table-dwim ()
   "Run the default action on `kele-list' table entries.
@@ -1913,12 +1914,13 @@ Otherwise, simply `kele-get' the resource at point."
   "Delete the resource at the current line."
   (interactive nil kele-list-mode)
   (let-alist (vtable-current-object)
-    (kele-delete
-     kele--list-context
-     .metadata.namespace
-     (kele--gv-string kele--list-gvk)
-     (oref kele--list-gvk kind)
-     .metadata.name))
+    (let ((gvk (alist-get 'gvk (oref (magit-section-at) value))))
+      (kele-delete
+       kele--list-context
+       .metadata.namespace
+       (kele--gv-string gvk)
+       (oref gvk kind)
+       .metadata.name)))
   (vtable-revert-command))
 
 (defvar kele-list-table-map
@@ -2111,13 +2113,11 @@ See bug#58712.  Remove when Emacs 30 is released."
               ((group version) (kele--groupversion-split gv))
               (gvk (kele--gvk-create :group group :version version :kind kind)))
         (condition-case err
-            (magit-insert-section (kele-list-table)
+            (magit-insert-section (kele-list-table `((gvk . ,gvk)))
               (magit-insert-heading (format "%s: %s"
                                             (propertize "Resources" 'font-lock-face 'magit-section-heading)
                                             (propertize kind 'font-lock-face 'kele-resource-kind-face)))
               (magit-insert-section-body
-                (setq-local kele--list-gvk gvk)
-                (put 'kele--list-gvk 'permanent-local t)
                 (vtable-insert (kele--vtable-tabulate gvk context namespace))
                 (vtable-end-of-table)
                 (insert "\n")))
@@ -2194,19 +2194,15 @@ KIND is not namespaced, returns an error."
                                               group-version
                                               kind)
              (kele--get-namespace-arg :permit-nil t)))))
-  (-let* (((group version) (kele--groupversion-split group-version))
-          (gvk (kele--gvk-create :group group :version version :kind kind))
-          (buf (get-buffer-create (format "*kele: %s/%s [%s(%s)]*"
-                                          group-version
-                                          kind
-                                          context
-                                          (or namespace "<all namespaces>")))))
+  (let ((buf (get-buffer-create (format "*kele: %s/%s [%s(%s)]*"
+                                        group-version
+                                        kind
+                                        context
+                                        (or namespace "<all namespaces>")))))
     (with-current-buffer buf
       (setq-local kele--list-context context)
-      (setq-local kele--list-gvk gvk)
       (setq-local kele--list-snapshot-time (current-time))
       (put 'kele--list-context 'permanent-local t)
-      (put 'kele--list-gvk 'permanent-local t)
       (put 'kele--list-snapshot-time 'permanent-local t)
 
       (let ((inhibit-read-only t))

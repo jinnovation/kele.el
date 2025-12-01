@@ -792,18 +792,40 @@ metadata:
   (before-each
     (setq kele-confirm-deletions nil)
     (setq kele--list-context "fake-context")
-    (setq kele--list-gvk (kele--gvk-create
-                          :group "fake-group"
-                          :version "v999"
-                          :kind "fake-kind"))
     (spy-on 'vtable-revert-command)
-    (spy-on 'kele-delete))
+    (spy-on 'kele-delete)
+    (spy-on 'kele-get))
+
+  (describe "`kele--list-get-at-point'"
+    (before-each
+      (let ((fake-gvk (kele--gvk-create :group "fake-group" :version "v999" :kind "fake-kind"))
+            (fake-section (magit-section :type 'kele-list-table)))
+        (oset fake-section value `((gvk . ,fake-gvk)))
+        (spy-on 'vtable-current-object :and-return-value
+                '((object . ((metadata . ((namespace . "fake-namespace")
+                                          (name . "fake-name")))))))
+        (spy-on 'magit-section-at :and-return-value fake-section)))
+
+    (it "retrieves GVK from magit section value"
+      (kele--list-get-at-point)
+      (let ((fake-gvk (kele--gvk-create :group "fake-group" :version "v999" :kind "fake-kind")))
+        (expect 'kele-get :to-have-been-called-with
+                "fake-context"
+                "fake-namespace"
+                fake-gvk
+                "fake-name"))))
+
   (describe "`kele-list-kill'"
     (before-each
-      (spy-on 'vtable-current-object :and-return-value
-              '((metadata . ((namespace . "fake-namespace")
-                             (name . "fake-name"))))))
-    (it "kills the current object"
+      (let ((fake-gvk (kele--gvk-create :group "fake-group" :version "v999" :kind "fake-kind"))
+            (fake-section (magit-section :type 'kele-list-table)))
+        (oset fake-section value `((gvk . ,fake-gvk)))
+        (spy-on 'vtable-current-object :and-return-value
+                '((metadata . ((namespace . "fake-namespace")
+                               (name . "fake-name")))))
+        (spy-on 'magit-section-at :and-return-value fake-section)))
+
+    (it "kills the current object using GVK from magit section"
       (kele-list-kill)
       (expect 'kele-delete :to-have-been-called-with
               "fake-context"
@@ -811,6 +833,7 @@ metadata:
               "fake-group/v999"
               "fake-kind"
               "fake-name"))
+
     (it "refreshes the table"
       (kele-list-kill)
       (expect 'vtable-revert-command :to-have-been-called))))
