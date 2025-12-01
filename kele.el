@@ -2311,7 +2311,11 @@ instead of \"pod.\""
   "Get resource GVK by NAME and display it in a buffer.
 
 NAMESPACE and CONTEXT are all used to identify the resource type
-to query for."
+to query for.
+
+By default, `kele-get' will prompt you to find a resource across all
+namespaces within CONTEXT.  To select a specific namespace to search for
+resources within, pass the prefix argument."
   :key "g"
   ;; TODO(#185): Make this account for group + version as well
   :inapt-if-not
@@ -2346,7 +2350,7 @@ to query for."
            (ns (kele--get-namespace-arg
                 :group-version (kele--gv-string gvk)
                 :kind (oref gvk kind)
-                :permit-nil t
+                :permit-nil (not current-prefix-arg)
                 :use-default nil))
            (cands (kele--fetch-resource-names gvk :namespace ns :context (kele--get-context-arg) :with-namespace t))
            (name (completing-read "Name: " (-cut kele--resources-complete <> <> <> :group-by-namespace cands))))

@@ -32,6 +32,11 @@ versioning][semver].
 - `kele-port-forward` is now inapt if the user does not have permission to create port-forwards
 - `kele-resource-follow-logs` is now inapt if the user does not have permission to get pod logs
 
+### Changed
+
+- `kele-get` now accepts a prefix argument (`C-u M-x kele-get`) to enable namespace
+  filtering. Without the prefix argument, `kele-get` searches across all namespaces.
+
 ## 0.7.0
 
 ### Added
