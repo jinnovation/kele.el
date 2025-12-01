@@ -278,6 +278,8 @@ Unless SILENT is non-nil, will log the command output."
                             nil
                             (current-buffer)
                             nil
+                            ;; FIXME: Use KUBECONFIG env var if set instead of
+                            ;; --kubeconfig
                             "--kubeconfig" kele-kubeconfig-path
                             args)))
       (if (= 0 exit-code)
@@ -290,6 +292,7 @@ Unless SILENT is non-nil, will log the command output."
 (cl-defun kele-kubectl-do (&rest args)
   "Execute kubectl with ARGS."
   (let ((cmd (append (list kele-kubectl-executable)
+                     ;; FIXME: Use KUBECONFIG env var if set instead of --kubeconfig
                      `("--kubeconfig" ,kele-kubeconfig-path)
                      args)))
     (make-process
@@ -571,6 +574,7 @@ contents."
   (oset cache
         filewatch-id
         (file-notify-add-watch
+         ;; FIXME: Update for KUBECONFIG merging
          kele-kubeconfig-path
          '(change)
          (-partial #'kele--cache-update cache)))
