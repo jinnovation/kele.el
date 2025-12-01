@@ -39,6 +39,10 @@ versioning][semver].
 - `kele-get` now accepts a prefix argument (`C-u M-x kele-get`) to enable namespace
   filtering. Without the prefix argument, `kele-get` searches across all namespaces.
 
+### Removed
+
+- Removed dependency on [`s.el`](https://github.com/magnars/s.el)
+
 ## 0.7.0
 
 ### Added

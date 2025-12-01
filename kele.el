@@ -8,7 +8,7 @@
 ;; Homepage: https://github.com/jinnovation/kele.el
 ;; Keywords: kubernetes tools
 ;; SPDX-License-Identifier: Apache-2.0
-;; Package-Requires: ((emacs "29.1") (async "1.9.7") (dash "2.19.1") (f "0.20.0") (magit-section "4.0.0") memoize (plz "0.8.0") (s "1.13.0") (yaml "0.5.1"))
+;; Package-Requires: ((emacs "29.1") (async "1.9.7") (dash "2.19.1") (f "0.20.0") (magit-section "4.0.0") memoize (plz "0.8.0") (yaml "0.5.1"))
 
 ;;; Commentary:
 
@@ -27,7 +27,6 @@
 (require 'magit-section)
 (require 'memoize)
 (require 'plz)
-(require 's)
 (require 'subr-x)
 (require 'transient)
 (require 'treesit)
@@ -283,7 +282,7 @@ Unless SILENT is non-nil, will log the command output."
                             args)))
       (if (= 0 exit-code)
           (progn
-            (unless silent (message (s-trim-right (buffer-string))))
+            (unless silent (message (string-trim-right (buffer-string))))
             exit-code)
         (unless suppress-error (error (buffer-string)))
         exit-code))))
@@ -294,7 +293,7 @@ Unless SILENT is non-nil, will log the command output."
                      `("--kubeconfig" ,kele-kubeconfig-path)
                      args)))
     (make-process
-     :name (format "kele: %s" (s-join " " cmd))
+     :name (format "kele: %s" (string-join cmd " "))
      :command cmd
      :noquery t)))
 
@@ -362,13 +361,13 @@ MSG is the progress reporting message to display."
                    .cluster.server))
          (host (url-host (url-generic-parse-url server)))
          (port (url-portspec (url-generic-parse-url server))))
-    (s-concat host (if port (format ":%s" port) ""))))
+    (concat host (if port (format ":%s" port) ""))))
 
 (cl-defmethod kele--get-resource-lists-for-context ((cache kele--discovery-cache)
                                                     &optional context)
   "Get all resource lists for CONTEXT from CACHE."
   (alist-get
-   (s-replace ":" "_" (kele--get-host-for-context (or context (kele-current-context-name))))
+   (replace-regexp-in-string ":" "_" (kele--get-host-for-context (or context (kele-current-context-name))))
    (oref cache contents)
    nil nil (-cut compare-strings <> nil nil <> nil nil t)))
 
@@ -1243,7 +1242,7 @@ throws an error."
                              (oref gvk kind)
                              :context context)
                             (or namespace (kele--default-namespace-for-context context))))
-            (url-gv (if (s-contains-p "/" gv)
+            (url-gv (if (string-match-p "/" gv)
                         (format "apis/%s" gv)
                       (format "api/%s" gv)))
             (url-res (format "%s/%s" (oref gvk kind) name))
@@ -1340,10 +1339,11 @@ show the requested Kubernetes object manifest.
         (pcase-dolist (`(,cmd . ,desc) kele--get-mode-command-descriptions)
           (insert (format (propertize "# %s %s\n"
                                       'font-lock-face 'font-lock-comment-face)
-                          (s-pad-right
+                          (string-pad
+                           (substitute-command-keys (format "\\[%s]" cmd))
                            10
-                           " "
-                           (substitute-command-keys (format "\\[%s]" cmd)))
+                           nil
+                           t)
                           desc)))))))
 
 (add-hook 'kele-get-mode-hook #'kele--get-insert-header t)
@@ -1354,7 +1354,7 @@ show the requested Kubernetes object manifest.
 Returns a list where the car is the group and the cadr is the version.
 
 Nil value for group denotes the core API."
-  (let ((split (s-split "/" group-version)))
+  (let ((split (split-string group-version "/")))
     (if (length= split 1) (list nil (car split)) split)))
 
 (cl-defun kele--tabulate-resources (gvk &key namespace context)
