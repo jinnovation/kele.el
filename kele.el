@@ -49,7 +49,7 @@
   :group 'kele)
 
 (defcustom kele-cache-dir
-  (f-expand "~/.kube/cache/")
+  (expand-file-name "~/.kube/cache/")
   "Path to the kubectl cache."
   :group 'kele
   :type 'directory)
@@ -481,18 +481,18 @@ retval into `async-wait'."
                     (require 'json)
                     (require 'yaml)
                     ,(async-inject-variables "kele-cache-dir")
-                    (->> (f-entries (f-join kele-cache-dir "discovery"))
+                    (->> (f-entries (file-name-concat kele-cache-dir "discovery"))
                          (-map (lambda (dir)
                                  (let* ((api-list-files (f-files dir
                                                                  (lambda (file)
-                                                                   (equal (f-ext file) "json"))
+                                                                   (equal (file-name-extension file) "json"))
                                                                  t))
                                         (api-lists (-map (lambda (file)
                                                            (json-parse-string (f-read file)
                                                                               :object-type 'alist
                                                                               :array-type 'list))
                                                          api-list-files))
-                                        (key (f-relative dir (f-join kele-cache-dir "discovery"))))
+                                        (key (file-relative-name dir (file-name-concat kele-cache-dir "discovery"))))
                                    `(,key . ,api-lists))))))
                  func-complete)))
 
