@@ -13,3 +13,12 @@
   be found on GitHub.
 - Use stdlib Emacs packages, functions, and interfaces wherever possible.
 - All messages intended for display to the user should be prefixed with `[kele]` followed by a space
+
+## Debugging
+
+- Perform as many operations as possible via `kele` Emacs functions. Only use "public" Emacs
+  functions, i.e. functions prefixed with `kele-` instead of `kele--`. Avoid using `kubectl` unless
+  absolutely necessary.
+  - Public functions can be defined with `transient-define-suffix` in addition to `defun`.
+- When printing buffer contents, use the `buffer-substring-no-properties` function. DO NOT use
+  `buffer-string` unless specifically requested.
