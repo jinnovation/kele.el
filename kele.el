@@ -2353,6 +2353,14 @@ resources within, pass the prefix argument."
      (list (kele--get-context-arg) ns gvk name)))
   (kele--render-object (kele--get-resource gvk name :namespace namespace :context context)))
 
+(defun kele--can-port-forward-p (context)
+  "Return whether the current user can create port-forwards in the given CONTEXT."
+  (kele--can-i :verb 'create
+               :resource "pods"
+               :group ""
+               :subresource "portforward"
+               :context context))
+
 (transient-define-suffix kele-port-forward (context namespace gvk name port)
   "Create a port-forward for resource GVK named NAME at PORT.
 
@@ -2364,11 +2372,7 @@ NAMESPACE and CONTEXT are used to identify the resource type to query for."
       (cond
         ((not (-contains? kele--port-forwardable-kinds .kind))
          (format "Resource %s does not support port-forward" .kind))
-        ((not (kele--can-i :verb 'create
-                           :resource "pods"
-                           :group ""
-                           :subresource "portforward"
-                           :context .context))
+        ((not (kele--can-port-forward-p .context))
          "Don't have permission to create port-forwards")
         (t "Port-forward to..."))))
   :if
@@ -2378,11 +2382,7 @@ NAMESPACE and CONTEXT are used to identify the resource type to query for."
   :inapt-if-not
   (lambda ()
     (let-alist (oref transient--prefix scope)
-      (kele--can-i :verb 'create
-                   :resource "pods"
-                   :group ""
-                   :subresource "portforward"
-                   :context .context)))
+      (kele--can-port-forward-p .context)))
   (interactive
    (let* ((gvk (kele--get-gvk-arg))
           (context (kele--get-context-arg))
