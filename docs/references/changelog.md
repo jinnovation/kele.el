@@ -25,6 +25,8 @@ versioning][semver].
 - Added dependency on `magit-section`
 - Added dedicated face `kele-resource-kind-face` for highlighting Kubernetes resource kinds,
   replacing generic `warning` face usage
+- Added dedicated keybindings + functions for initializing `kele-resource` to work with Pods,
+  Services, and Deployments
 
 ### Fixed
 

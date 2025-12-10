@@ -1601,6 +1601,9 @@ This is idempotent."
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "c") #'kele-config)
     (define-key map (kbd "r") #'kele-resource)
+    (define-key map (kbd "P") #'kele-pods)
+    (define-key map (kbd "D") #'kele-deployments)
+    (define-key map (kbd "S") #'kele-services)
     (define-key map (kbd "p") #'kele-ports)
     (define-key map (kbd "?") #'kele-dispatch)
     map)
@@ -2642,6 +2645,46 @@ CONTEXT and NAMESPACE are used to identify where the deployment lives."
 
 ;; FIXME: Known issues:
 ;; - Might not support multi-container pods
+
+(defun kele-pods ()
+  "Work with Pod resources.
+
+This is a convenience wrapper around `kele-resource' that
+pre-selects the 'pods' resource kind."
+  (interactive)
+  (kele-resource
+   (kele--get-groupversions-for-type
+    kele--global-discovery-cache
+    "pods"
+    :context (kele-current-context-name))
+   "pods"))
+
+(defun kele-deployments ()
+  "Work with Deployment resources.
+
+This is a convenience wrapper around `kele-resource' that
+pre-selects the 'deployments' resource kind."
+  (interactive)
+  (kele-resource
+   (kele--get-groupversions-for-type
+    kele--global-discovery-cache
+    "deployments"
+    :context (kele-current-context-name))
+   "deployments"))
+
+(defun kele-services ()
+  "Work with Service resources.
+
+This is a convenience wrapper around `kele-resource' that
+pre-selects the 'services' resource kind."
+  (interactive)
+  (kele-resource
+   (kele--get-groupversions-for-type
+    kele--global-discovery-cache
+    "services"
+    :context (kele-current-context-name))
+   "services"))
+
 (transient-define-suffix kele-resource-follow-logs (context namespace gvk name)
   :key "L"
   :if
@@ -2691,8 +2734,11 @@ CONTEXT and NAMESPACE are used to identify where the deployment lives."
   "Work with Kubernetes clusters and configs."
   [["Work with..."
     ("c" "Configurations" kele-config)
+    ("p" "Proxy servers" kele-ports)
     ("r" "Resources" kele-resource)
-    ("p" "Proxy servers" kele-ports)]
+    ("P" "Pods" kele-pods)
+    ("D" "Deployments" kele-deployments)
+    ("S" "Services" kele-services)]
    ["Actions"
     ("L" kele-list-all)]])
 
