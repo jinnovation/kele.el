@@ -1870,7 +1870,11 @@ support that verb will be offered as completion candidates."
     (kele--gvk-create :group group :version version :kind kind)))
 
 
+;; FIXME(@jinnovation): Could these be generalized to all kele buffers -- not just list ones?
 (defvar kele--list-context nil
+  "The context corresponding to the current `kele-list-mode' buffer.")
+
+(defvar kele--list-namespace nil
   "The context corresponding to the current `kele-list-mode' buffer.")
 
 (defvar kele--list-snapshot-time nil
@@ -2143,8 +2147,12 @@ Resources listed are those defined in `kele-all-kinds'."
                                           (or namespace "<all namespaces>")))))
     (with-current-buffer buf
       (setq-local kele--list-context context)
-      (setq-local kele--list-snapshot-time (current-time))
       (put 'kele--list-context 'permanent-local t)
+
+      (setq-local kele--list-namespace namespace)
+      (put 'kele--list-namespace 'permanent-local t)
+
+      (setq-local kele--list-snapshot-time (current-time))
       (put 'kele--list-snapshot-time 'permanent-local t)
 
       (let ((inhibit-read-only t))
@@ -2204,8 +2212,12 @@ KIND is not namespaced, returns an error."
                                         (or namespace "<all namespaces>")))))
     (with-current-buffer buf
       (setq-local kele--list-context context)
-      (setq-local kele--list-snapshot-time (current-time))
       (put 'kele--list-context 'permanent-local t)
+
+      (setq-local kele--list-namespace namespace)
+      (put 'kele--list-namespace 'permanent-local t)
+
+      (setq-local kele--list-snapshot-time (current-time))
       (put 'kele--list-snapshot-time 'permanent-local t)
 
       (let ((inhibit-read-only t))
