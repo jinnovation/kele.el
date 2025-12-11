@@ -2647,10 +2647,7 @@ CONTEXT and NAMESPACE are used to identify where the deployment lives."
 ;; - Might not support multi-container pods
 
 (defun kele-pods ()
-  "Work with Pod resources.
-
-This is a convenience wrapper around `kele-resource' that
-pre-selects the 'pods' resource kind."
+  "Work with Pod resources."
   (interactive)
   (kele-resource
    (kele--get-groupversions-for-type
@@ -2660,10 +2657,7 @@ pre-selects the 'pods' resource kind."
    "pods"))
 
 (defun kele-deployments ()
-  "Work with Deployment resources.
-
-This is a convenience wrapper around `kele-resource' that
-pre-selects the 'deployments' resource kind."
+  "Work with Deployment resources."
   (interactive)
   (kele-resource
    (kele--get-groupversions-for-type
@@ -2673,10 +2667,7 @@ pre-selects the 'deployments' resource kind."
    "deployments"))
 
 (defun kele-services ()
-  "Work with Service resources.
-
-This is a convenience wrapper around `kele-resource' that
-pre-selects the 'services' resource kind."
+  "Work with Service resources."
   (interactive)
   (kele-resource
    (kele--get-groupversions-for-type
