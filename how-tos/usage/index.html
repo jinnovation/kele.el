@@ -1,0 +1,1308 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Kubernetes Enablement Layer for Emacs">
+      
+      
+      
+        <link rel="canonical" href="https://jonathanj.in/kele.el/how-tos/usage/">
+      
+      
+        <link rel="prev" href="../..">
+      
+      
+        <link rel="next" href="../customization/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.17">
+    
+    
+      
+        <title>Usage - 🥤 kele.el: Kubernetes Enablement Layer for Emacs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.bcfcd587.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+  
+
+
+  <script defer data-domain="jonathanj.in/kele.el" src="https://plausible.io/js/script.js"></script>
+  
+    <script>"undefined"!=typeof __md_analytics&&__md_analytics()</script>
+  
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#usage" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="🥤 kele.el: Kubernetes Enablement Layer for Emacs" class="md-header__button md-logo" aria-label="🥤 kele.el: Kubernetes Enablement Layer for Emacs" data-md-component="logo">
+      
+  <img src="../../assets/logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            🥤 kele.el: Kubernetes Enablement Layer for Emacs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Usage
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jinnovation/kele.el" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jinnovation/kele.el
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+    
+  
+  How-Tos
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../explanations/comparisons/" class="md-tabs__link">
+          
+  
+    
+  
+  Explanations
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../references/" class="md-tabs__link">
+          
+  
+    
+  
+  References
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../contributing/" class="md-tabs__link">
+        
+  
+    
+  
+  Contributor Guide
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="🥤 kele.el: Kubernetes Enablement Layer for Emacs" class="md-nav__button md-logo" aria-label="🥤 kele.el: Kubernetes Enablement Layer for Emacs" data-md-component="logo">
+      
+  <img src="../../assets/logo.png" alt="logo">
+
+    </a>
+    🥤 kele.el: Kubernetes Enablement Layer for Emacs
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jinnovation/kele.el" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jinnovation/kele.el
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    How-Tos
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            How-Tos
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Usage
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Usage
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#dispatch" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dispatch
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#working-with-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      Working with Resources
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Working with Resources">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#getting-a-single-resource" class="md-nav__link">
+    <span class="md-ellipsis">
+      Getting a single resource
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deleting-a-single-resource" class="md-nav__link">
+    <span class="md-ellipsis">
+      Deleting a single resource
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#listing-all-resources-of-a-single-kind" class="md-nav__link">
+    <span class="md-ellipsis">
+      Listing all resources of a single kind
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#refreshing-a-resource" class="md-nav__link">
+    <span class="md-ellipsis">
+      Refreshing a resource
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#following-logs" class="md-nav__link">
+    <span class="md-ellipsis">
+      Following logs
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contexts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Contexts
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Contexts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#managing-proxy-servers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Managing proxy servers
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../customization/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Customization
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Integrations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Explanations
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Explanations
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../explanations/comparisons/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Comparisons with Similar Packages/Tools
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../explanations/design/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Design
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../references/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    References
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            References
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../references/changelog/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Changelog
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_3" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../references/adrs/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    ADRs
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_3" id="__nav_4_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_3">
+            <span class="md-nav__icon md-icon"></span>
+            ADRs
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../references/adrs/01-timer-based-discovery-cache/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    adr-01: Timer-based discovery-cache caching
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Contributor Guide
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#dispatch" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dispatch
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#working-with-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      Working with Resources
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Working with Resources">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#getting-a-single-resource" class="md-nav__link">
+    <span class="md-ellipsis">
+      Getting a single resource
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deleting-a-single-resource" class="md-nav__link">
+    <span class="md-ellipsis">
+      Deleting a single resource
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#listing-all-resources-of-a-single-kind" class="md-nav__link">
+    <span class="md-ellipsis">
+      Listing all resources of a single kind
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#refreshing-a-resource" class="md-nav__link">
+    <span class="md-ellipsis">
+      Refreshing a resource
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#following-logs" class="md-nav__link">
+    <span class="md-ellipsis">
+      Following logs
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contexts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Contexts
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Contexts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#managing-proxy-servers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Managing proxy servers
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="usage">Usage</h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You&rsquo;ll notice this page is pretty sparse. Kele is an early-stage package
+with lots of room to grow. Stay tuned for more!</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Kele doesn&rsquo;t have a default keybinding prefix for its commands. All examples
+documented here assume that you&rsquo;ve opted for <code>s-k</code>.</p>
+<p>For instructions on how to set your own keybinding prefix, see: <a href="../customization/">How-Tos &gt;
+Customization</a>.</p>
+</div>
+<h2 id="dispatch">Dispatch</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Keybinding</th>
+<th style="text-align: left;">Interactive function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>s-k ?</code></td>
+<td style="text-align: left;"><code>kele-dispatch</code></td>
+</tr>
+</tbody>
+</table>
+<p>Kele provides <code>kele-dispatch</code> as a launchpad for all subsequent Kele
+functionality. If you ever forget what the keybinding is for what you&rsquo;re trying
+to accomplish, reach for <code>kele-dispatch</code>.</p>
+<h2 id="working-with-resources">Working with Resources</h2>
+<p><code>s-k r</code> will invoke <code>kele-resource</code>, allowing you to act on specific resource
+kinds. With <code>kele-resource</code>, you can, for example:</p>
+<ul>
+<li>Look up a given Kubernetes object by name, fetch its manifest, and display it
+  in a separate buffer;</li>
+<li>List out all resources of a given type.</li>
+</ul>
+<p><img alt="" src="../img/resource-prefix.png" /></p>
+<div class="admonition tip inline">
+<p><code>kele-resource</code> supports <a href="https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/">custom resources</a> too!</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Individual bindings within <code>kele-resource</code> are enabled/disabled based on
+your permissions in the given cluster. For example, if you do not have <code>get</code>
+permission for the given resource, the <code>g</code> key will be disabled &ndash; likewise
+the <code>l</code> key with <code>list</code> permission.</p>
+</div>
+<p><code>kele-resource</code> will first prompt you to select the <strong>kind</strong> that you&rsquo;d like to
+work with, after which you can choose to <strong>get</strong> a specific object of that kind
+by name. If the resource is namespaced, you will also be presented with the
+option to choose the namespace to select from.</p>
+<p>Certain resource kinds have actions unique to them. When you select a resource
+kind that has such actions defined, these are presented in a dedicated section
+with their own key bindings. For example, <code>s-k r "deployments"</code> will, in
+addition to the general actions for getting and listing Deployments, also allow
+you to restart a specific Deployment.</p>
+<h3 id="getting-a-single-resource">Getting a single resource</h3>
+<p>You can get a single resource of the given kind with:
+<div class="highlight"><pre><span></span><code>s-k r &lt;kind name&gt; g &lt;resource name&gt;
+</code></pre></div></p>
+<p>This is bound to <code>kele-get</code>.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Leaving <code>--namespace=</code> unset will list all resources of the selected kind
+across all namespaces for you to choose from.</p>
+</div>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Selecting a resource</label><label for="__tabbed_1_2">Viewing the chosen resource</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p><img alt="" src="../img/resource-completion.png" /></p>
+</div>
+<div class="tabbed-block">
+<p><img alt="" src="../img/resource-show.png" /></p>
+</div>
+</div>
+</div>
+<h3 id="deleting-a-single-resource">Deleting a single resource</h3>
+<p>You can delete a single resource of the given kind with:
+<div class="highlight"><pre><span></span><code>s-k r &lt;kind name&gt; d &lt;resource name&gt;
+</code></pre></div></p>
+<h3 id="listing-all-resources-of-a-single-kind">Listing all resources of a single kind</h3>
+<p>You can list all resources of a single kind with:
+<div class="highlight"><pre><span></span><code>s-k r &lt;kind name&gt; l
+</code></pre></div></p>
+<p>This is bound to <code>kele-list</code>.</p>
+<p><img alt="" src="../img/kele-list.png" /></p>
+<p>This will list all resources of the specified group-version and kind in a
+separate buffer in a table.</p>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>Kele uses <a href="https://kubernetes.io/docs/reference/using-api/api-concepts/#receiving-resources-as-tables">server-side
+printing</a>,
+which means that any resource-specific columns that <code>kubectl</code> would print &ndash;
+for example, the &ldquo;Status&rdquo; column for Pods &ndash; will be tabulated here as well.</p>
+</div>
+<p>From here, you can:</p>
+<ul>
+<li>Click any of the header columns to sort the list;</li>
+<li>Click or hit <code>RET</code> on any of the entries to display its full manifest in a
+  separate buffer;</li>
+<li>Delete a resource with <code>k</code>.</li>
+</ul>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Leaving <code>--namespace=</code> unset will list resources across all namespaces.</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Hitting <code>RET</code> with your cursor on the <strong>Owner(s)</strong> column will open the
+<strong>owner resource</strong>.</p>
+</div>
+<h3 id="refreshing-a-resource">Refreshing a resource</h3>
+<p>You can press <code>g</code> in a <code>kele-get</code> buffer to re-fetch and refresh the current resource.</p>
+<h3 id="following-logs">Following logs</h3>
+<p>When <code>kele-resource</code> is called on a resource that supports logs, you can use the
+<code>l</code> key to follow the logs for a single resource.</p>
+<p><img alt="" src="../img/kele-resource-logs.png" /></p>
+<h2 id="contexts">Contexts</h2>
+<p><img alt="" src="../img/context-prefix.png" /></p>
+<p>Kele commands involving Kubernetes <a href="https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/">contexts</a> center around the <code>s-k c</code> prefix (<code>kele-config</code>).</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Keybinding</th>
+<th>Functionality</th>
+<th style="text-align: left;">Interactive function</th>
+<th style="text-align: left;">Demo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>s-k c s</code></td>
+<td>Switching from one context to another</td>
+<td style="text-align: left;"><code>kele-context-switch</code></td>
+<td style="text-align: left;"><img alt="" src="../img/context-switch.gif" /></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>s-k c r</code></td>
+<td>Renaming a context</td>
+<td style="text-align: left;"><code>kele-context-rename</code></td>
+<td style="text-align: left;"><img alt="" src="../img/context-rename.gif" /></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>s-k c d</code></td>
+<td>Deleting a context</td>
+<td style="text-align: left;"><code>kele-context-delete</code></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>s-k c n</code></td>
+<td>Changing the default namespace</td>
+<td style="text-align: left;"><code>kele-namespace-switch-for-current-context</code></td>
+<td style="text-align: left;"></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Most context-related Kele functionality can also be done via <a href="https://github.com/oantolin/embark">Embark</a> on any
+completion candidate in any context-related Kele command.</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>If you have functions that need to run after switching to a new context in
+order to use it, <code>kele-context-after-switch-functions</code> is available to use. This
+can be useful for, say, re-authenticating with the new context before
+interacting with it.</p>
+</div>
+<h3 id="managing-proxy-servers">Managing proxy servers</h3>
+<p>Kele allows for starting and stopping <a href="https://kubernetes.io/docs/tasks/extend-kubernetes/http-proxy-access-api/">HTTP
+proxies</a>
+for each context. The status of each context&rsquo;s proxy is displayed in the
+annotations for each cluster completion candidate.</p>
+<details class="example">
+<summary>Demo</summary>
+<p><img alt="" src="../img/kele-proxy.png" /></p>
+</details>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Any proxy server created via Kele is <strong>ephemeral</strong>; they are automatically
+closed and terminated after a set amount of time. For more details, see
+<code>kele-proxy-ttl</code>.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Each context can only have one proxy server active at a time. This is an
+artificial limitation put in place by Kele.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Keybinding</th>
+<th style="text-align: left;">Functionality</th>
+<th style="text-align: left;">Interactive function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>s-k p p</code></td>
+<td style="text-align: left;">Start/stop proxy server process for the current context</td>
+<td style="text-align: left;"><code>kele-proxy-toggle</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>s-k p P</code></td>
+<td style="text-align: left;">Start/stop proxy server process for a specific context</td>
+<td style="text-align: left;"><code>kele-proxy-toggle</code></td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+
+<div class="md-copyright__highlight">
+This site tracks visits using
+<a href="https://plausible.io/about" target="_blank" rel="noopener">Plausible
+Analytics</a>, a privacy-friendly and open-source Google Analytics alternative
+that collects no personal data.
+</div>
+
+Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.indexes", "navigation.tabs", "navigation.tabs.sticky", "navigation.top"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.1e8ae164.min.js"></script>
+      
+    
+  </body>
+</html>
